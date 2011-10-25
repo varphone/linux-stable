@@ -150,7 +150,7 @@ static int mt9m001_init(struct i2c_client *client)
 
 	/* Disable chip, synchronous option update */
 	if (!ret)
-		ret = reg_write(client, MT9M001_OUTPUT_CONTROL, 0);
+		ret = reg_clear(client, MT9M001_OUTPUT_CONTROL, 0x0002);
 
 	return ret;
 }
@@ -160,7 +160,8 @@ static int mt9m001_s_stream(struct v4l2_subdev *sd, int enable)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 
 	/* Switch to master "normal" mode or stop sensor readout */
-	if (reg_write(client, MT9M001_OUTPUT_CONTROL, enable ? 2 : 0) < 0)
+	if (enable ? reg_set(client, MT9M001_OUTPUT_CONTROL, 0x0002) :
+			reg_clear(client, MT9M001_OUTPUT_CONTROL, 0x0002))
 		return -EIO;
 	return 0;
 }
