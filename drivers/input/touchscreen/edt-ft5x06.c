@@ -492,7 +492,7 @@ static int edt_ft5x06_i2c_ts_probe (struct i2c_client *client,
 	mutex_init (&tsdata->mutex);
 
 	if (tsdata->reset_pin >= 0) {
-		error = gpio_request (tsdata->reset_pin, NULL);
+		error = gpio_request (tsdata->reset_pin, "EDT-FT5X06 nRESET");
 		if (error < 0) {
 			dev_err (&client->dev,
 				 "Failed to request GPIO %d as reset pin, error %d\n",
@@ -513,7 +513,7 @@ static int edt_ft5x06_i2c_ts_probe (struct i2c_client *client,
 	tsdata->irq = client->irq;
 	tsdata->irq_pin = irq_to_gpio (tsdata->irq);
 
-	error = gpio_request (tsdata->irq_pin, NULL);
+	error = gpio_request (tsdata->irq_pin, "EDT-FT5X06 nIRQ");
 	if (error < 0) {
 		dev_err (&client->dev,
 		         "Failed to request GPIO %d for IRQ %d, error %d\n",
