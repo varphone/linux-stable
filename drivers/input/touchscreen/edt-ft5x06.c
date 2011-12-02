@@ -491,20 +491,22 @@ static int edt_ft5x06_i2c_ts_probe (struct i2c_client *client,
 	tsdata->reset_pin = ((struct edt_ft5x06_platform_data *) client->dev.platform_data)->reset_pin;
 	mutex_init (&tsdata->mutex);
 
-	error = gpio_request (tsdata->reset_pin, NULL);
-	if (error < 0) {
-		dev_err (&client->dev,
-		         "Failed to request GPIO %d as reset pin, error %d\n",
-		         tsdata->reset_pin, error);
-		error = -ENOMEM;
-		goto err_free_tsdata;
-	}
+	if (tsdata->reset_pin >= 0) {
+		error = gpio_request (tsdata->reset_pin, NULL);
+		if (error < 0) {
+			dev_err (&client->dev,
+				 "Failed to request GPIO %d as reset pin, error %d\n",
+				 tsdata->reset_pin, error);
+			error = -ENOMEM;
+			goto err_free_tsdata;
+		}
 
-	/* this pulls reset down, enabling the low active reset */
-	if (gpio_direction_output (tsdata->reset_pin, 0) < 0) {
-		dev_info (&client->dev, "switching to output failed\n");
-		error = -ENOMEM;
-		goto err_free_reset_pin;
+		/* this pulls reset down, enabling the low active reset */
+		if (gpio_direction_output (tsdata->reset_pin, 0) < 0) {
+			dev_info (&client->dev, "switching to output failed\n");
+			error = -ENOMEM;
+			goto err_free_reset_pin;
+		}
 	}
 
 	/* request IRQ pin */
@@ -522,9 +524,11 @@ static int edt_ft5x06_i2c_ts_probe (struct i2c_client *client,
 	gpio_direction_input (tsdata->irq_pin);
 
 	/* release reset */
-	mdelay (50);
-	gpio_set_value (tsdata->reset_pin, 1);
-	mdelay (100);
+	if (tsdata->reset_pin >= 0) {
+		mdelay (50);
+		gpio_set_value (tsdata->reset_pin, 1);
+		mdelay (100);
+	}
 
 	mutex_lock (&tsdata->mutex);
 
@@ -623,7 +627,8 @@ err_free_input_device:
 err_free_irq_pin:
 	gpio_free (tsdata->irq_pin);
 err_free_reset_pin:
-	gpio_free (tsdata->reset_pin);
+	if (tsdata->reset_pin >= 0)
+		gpio_free (tsdata->reset_pin);
 err_free_tsdata:
 	kfree (tsdata);
 	return error;
@@ -640,7 +645,8 @@ static int edt_ft5x06_i2c_ts_remove (struct i2c_client *client)
 	kfree (tsdata->input->name);
 	input_free_device (tsdata->input);
 	gpio_free (tsdata->irq_pin);
-	gpio_free (tsdata->reset_pin);
+	if (tsdata->reset_pin >= 0)
+		gpio_free (tsdata->reset_pin);
 	kfree (tsdata);
 
 	dev_set_drvdata (&client->dev, NULL);
