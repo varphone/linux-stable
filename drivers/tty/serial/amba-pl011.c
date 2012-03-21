@@ -1993,6 +1993,10 @@ static int pl011_probe(struct amba_device *dev, const struct amba_id *id)
 	uap->port.line = i;
 	pl011_dma_probe(uap);
 
+	/* Ensure interrupts from this UART are masked and cleared */
+	writew(0, uap->port.membase + UART011_IMSC);
+	writew(0xffff, uap->port.membase + UART011_ICR);
+
 	snprintf(uap->type, sizeof(uap->type), "PL011 rev%u", amba_rev(dev));
 
 	amba_ports[i] = uap;
