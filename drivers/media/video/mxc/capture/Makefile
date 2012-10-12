@@ -22,6 +22,8 @@ obj-$(CONFIG_MXC_EMMA_CAMERA_MICRON111) += emma_mt9v111_camera.o
 
 mt9v111_camera-objs := mt9v111.o
 obj-$(CONFIG_MXC_CAMERA_MICRON111) += mt9v111_camera.o
+mt9m111_camera-objs := mt9m111.o
+obj-$(CONFIG_MXC_CAMERA_MICRON111_M) += mt9m111_camera.o
 
 hv7161_camera-objs := hv7161.o
 obj-$(CONFIG_MXC_CAMERA_HV7161) += hv7161_camera.o
