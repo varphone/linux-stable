@@ -32,6 +32,7 @@
 #include <linux/clk.h>
 #include <media/v4l2-int-device.h>
 #include <linux/v4l2-mediabus.h>
+#include <linux/fsl_devices.h>
 #include <media/v4l2-chip-ident.h>
 #include "mxc_v4l2_capture.h"
 #include "mt9m111.h"
@@ -52,7 +53,7 @@ struct mt9m111_datafmt {
 };
 
 struct mt9m111_data {
-	const struct mt9m111_platform_data *platform_data;
+	const struct fsl_mxc_camera_platform_data *platform_data;
 	struct v4l2_int_device *v4l2_int_device;
 	struct i2c_client *i2c_client;
 	struct v4l2_pix_format pix;
@@ -474,6 +475,8 @@ static int mt9m111_sensor_init(struct i2c_client *client)
 		ret = mt9m111_set_context(client, mt9m111->context);
 	if (!ret)
 		ret = mt9m111_set_autoexposure(client, mt9m111->autoexposure);
+	if (!ret)
+		ret = mt9m111_setfmt_yuv(client);
 	if (ret)
 		dev_err(&client->dev, "mt9m111 init failed: %d\n", ret);
 	return ret;
@@ -626,6 +629,8 @@ static int ioctl_s_parm(struct v4l2_int_device *s, struct v4l2_streamparm *a)
 		/* Check that the new frame rate is allowed.
 		 * Changing the frame rate is not allowed on this
 		 *camera. */
+
+#if 0
 		if (cparm->timeperframe.denominator !=
 		    mt9m111->streamcap.timeperframe.denominator) {
 			pr_err("ERROR: mt9m111: ioctl_s_parm: " \
@@ -637,7 +642,7 @@ static int ioctl_s_parm(struct v4l2_int_device *s, struct v4l2_streamparm *a)
 						cparm->timeperframe;
 		      /* Call any camera functions to match settings. */
 		}
-
+#endif
 		/* Check that new capture mode is supported. */
 		if ((cparm->capturemode != 0) &&
 		    !(cparm->capturemode & V4L2_MODE_HIGHQUALITY)) {
@@ -903,6 +908,46 @@ static int ioctl_s_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
     
 	return retval;
 }
+/*!
+ * ioctl_enum_framesizes - V4L2 sensor interface handler for
+ *			   VIDIOC_ENUM_FRAMESIZES ioctl
+ * @s: pointer to standard V4L2 device structure
+ * @fsize: standard V4L2 VIDIOC_ENUM_FRAMESIZES ioctl structure
+ *
+ * Return 0 if successful, otherwise -EINVAL.
+ */
+static int ioctl_enum_framesizes(struct v4l2_int_device *s,
+				 struct v4l2_frmsizeenum *fsize)
+{
+	struct mt9m111_data *mt9m111 = v4l2_to_mt9m111(s);
+
+	fsize->pixel_format = mt9m111->pix.pixelformat;
+	fsize->type = V4L2_FRMSIZE_TYPE_CONTINUOUS;
+	fsize->stepwise.min_height = 0;
+	fsize->stepwise.min_width = 0;
+	fsize->stepwise.max_height = MT9M111_MAX_HEIGHT;
+	fsize->stepwise.max_width = MT9M111_MAX_WIDTH;
+	fsize->stepwise.step_width = fsize->stepwise.step_height = 1;
+	return 0;
+}
+
+/*!
+ * ioctl_g_chip_ident - V4L2 sensor interface handler for
+ *			VIDIOC_DBG_G_CHIP_IDENT ioctl
+ * @s: pointer to standard V4L2 device structure
+ * @id: pointer to int
+ *
+ * Return 0.
+ */
+static int ioctl_g_chip_ident(struct v4l2_int_device *s, int *id)
+{
+	((struct v4l2_dbg_chip_ident *)id)->match.type =
+					V4L2_CHIP_MATCH_I2C_DRIVER;
+	strcpy(((struct v4l2_dbg_chip_ident *)id)->match.name, "mt9m111_camera");
+
+	return 0;
+}
+
 
 /*!
  * ioctl_init - V4L2 sensor interface handler for VIDIOC_INT_INIT
@@ -1032,6 +1077,10 @@ static struct v4l2_int_ioctl_desc mt9m111_ioctl_desc[] = {
 /*	{vidioc_int_queryctrl_num, (v4l2_int_ioctl_func *) ioctl_queryctrl}, */
 	{vidioc_int_g_ctrl_num, (v4l2_int_ioctl_func *) ioctl_g_ctrl},
 	{vidioc_int_s_ctrl_num, (v4l2_int_ioctl_func *) ioctl_s_ctrl},
+	{vidioc_int_enum_framesizes_num,
+				(v4l2_int_ioctl_func *)ioctl_enum_framesizes},
+	{vidioc_int_g_chip_ident_num,
+				(v4l2_int_ioctl_func *)ioctl_g_chip_ident},
 };
 
 static struct v4l2_int_slave mt9m111_slave = {
@@ -1070,6 +1119,9 @@ static int mt9m111_probe(struct i2c_client *client,
 	/* Set initial values for the sensor struct. */
 	mt9m111->i2c_client = client;
 	i2c_set_clientdata(client, mt9m111);
+	mt9m111->platform_data = client->dev.platform_data;
+	mt9m111->csi = mt9m111->platform_data->csi;
+	mt9m111->io_init = mt9m111->platform_data->io_init;
 
 	pr_debug("   client name is %s\n", client->name);
 	mt9m111->pix.pixelformat = V4L2_PIX_FMT_UYVY;
@@ -1092,6 +1144,10 @@ static int mt9m111_probe(struct i2c_client *client,
 	/* This function attaches this structure to the /dev/video0 device.
 	 * The pointer in priv points to the mt9m111_data structure here.*/
 	retval = v4l2_int_device_register(&mt9m111_int_device);
+
+	if (mt9m111->io_init)
+		mt9m111->io_init();
+
 
 	return retval;
 }
