@@ -908,6 +908,27 @@ static int ioctl_s_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
     
 	return retval;
 }
+
+/*!
+ * ioctl_enum_fmt_cap - V4L2 sensor interface handler for VIDIOC_ENUM_FMT
+ * @s: pointer to standard V4L2 device structure
+ * @fmt: pointer to standard V4L2 fmt description structure
+ *
+ * Return 0.
+ */
+static int ioctl_enum_fmt_cap(struct v4l2_int_device *s,
+			      struct v4l2_fmtdesc *fmt)
+{
+	struct mt9m111_data *mt9m111 = v4l2_to_mt9m111(s);
+
+	if (fmt->index > 1)
+		return -EINVAL;
+
+	fmt->pixelformat = mt9m111->pix.pixelformat;
+
+	return 0;
+}
+
 /*!
  * ioctl_enum_framesizes - V4L2 sensor interface handler for
  *			   VIDIOC_ENUM_FRAMESIZES ioctl
@@ -1052,8 +1073,8 @@ static struct v4l2_int_ioctl_desc mt9m111_ioctl_desc[] = {
 	/*!
 	 * VIDIOC_ENUM_FMT ioctl for the CAPTURE buffer type.
 	 */
-/*	{vidioc_int_enum_fmt_cap_num,
-				(v4l2_int_ioctl_func *) ioctl_enum_fmt_cap}, */
+	{vidioc_int_enum_fmt_cap_num,
+				(v4l2_int_ioctl_func *) ioctl_enum_fmt_cap},
 
 	/*!
 	 * VIDIOC_TRY_FMT ioctl for the CAPTURE buffer type.
