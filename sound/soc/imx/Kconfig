@@ -43,7 +43,7 @@ config SND_SOC_MX27VIS_AIC32X4
 
 config SND_SOC_PHYCORE_AC97
 	tristate "SoC Audio support for Phytec phyCORE (and phyCARD) boards"
-	depends on MACH_PCM043 || MACH_PCA100
+	depends on MACH_PCM043 || MACH_PCA100 || MACH_MX6Q_PHYCARD
 	select SND_SOC_WM9712
 	select SND_MXC_SOC_FIQ
 	help
@@ -123,5 +123,14 @@ config SND_SOC_IMX_HDMI
 	select MFD_MXC_HDMI
 	help
 	  Say Y if you want to add support for SoC audio through IMX HDMI.
+
+config SND_SOC_IMX_TLV320AIC3007
+	tristate "SoC Audio support for i.MX boards with tlv320aic3007"
+	depends on I2C && (MACH_MX6Q_PHYFLEX || MACH_MX6Q_PHYCARD)
+	select SND_SOC_TLV320AIC3X
+	select SND_MXC_SOC_MX2
+	help
+	  Say Y if you want to add support for SoC audio on an i.MX board with
+	  a tlv320aic3007 codec.
 
 endif	# SND_IMX_SOC
