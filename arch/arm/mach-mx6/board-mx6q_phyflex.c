@@ -104,10 +104,10 @@
 #define MX6_PHYFLEX_ECSPI3_CS1		IMX_GPIO_NR(4, 25)
 #define MX6_PHYFLEX_ECSPI3_CS2		IMX_GPIO_NR(4, 26)
 #define MX6_PHYFLEX_ECSPI3_CS3		IMX_GPIO_NR(4, 27)
+#define MX6_PHYFLEX_ECSPI3_WP		IMX_GPIO_NR(3, 29)
 
 #define MX6_PHYFLEX_USB_OTG_PWR		IMX_GPIO_NR(4, 15)
 //#define MX6_PHYFLEX_DISP0_PWR		IMX_GPIO_NR(3, 24)
-#define MX6_PHYFLEX_DISP0_PWR		IMX_GPIO_NR(3, 29)
 #define MX6_PHYFLEX_DISP0_I2C_EN	IMX_GPIO_NR(3, 28)
 
 #define MX6_PHYFLEX_USB_HOST1_OC	IMX_GPIO_NR(1, 3)
@@ -283,12 +283,6 @@ static struct spi_board_info n25q128_spi2_board_info[] __initdata = {
 #endif
 };
 
-static void spi_device_init(void)
-{
-	spi_register_board_info(n25q128_spi2_board_info,
-				ARRAY_SIZE(n25q128_spi2_board_info));
-}
-
 static struct imxi2c_platform_data mx6_phyflex_i2c0_data = {
 	.bitrate = 100000,
 };
@@ -384,10 +378,6 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 		I2C_BOARD_INFO("max1037", 0x64),
 	}, {
 		I2C_BOARD_INFO("tlv320aic3007", 0x18),
-//	}, {
-//		I2C_BOARD_INFO("max7300", 0x40),
-//		.platform_data =(void *)&max7301_i2c_data,
-
 	}, {
 		I2C_BOARD_INFO("rtc8564", 0x51),
 	}, {
@@ -398,7 +388,7 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 
 static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 	{
-		I2C_BOARD_INFO("max1037", 0x64),
+//		I2C_BOARD_INFO("max1037", 0x64),
 	}
 };
 
@@ -1037,7 +1027,7 @@ static struct gpio_led gpio_leds[] = {
 		.gpio                   = IMX_GPIO_NR(1, 7),
 	}, {
 		.name                   = "red",
-		.default_trigger        = "heartbeat",
+		.default_trigger        = "nand-disk",
 		.gpio                   = IMX_GPIO_NR(3, 20),
 /*
 	ToDo: Uncoment next lines, when second phyFlex TS interupt fixed
@@ -1141,7 +1131,10 @@ static void __init mx6_phyflex_init(void)
 
 	/* SPI */
 	imx6q_add_ecspi(2, &mx6_phyflex_spi_data);
-	spi_device_init();
+	spi_register_board_info(n25q128_spi2_board_info, ARRAY_SIZE(n25q128_spi2_board_info));
+#if defined(CONFIG_CAN_MCP251X)
+	spi_register_board_info(mcp251x_board_info, ARRAY_SIZE(mcp251x_board_info));
+#endif
 
 #ifdef ENABLE_PHY
 	imx6_init_fec(fec_data);
@@ -1154,8 +1147,8 @@ static void __init mx6_phyflex_init(void)
 	platform_device_register(&phyflex_vmmc_reg_devices);
 
 	/* SD cards initialization */
-	board_esdhc_init(1, MX6_PHYFLEX_SD2_CD, MX6_PHYFLEX_SD2_WP);
 	board_esdhc_init(2, MX6_PHYFLEX_SD3_CD, MX6_PHYFLEX_SD3_WP);
+	board_esdhc_init(1, MX6_PHYFLEX_SD2_CD, MX6_PHYFLEX_SD2_WP);
 
 	mx6_phyflex_init_usb();
 	mx6_phyflex_init_audio();
@@ -1193,14 +1186,11 @@ static void __init mx6_phyflex_init(void)
 	/* PCI Express initialization */
 	imx6q_add_pcie(&mx6_phyflex_pcie_data);
 
-//	imx6q_add_perfmon(0);
-//	imx6q_add_perfmon(1);
-//	imx6q_add_perfmon(2);
+	imx6q_add_perfmon(0);
+	imx6q_add_perfmon(1);
+	imx6q_add_perfmon(2);
 //	imx6q_add_mlb150(&mx6_phyflex_mlb150_data);
 
-#if defined(CONFIG_CAN_MCP251X)
-	spi_register_board_info(mcp251x_board_info, ARRAY_SIZE(mcp251x_board_info));
-#endif
 
 	/* 1-wire devices registration */
 	platform_device_register(&w1_device);
