@@ -120,6 +120,14 @@ static struct fb_videomode ldb_modedb[] = {
 	 0,
 	 FB_VMODE_NONINTERLACED,
 	 FB_MODE_IS_DETAILED,},
+	{
+	"LDB-VGA", 60, 800, 480, 40000,
+	42, 86,
+	1, 23,
+	128, 4,
+	0,
+	FB_VMODE_NONINTERLACED,
+	FB_MODE_IS_DETAILED,},
 };
 static int ldb_modedb_sz = ARRAY_SIZE(ldb_modedb);
 
@@ -393,10 +401,27 @@ static int ldb_ipu_ldb_route(int ipu, int di, struct ldb_data *ldb)
 	return 0;
 }
 
+static void ldb_add_var_to_modelist(struct mxc_dispdrv_setting *setting,
+	struct fb_videomode *modedb, int num_modes)
+{
+	int i;
+
+	INIT_LIST_HEAD(&setting->fbi->modelist);
+	for (i = 0; i < num_modes; i++) {
+		struct fb_videomode m;
+		fb_var_to_videomode(&m, &setting->fbi->var);
+		if (fb_mode_is_equal(&m, &modedb[i])) {
+			fb_add_videomode(&modedb[i],
+					&setting->fbi->modelist);
+			break;
+		}
+	}
+}
+
 static int ldb_disp_init(struct mxc_dispdrv_handle *disp,
 	struct mxc_dispdrv_setting *setting)
 {
-	int ret = 0, i;
+	int ret = 0;
 	struct ldb_data *ldb = mxc_dispdrv_getdata(disp);
 	struct fsl_mxc_ldb_platform_data *plat_data = ldb->pdev->dev.platform_data;
 	struct resource *res;
@@ -693,21 +718,20 @@ static int ldb_disp_init(struct mxc_dispdrv_handle *disp,
 			ldb->setting[setting_idx].ldb_di_clk);
 
 	/* must use spec video mode defined by driver */
+
+	/* search platform specific first */
 	ret = fb_find_mode(&setting->fbi->var, setting->fbi, setting->dft_mode_str,
-				ldb_modedb, ldb_modedb_sz, NULL, setting->default_bpp);
+				plat_data->modes, plat_data->num_modes, NULL, setting->default_bpp);
+
+	/* search default database, if nothing matches */
+	if (ret != 1)
+		ret = fb_find_mode(&setting->fbi->var, setting->fbi, setting->dft_mode_str,
+					ldb_modedb, ldb_modedb_sz, NULL, setting->default_bpp);
 	if (ret != 1)
 		fb_videomode_to_var(&setting->fbi->var, &ldb_modedb[0]);
 
-	INIT_LIST_HEAD(&setting->fbi->modelist);
-	for (i = 0; i < ldb_modedb_sz; i++) {
-		struct fb_videomode m;
-		fb_var_to_videomode(&m, &setting->fbi->var);
-		if (fb_mode_is_equal(&m, &ldb_modedb[i])) {
-			fb_add_videomode(&ldb_modedb[i],
-					&setting->fbi->modelist);
-			break;
-		}
-	}
+	ldb_add_var_to_modelist(setting, plat_data->modes, plat_data->num_modes);
+	ldb_add_var_to_modelist(setting, ldb_modedb, ldb_modedb_sz);
 
 	/* save current ldb setting for fb notifier */
 	ldb->setting[setting_idx].active = true;
