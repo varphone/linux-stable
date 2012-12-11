@@ -1334,6 +1334,8 @@ static struct fsl_mxc_ldb_platform_data ldb_data = {
 	.mode = LDB_SEP0,
 	.sec_ipu_id = 1,
 	.sec_disp_id = 1,
+	.modes = NULL,
+	.num_modes = 0,
 };
 
 static struct max8903_pdata charger1_data = {

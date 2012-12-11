@@ -239,6 +239,9 @@ struct fsl_mxc_ldb_platform_data {
 	/*only work for separate mode*/
 	int sec_ipu_id;
 	int sec_disp_id;
+
+	struct fb_videomode *modes;
+	int num_modes;
 };
 
 struct mxc_fb_platform_data {
