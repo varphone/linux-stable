@@ -17,6 +17,13 @@
  */
 
 #include <mach/iomux-mx6q.h>
+
+#define PHYFLEX_CLKO_PAD_CTRL	(PAD_CTL_SPEED_MED | PAD_CTL_DSE_80ohm | \
+		PAD_CTL_SRE_FAST)
+
+#define  PHYFLEX_PAD_GPIO_5__CCM_CLKO		\
+		(_MX6Q_PAD_GPIO_5__CCM_CLKO | MUX_PAD_CTRL(PHYFLEX_CLKO_PAD_CTRL))
+
 /* Common pads for PhyFlex board */
 static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 
@@ -115,10 +122,6 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_GPIO_17__GPIO_7_12,	/* PEB1 SPI RDY*/
 	MX6Q_PAD_GPIO_18__GPIO_7_13,	/* PEB1 SPI INT*/
 
-	/* MCLK for csi0 */
-	MX6Q_PAD_GPIO_0__CCM_CLKO,
-	MX6Q_PAD_GPIO_3__CCM_CLKO2,
-
 	/* ESAI */
 //	MX6Q_PAD_ENET_CRS_DV__ESAI1_SCKT,
 //	MX6Q_PAD_NANDF_CS2__ESAI1_TX0,
@@ -196,7 +199,7 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_CSI0_PIXCLK__IPU1_CSI0_PIXCLK,
 	MX6Q_PAD_CSI0_VSYNC__IPU1_CSI0_VSYNC,
 	MX6Q_PAD_CSI0_DATA_EN__IPU1_CSI0_DATA_EN,
-	MX6Q_PAD_GPIO_5__CCM_CLKO,
+	PHYFLEX_PAD_GPIO_5__CCM_CLKO,
 	MX6Q_PAD_ENET_RX_ER__GPIO_1_24,
 	MX6Q_PAD_CSI0_DAT10__IPU1_CSI0_D_10,
 	MX6Q_PAD_CSI0_DAT11__IPU1_CSI0_D_11,
