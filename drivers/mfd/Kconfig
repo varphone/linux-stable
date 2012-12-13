@@ -306,6 +306,16 @@ config PMIC_DA903X
 	  individual components like LCD backlight, voltage regulators,
 	  LEDs and battery-charger under the corresponding menus.
 
+config MFD_DA9063
+	bool "Dialog Semiconductor DA9063 PMIC Support"
+	depends on I2C=y
+	select MFD_CORE
+	select REGMAP_I2C
+	help
+	  Say yes here to add support for the Dialog Semiconductor DA9063 
+	  Power Management IC. This driver provides core functions for 
+	  DA9063.
+
 config PMIC_ADP5520
 	bool "Analog Devices ADP5520/01 MFD PMIC Core Support"
 	depends on I2C=y
