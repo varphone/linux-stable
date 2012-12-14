@@ -33,9 +33,9 @@
 /*!
  * Basic camera values
  */
-#define MT9M111_FRAME_RATE        30
+#define MT9M111_FRAME_RATE        15
 #define MT9M111_MCLK              54000000	/* Desired clock rate */
-#define MT9M111_CLK_MIN           12000000	/* This clock rate yields 15 fps */
+#define MT9M111_CLK_MIN           0	
 #define MT9M111_CLK_MAX           54000000
 #define MT9M111_MAX_WIDTH         1280		/* Max width for this camera */
 #define MT9M111_MAX_HEIGHT        1024		/* Max height for this camera */
