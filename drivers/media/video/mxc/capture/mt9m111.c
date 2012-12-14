@@ -505,6 +505,8 @@ static int mt9m111_sensor_init(struct i2c_client *client)
  */
 static int ioctl_g_ifparm(struct v4l2_int_device *s, struct v4l2_ifparm *p)
 {
+	struct mt9m111_data *mt9m111 = v4l2_to_mt9m111(s);
+
 	pr_debug("In mt9m111:ioctl_g_ifparm\n");
 
 	if (s == NULL) {
@@ -515,7 +517,7 @@ static int ioctl_g_ifparm(struct v4l2_int_device *s, struct v4l2_ifparm *p)
 	}
 
 	memset(p, 0, sizeof(*p));
-	p->u.bt656.clock_curr = MT9M111_MCLK;
+	p->u.bt656.clock_curr = mt9m111->mclk;
 	p->if_type = V4L2_IF_TYPE_BT656;
 	p->u.bt656.mode = V4L2_IF_TYPE_BT656_MODE_NOBT_8BIT;
 	p->u.bt656.clock_min = MT9M111_CLK_MIN;
@@ -964,7 +966,7 @@ static int ioctl_g_chip_ident(struct v4l2_int_device *s, int *id)
 {
 	((struct v4l2_dbg_chip_ident *)id)->match.type =
 					V4L2_CHIP_MATCH_I2C_DRIVER;
-	strcpy(((struct v4l2_dbg_chip_ident *)id)->match.name, "mt9m111_camera");
+	strcpy(((struct v4l2_dbg_chip_ident *)id)->match.name, "mt9m111");
 
 	return 0;
 }
@@ -1043,6 +1045,8 @@ static int ioctl_dev_init(struct v4l2_int_device *s)
 	gpio_sensor_active();
 
 	set_mclk_rate(&clock_rate, 0);                        // TODO: unhardcode '0' csi
+
+	mt9m111->mclk = clock_rate;
 
 	mt9m111_video_probe(mt9m111);
 
