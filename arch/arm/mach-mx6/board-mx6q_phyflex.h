@@ -18,7 +18,7 @@
 
 #include <mach/iomux-mx6q.h>
 
-#define PHYFLEX_CLKO_PAD_CTRL	(PAD_CTL_SPEED_MED | PAD_CTL_DSE_80ohm | \
+#define PHYFLEX_CLKO_PAD_CTRL	(PAD_CTL_SPEED_MED | PAD_CTL_DSE_60ohm | \
 		PAD_CTL_SRE_FAST)
 
 #define  PHYFLEX_PAD_GPIO_5__CCM_CLKO		\
