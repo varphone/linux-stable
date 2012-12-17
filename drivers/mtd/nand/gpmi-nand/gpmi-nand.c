@@ -561,14 +561,16 @@ static int __devinit init_hardware(struct gpmi_nand_data *this)
 	 * with any NAND Flash device
 	 * (although, with less-than-optimal performance).
 	 */
+
+	/* Change value to Samsung nand */
 	struct nand_timing  safe_timing = {
-		.data_setup_in_ns        = 80,
-		.data_hold_in_ns         = 60,
-		.address_setup_in_ns     = 25,
-		.gpmi_sample_delay_in_ns =  6,
-		.tREA_in_ns              = -1,
-		.tRLOH_in_ns             = -1,
-		.tRHOH_in_ns             = -1,
+		.data_setup_in_ns        = 12, /* Default safe value: 80 */
+		.data_hold_in_ns         =  5, /* Default safe value: 60 */
+		.address_setup_in_ns     = 12, /* Default safe value: 25 */
+		.gpmi_sample_delay_in_ns =  6, /* Default safe value:  6 */
+		.tREA_in_ns              = -1, /* 20max */
+		.tRLOH_in_ns             = -1, /* 5min  */
+		.tRHOH_in_ns             = -1, /* 15min */
 	};
 
 	/* Initialize the hardwares. */

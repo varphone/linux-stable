@@ -5471,8 +5471,9 @@ int __init mx6_clocks_init(unsigned long ckil, unsigned long osc,
 	clk_set_rate(&asrc_clk[1], 7500000);
 
 	/* set the GPMI clock to default frequency : 20MHz */
+	/* For Phytec boards switch default frequency to 50MHz */
 	clk_set_parent(&enfc_clk, &pll2_pfd_400M);
-	clk_set_rate(&enfc_clk, enfc_clk.round_rate(&enfc_clk, 20000000));
+	clk_set_rate(&enfc_clk, enfc_clk.round_rate(&enfc_clk, 50000000));
 
 	mx6_cpu_op_init();
 	cpu_op_tbl = get_cpu_op(&cpu_op_nr);
