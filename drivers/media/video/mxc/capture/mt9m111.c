@@ -554,6 +554,37 @@ static int ioctl_s_power(struct v4l2_int_device *s, int on)
 	return 0;
 }
 
+static unsigned long mt9m111_get_cyclesperframe(struct mt9m111_data *mt9m111)
+{
+	struct i2c_client *client = mt9m111->i2c_client;
+	unsigned int a, q;
+	unsigned long f;
+
+	a = mt9m111_reg_read(client, MT9M111_WINDOW_WIDTH) + 8;
+	if (mt9m111->context == HIGHPOWER)
+		q = mt9m111_reg_read(client, MT9M111_HORIZONTAL_BLANKING_B);
+	else
+		q = mt9m111_reg_read(client, MT9M111_HORIZONTAL_BLANKING_A);
+
+	f = mt9m111_reg_read(client, MT9M111_WINDOW_HEIGHT);
+
+	if (mt9m111->context == HIGHPOWER)
+		f += mt9m111_reg_read(client, MT9M111_VERTICAL_BLANKING_B);
+	else
+		f += mt9m111_reg_read(client, MT9M111_VERTICAL_BLANKING_A);
+
+	f *= (a + q);
+
+	/* One pixel clock cycle = 2 or 4 master clock cycles */
+	if (mt9m111->context == HIGHPOWER)
+		f *= 2;
+	else
+		f *= 4;
+
+	return f;
+}
+
+
 /*!
  * ioctl_g_parm - V4L2 sensor interface handler for VIDIOC_G_PARM ioctl
  * @s: pointer to standard V4L2 device structure
@@ -576,6 +607,11 @@ static int ioctl_g_parm(struct v4l2_int_device *s, struct v4l2_streamparm *a)
 		pr_debug("   type is V4L2_BUF_TYPE_VIDEO_CAPTURE\n");
 		memset(a, 0, sizeof(*a));
 		a->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+		mt9m111->streamcap.timeperframe.denominator = mt9m111->mclk;
+		mt9m111->streamcap.timeperframe.numerator =
+			mt9m111_get_cyclesperframe(mt9m111);
+
 		cparm->capability = mt9m111->streamcap.capability;
 		cparm->timeperframe =
 				mt9m111->streamcap.timeperframe;
@@ -618,7 +654,7 @@ static int ioctl_s_parm(struct v4l2_int_device *s, struct v4l2_streamparm *a)
 	struct mt9m111_data *mt9m111 = v4l2_to_mt9m111(s);
 	int ret = 0;
 	struct v4l2_captureparm *cparm = &a->parm.capture;
-	/* s->priv points to mt9m111_data */
+	uint32_t clock_rate;
 
 	pr_debug("In mt9m111:ioctl_s_parm\n");
 
@@ -627,23 +663,20 @@ static int ioctl_s_parm(struct v4l2_int_device *s, struct v4l2_streamparm *a)
 	case V4L2_BUF_TYPE_VIDEO_CAPTURE:
 		pr_debug("   type is V4L2_BUF_TYPE_VIDEO_CAPTURE\n");
 
-		/* Check that the new frame rate is allowed.
-		 * Changing the frame rate is not allowed on this
-		 *camera. */
+		clock_rate = mt9m111_get_cyclesperframe(mt9m111) *
+			cparm->timeperframe.denominator /
+			cparm->timeperframe.numerator;
 
-#if 0
-		if (cparm->timeperframe.denominator !=
-		    mt9m111->streamcap.timeperframe.denominator) {
-			pr_err("ERROR: mt9m111: ioctl_s_parm: " \
-			       "This camera does not allow frame rate "
-			       "changes.\n");
-			ret = -EINVAL;
-		} else {
-			mt9m111->streamcap.timeperframe =
-						cparm->timeperframe;
-		      /* Call any camera functions to match settings. */
-		}
-#endif
+		if (clock_rate > MT9M111_CLK_MAX)
+			clock_rate = MT9M111_CLK_MAX;
+
+		set_mclk_rate(&clock_rate, 0);
+		mt9m111->mclk = clock_rate;
+
+		mt9m111->streamcap.timeperframe.denominator = mt9m111->mclk;
+		mt9m111->streamcap.timeperframe.numerator =
+			mt9m111_get_cyclesperframe(mt9m111);
+
 		/* Check that new capture mode is supported. */
 		if ((cparm->capturemode != 0) &&
 		    !(cparm->capturemode & V4L2_MODE_HIGHQUALITY)) {
