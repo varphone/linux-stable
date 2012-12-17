@@ -738,7 +738,10 @@ static int imx_ssi_probe(struct platform_device *pdev)
 		dai = &imx_ssi_dai;
 
 	writel(0x0, ssi->base + SSI_SIER);
-	clk_disable(ssi->clk);
+	
+	/* Next line was committed 
+	because chip hangs at access to SSI register in AC97 mode.*/
+	//clk_disable(ssi->clk);
 
 	ssi->dma_params_rx.dma_addr = res->start + SSI_SRX0;
 	ssi->dma_params_tx.dma_addr = res->start + SSI_STX0;
