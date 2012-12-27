@@ -2233,8 +2233,17 @@ static long mxc_v4l_do_ioctl(struct file *file,
 	/* linux v4l2 bug, kernel c0485619 user c0405619 */
 	case VIDIOC_ENUMSTD: {
 		struct v4l2_standard *e = arg;
+
 		pr_debug("   case VIDIOC_ENUMSTD\n");
-		*e = cam->standard;
+		if (e->index > 0 ) {
+			retval = -EINVAL;
+			break;
+		}
+
+		e->id = cam->standard.id;
+		e->frameperiod = cam->standard.frameperiod;
+		e->framelines = cam->standard.framelines;
+		strlcpy(e->name, cam->standard.name, sizeof(e->name));
 		break;
 	}
 
