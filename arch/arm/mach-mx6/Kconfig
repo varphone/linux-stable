@@ -405,3 +405,14 @@ config MX6_ENET_IRQ_TO_GPIO
 	   This will allow the system to enter WAIT mode when ENET is active.
 
 endif
+
+if MACH_MX6Q_PHYFLEX
+
+comment "phyFLEX Options:"
+
+config PHYFLEX_SOC_1362_0
+	bool "Module revision 1362.0"
+	help
+	  Old version of phyFLEX modules without integrated PMIC
+
+endif
