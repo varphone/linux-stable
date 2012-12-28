@@ -91,7 +91,7 @@
 #include "board-mx6q_phytec-sd.h"
 #include "board-mx6q_phytec-nand.h"
 
-#define MX6_PHYFLEX_SD3_CD		IMX_GPIO_NR(5, 22)
+#define MX6_PHYFLEX_SD3_CD		IMX_GPIO_NR(1, 27)
 #define MX6_PHYFLEX_SD3_WP		IMX_GPIO_NR(5, 23)
 #define MX6_PHYFLEX_SD2_CD		IMX_GPIO_NR(1, 4)
 #define MX6_PHYFLEX_SD2_WP		IMX_GPIO_NR(1, 2)
@@ -105,6 +105,9 @@
 #define MX6_PHYFLEX_ECSPI3_CS2		IMX_GPIO_NR(4, 26)
 #define MX6_PHYFLEX_ECSPI3_CS3		IMX_GPIO_NR(4, 27)
 #define MX6_PHYFLEX_ECSPI3_WP		IMX_GPIO_NR(3, 29)
+
+#define MX6_PHYFLEX_LED_GREEN		IMX_GPIO_NR(1, 30)
+#define MX6_PHYFLEX_LED_RED		IMX_GPIO_NR(2, 31)
 
 #define MX6_PHYFLEX_USB_OTG_PWR		IMX_GPIO_NR(4, 15)
 //#define MX6_PHYFLEX_DISP0_PWR		IMX_GPIO_NR(3, 24)
@@ -380,9 +383,9 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 		I2C_BOARD_INFO("tlv320aic3007", 0x18),
 	}, {
 		I2C_BOARD_INFO("rtc8564", 0x51),
-	}, {
-		I2C_BOARD_INFO("pca9533", 0x62),
-		.platform_data = &user_leds_data,
+//	}, {
+//		I2C_BOARD_INFO("pca9533", 0x62),
+//		.platform_data = &user_leds_data,
 	},
 };
 
@@ -1024,11 +1027,11 @@ static struct gpio_led gpio_leds[] = {
 	{
 		.name                   = "green",
 		.default_trigger        = "mmc0",
-		.gpio                   = IMX_GPIO_NR(1, 7),
+		.gpio                   = MX6_PHYFLEX_LED_GREEN,
 	}, {
 		.name                   = "red",
 		.default_trigger        = "nand-disk",
-		.gpio                   = IMX_GPIO_NR(3, 20),
+		.gpio                   = MX6_PHYFLEX_LED_RED,
 /*
 	ToDo: Uncoment next lines, when second phyFlex TS interupt fixed
 	}, {

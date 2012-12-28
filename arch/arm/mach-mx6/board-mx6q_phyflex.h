@@ -28,8 +28,9 @@
 static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 
 	/* User LEDs */
-	MX6Q_PAD_GPIO_7__GPIO_1_7,	// Led Green
-	MX6Q_PAD_EIM_D20__GPIO_3_20,	// Led Red
+	MX6Q_PAD_ENET_TXD0__GPIO_1_30,	// Led Green
+	MX6Q_PAD_EIM_EB3__GPIO_2_31,	// Led Red
+	
 	MX6Q_PAD_EIM_CS1__GPIO_2_24,	// User Led -> HW Changed to Second TS Interrupt
 
 	MX6Q_PAD_EIM_D25__UART3_RXD,
@@ -104,7 +105,7 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_SD3_DAT7__USDHC3_DAT7_50MHZ,
 	MX6Q_PAD_SD3_RST__GPIO_7_8,
 	/* SD3_CD and SD3_WP */
-	MX6Q_PAD_CSI0_DAT4__GPIO_5_22,
+	MX6Q_PAD_ENET_RXD0__GPIO_1_27,
 	MX6Q_PAD_CSI0_DAT5__GPIO_5_23,
 
 	/* SPI3 */
@@ -238,8 +239,11 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_EIM_A23__IPU2_CSI1_D_18,
 	MX6Q_PAD_EIM_A24__IPU2_CSI1_D_19,
 
-        /* PCIE_PRSNT */
-	MX6Q_PAD_ENET_RXD0__GPIO_1_27,
+	/* PCIE_PRSNT */
+	MX6Q_PAD_SD1_DAT3__GPIO_1_21,
 	/* PCIE_WAKE */
 	MX6Q_PAD_ENET_TXD0__GPIO_1_30,
+	
+	/* PMIC interrupt */
+	MX6Q_PAD_DI0_PIN15__GPIO_4_17,
 };
