@@ -360,3 +360,14 @@ config MX6_CLK_FOR_BOOTUI_TRANS
 	 so that bootloader splashimage can transition to kernel smoothly.
 
 endif
+
+if MACH_MX6Q_PHYFLEX
+
+comment "phyFLEX Options:"
+
+config PHYFLEX_SOC_1362_0
+	bool "Module revision 1362.0"
+	help
+	  Old version of phyFLEX modules without integrated PMIC
+
+endif
