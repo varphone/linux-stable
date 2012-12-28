@@ -89,6 +89,7 @@
 #include "cpu_op-mx6.h"
 #include "board-mx6q_phycard.h"
 
+#include "board-mx6q_phytec-common.h"
 #include "board-mx6q_phytec-sd.h"
 #include "board-mx6q_phytec-nand.h"
 
@@ -914,8 +915,8 @@ static void __init mx6_phyflex_init(void)
 {
 	int i;
 
-	/* Setup system revision to imx6 cpu revision */
-	system_rev = mx6q_revision();
+	/* imx6q SoC revision and CPU uniq ID setup */
+	mx6_setup_cpuinfo();
 
 	/* ToDo: common_pads for both PhyFlex and PhyCard.
 	 *All differents pads must initialised separated

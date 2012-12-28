@@ -88,6 +88,7 @@
 #include "cpu_op-mx6.h"
 #include "board-mx6q_phyflex.h"
 
+#include "board-mx6q_phytec-common.h"
 #include "board-mx6q_phytec-sd.h"
 #include "board-mx6q_phytec-nand.h"
 #include "board-mx6q_phytec-pmic.h"
@@ -164,15 +165,6 @@ static inline void mx6_phyflex_init_uart(void)
 {
 	imx6q_add_imx_uart(2, NULL);
 	imx6q_add_imx_uart(3, NULL);
-}
-
-/* Setup imx6 revision and uniq ID */
-static void mx6_setup_cpuinfo(void)
-{
-#define HW_OCOTP_DEVIDn(n)        (0x00000410 + (n) * 0x10)
-	system_rev = mx6q_revision();
-	system_serial_high = readl(MX6_IO_ADDRESS(OCOTP_BASE_ADDR) + HW_OCOTP_DEVIDn(0));
-	system_serial_low  = readl(MX6_IO_ADDRESS(OCOTP_BASE_ADDR) + HW_OCOTP_DEVIDn(1));
 }
 
 #ifdef ENABLE_PHY
@@ -1072,7 +1064,7 @@ static void __init mx6_phyflex_init(void)
 {
 	int i;
 
-	/* Setup system revision and uniq ID */
+	/* imx6q SoC revision and CPU uniq ID setup */
 	mx6_setup_cpuinfo();
 
 	mxc_iomux_v3_setup_multiple_pads(mx6q_phytec_common_pads, ARRAY_SIZE(mx6q_phytec_common_pads));
@@ -1080,6 +1072,7 @@ static void __init mx6_phyflex_init(void)
 	/* Init GPIO Led's */
 	platform_device_register(&leds_gpio);
 
+	/* Main Voltage regulators */
 	gp_reg_id = phyflex_dvfscore_data.reg_id;
 	soc_reg_id = phyflex_dvfscore_data.soc_id;
 	pu_reg_id = phyflex_dvfscore_data.pu_id;
