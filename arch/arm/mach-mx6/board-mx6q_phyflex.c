@@ -166,6 +166,15 @@ static inline void mx6_phyflex_init_uart(void)
 	imx6q_add_imx_uart(3, NULL);
 }
 
+/* Setup imx6 revision and uniq ID */
+static void mx6_setup_cpuinfo(void)
+{
+#define HW_OCOTP_DEVIDn(n)        (0x00000410 + (n) * 0x10)
+	system_rev = mx6q_revision();
+	system_serial_high = readl(MX6_IO_ADDRESS(OCOTP_BASE_ADDR) + HW_OCOTP_DEVIDn(0));
+	system_serial_low  = readl(MX6_IO_ADDRESS(OCOTP_BASE_ADDR) + HW_OCOTP_DEVIDn(1));
+}
+
 #ifdef ENABLE_PHY
 static int mx6_phyflex_fec_phy_init(struct phy_device *phydev)
 {
@@ -1063,8 +1072,8 @@ static void __init mx6_phyflex_init(void)
 {
 	int i;
 
-	/* Setup system revision to imx6 cpu revision */
-	system_rev = mx6q_revision();
+	/* Setup system revision and uniq ID */
+	mx6_setup_cpuinfo();
 
 	mxc_iomux_v3_setup_multiple_pads(mx6q_phytec_common_pads, ARRAY_SIZE(mx6q_phytec_common_pads));
 
