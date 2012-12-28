@@ -584,7 +584,8 @@ static int da9063_set_voltage(struct regulator_dev *rdev,
 	unsigned sel = da9063_min_val_to_sel(min_uV, regl->info->min_uV,
 					     regl->info->step_uV);
 
-	if (da9063_sel_to_vol(regl, sel) > max_uV)
+	// ToDo: Fix voltage correction range, now enlarge to 1 step to be shure, that we in corretc range
+	if (da9063_sel_to_vol(regl, sel) > (max_uV + regl->info->step_uV))
 		return -EINVAL;
 
 	val = (sel + fvol->offset) << fvol->shift & fvol->mask;

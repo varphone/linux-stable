@@ -1763,8 +1763,15 @@ static int _regulator_do_set_voltage(struct regulator_dev *rdev,
  */
 int regulator_set_voltage(struct regulator *regulator, int min_uV, int max_uV)
 {
-	struct regulator_dev *rdev = regulator->rdev;
+	struct regulator_dev *rdev = NULL;
 	int ret = 0;
+
+	if (NULL == regulator) {
+		printk(KERN_ERR "%s: regulator is NULL\n", __func__); 
+		return 0;
+	}
+
+	rdev = regulator->rdev;
 
 	mutex_lock(&rdev->mutex);
 
