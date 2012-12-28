@@ -90,6 +90,7 @@
 
 #include "board-mx6q_phytec-sd.h"
 #include "board-mx6q_phytec-nand.h"
+#include "board-mx6q_phytec-pmic.h"
 
 #if defined (CONFIG_PHYFLEX_SOC_1362_0)
 #define MX6_PHYFLEX_SD3_CD		IMX_GPIO_NR(5, 22)
@@ -913,8 +914,13 @@ static int __init mx6_phyflex_init_audio(void)
 }
 
 static struct mxc_dvfs_platform_data phyflex_dvfscore_data = {
-	.reg_id                 = "cpu_vddgp",
-	.soc_id                 = "cpu_vddsoc",
+#if defined (CONFIG_PHYFLEX_SOC_1362_0)
+	.reg_id                 = "cpu_vddgp",  // ANATOP regulator for vddcpu
+	.soc_id                 = "cpu_vddsoc", // ANATOP regulator for vddsoc
+#else
+	.reg_id                 = "VDDCORE",    // DA9063 regulator for vddcpu
+	.soc_id                 = "VDDSOC",     // DA9063 regulator for vddsoc
+#endif
 	.pu_id                  = "cpu_vddvpu",
 	.clk1_id                = "cpu_clk",
 	.clk2_id                = "gpc_dvfs_clk",
@@ -1084,6 +1090,11 @@ static void __init mx6_phyflex_init(void)
 	soc_reg_id = phyflex_dvfscore_data.soc_id;
 	pu_reg_id = phyflex_dvfscore_data.pu_id;
 
+#if !defined (CONFIG_PHYFLEX_SOC_1362_0)
+	/* Init PMIC */
+	mx6_phyflex_init_da9063();
+#endif
+
 	/* UART initialization*/
 	mx6_phyflex_init_uart();
 
@@ -1182,8 +1193,6 @@ static void __init mx6_phyflex_init(void)
 	/* DVFS initialization */
 	imx6q_add_dvfs_core(&phyflex_dvfscore_data);
 
-	mx6_cpu_regulator_init();
-
 	/* Add PWM devices */
 	imx6q_add_mxc_pwm(0);
 	imx6q_add_mxc_pwm(1);
@@ -1209,6 +1218,16 @@ static void __init mx6_phyflex_init(void)
 	platform_device_register(&w1_device);
 }
 
+// NOTE: this function is called by cpufreq. Dvfs doesn't calls this
+// function so it must be called specifically, but when it's done from
+// board initialization than order of regulators initialization is
+// wrong. It results in cpu_regulator variable which leads to crush at
+// time of dvfs enabling.
+// TODO: find correct way of calling this function. Maybe in next
+// kernel releases it will be explicitly called from dvfs.
+#if !defined(CONFIG_CPU_FREQ_IMX)
+device_initcall(mx6_cpu_regulator_init);
+#endif
 
 extern void __iomem *twd_base;
 static void __init mx6_timer_init(void)
