@@ -135,8 +135,6 @@ extern void (*put_cpu_regulator)(void);
 extern char *gp_reg_id;
 extern void mx6_cpu_regulator_init(void);
 
-static bool 	hda_on;	// HDA audio ON/OFF detect
-
 
 static const struct anatop_thermal_platform_data
 	mx6_phyflex_anatop_thermal_data __initconst = {
@@ -688,6 +686,24 @@ static struct platform_device mx6_phyflex_audio_device = {
 	.name = "tlv320aic3007",
 };
 
+static int __init mx6_phyflex_init_audio(void)
+{
+	/* SSI audio init part */
+	mxc_register_device(&mx6_phyflex_audio_device,
+						&mx6_phyflex_audio_data);
+	imx6q_add_imx_ssi(1, &mx6_phyflex_ssi_pdata);
+
+#ifdef CONFIG_SND_SOC_IMX_TLV320AIC3007
+	platform_device_register(&tlv320aic3007_phyflex_iovdd_reg_devices);
+	platform_device_register(&tlv320aic3007_phyflex_dvdd_reg_devices);
+	platform_device_register(&tlv320aic3007_phyflex_avdd_reg_devices);
+	platform_device_register(&tlv320aic3007_phyflex_drvdd_reg_devices);
+#endif
+
+	return 0;
+}
+
+#ifdef	CONFIG_SND_SOC_IMX_WM9712
 /* fo phyCARD */
 static iomux_v3_cfg_t mx6q_ac97_ssi_pads[] = {
 	MX6Q_PAD_DISP0_DAT18__AUDMUX_AUD5_TXFS,
@@ -755,35 +771,26 @@ static int imx_ac97_audmux_config(int slave, int master) {
 	return 0;
 }
 
-static int __init mx6_phyflex_init_audio(void)
-{
-	if (hda_on) {
-		/* SSI audio init part */
-		mxc_register_device(&mx6_phyflex_audio_device,
-                        &mx6_phyflex_audio_data);
-		imx6q_add_imx_ssi(1, &mx6_phyflex_ssi_pdata);
+static int __init mx6_ac97_init_audio(void) {
 
-#ifdef CONFIG_SND_SOC_IMX_TLV320AIC3007
-		platform_device_register(&tlv320aic3007_phyflex_iovdd_reg_devices);
-		platform_device_register(&tlv320aic3007_phyflex_dvdd_reg_devices);
-		platform_device_register(&tlv320aic3007_phyflex_avdd_reg_devices);
-		platform_device_register(&tlv320aic3007_phyflex_drvdd_reg_devices);
-#endif
-	} else {
-		gpio_request_one(MX6_PHYCARD_SSI_RESET, GPIOF_OUT_INIT_HIGH, "AC97");
-		gpio_request_one(IMX_GPIO_NR(5, 12), GPIOF_OUT_INIT_HIGH, "AC97");
-		gpio_request_one(IMX_GPIO_NR(5, 10), GPIOF_OUT_INIT_HIGH, "AC97");
+	gpio_request_one(MX6_PHYCARD_SSI_RESET, GPIOF_OUT_INIT_HIGH, "AC97");
+	gpio_request_one(IMX_GPIO_NR(5, 12), GPIOF_OUT_INIT_HIGH, "AC97");
+	gpio_request_one(IMX_GPIO_NR(5, 10), GPIOF_OUT_INIT_HIGH, "AC97");
 
 #define	INTERNAL_PORT	2
 #define	EXTERNAL_PORT	5
-		imx_ac97_audmux_config(INTERNAL_PORT,EXTERNAL_PORT);
+	imx_ac97_audmux_config(INTERNAL_PORT,EXTERNAL_PORT);
 
-		platform_device_register(&mx6_phycard_audio_device);
-		imx6q_add_imx_ssi(1, &mx6_phycard_ssi_pdata);
-	}
+	platform_device_register(&mx6_phycard_audio_device);
+	imx6q_add_imx_ssi(1, &mx6_phycard_ssi_pdata);
 
 	return 0;
 }
+#else
+static int __init mx6_ac97_init_audio(void) {
+	return 0;
+}
+#endif
 
 #if 0
 static int __init early_use_esai_record(char *p)
@@ -1003,15 +1010,6 @@ static void __init mx6_phyflex_init(void)
 	/* Init GPIO Led's */
 	platform_device_register(&leds_gpio);
 
-	/* Detecting HDA audio and STMPE811 touchscreen
-	 * or WM9712 AC97 audio and touchscreen */
-	gpio_request_one(MX6_PHYCARD_AC97_INT, GPIOF_IN, "Audio Detect");
-	if (gpio_get_value(MX6_PHYCARD_AC97_INT)) {
-		hda_on = true;
-	} else {
-		hda_on = false;
-	}
-
 	gp_reg_id = phyflex_dvfscore_data.reg_id;
 	mx6_phyflex_init_uart();
 
@@ -1026,9 +1024,6 @@ static void __init mx6_phyflex_init(void)
 	imx6q_add_imx_i2c(1, &mx6_phyflex_i2c1_data);
 	i2c_register_board_info(0, mxc_i2c0_board_info, ARRAY_SIZE(mxc_i2c0_board_info));
 	i2c_register_board_info(1, mxc_i2c1_board_info, ARRAY_SIZE(mxc_i2c1_board_info));
-	if (hda_on) {
-		i2c_register_board_info(1, mxc_i2c1_board_info_hda, ARRAY_SIZE(mxc_i2c1_board_info_hda));
-	}
 
 	/* SPI */
 	imx6q_add_ecspi(2, &mx6_phyflex_spi_data);
@@ -1045,7 +1040,16 @@ static void __init mx6_phyflex_init(void)
 	imx_add_viv_gpu(&imx6_gpu_data, &imx6_gpu_pdata);
 	imx6q_add_vpu();
 	mx6_phyflex_init_usb();
-	mx6_phyflex_init_audio();
+
+	/* Detecting HDA audio and STMPE811 touchscreen
+	 * or WM9712 AC97 audio and touchscreen */
+	gpio_request_one(MX6_PHYCARD_AC97_INT, GPIOF_IN, "Audio Detect");
+	if (gpio_get_value(MX6_PHYCARD_AC97_INT)) {
+		mx6_phyflex_init_audio();
+		i2c_register_board_info(1, mxc_i2c1_board_info_hda, ARRAY_SIZE(mxc_i2c1_board_info_hda));
+	} else {
+		mx6_ac97_init_audio();
+	}
 
 	platform_device_register(&phyflex_vmmc_reg_devices);
 	mx6_cpu_regulator_init();
