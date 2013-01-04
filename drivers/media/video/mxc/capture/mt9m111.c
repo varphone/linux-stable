@@ -994,10 +994,11 @@ static int ioctl_enum_framesizes(struct v4l2_int_device *s,
  *
  * Return 0.
  */
-static int ioctl_g_chip_ident(struct v4l2_int_device *s, int *id)
+static int ioctl_g_chip_ident(struct v4l2_int_device *s, struct v4l2_dbg_chip_ident *id)
 {
-	((struct v4l2_dbg_chip_ident *)id)->match.type =
-					V4L2_CHIP_MATCH_I2C_DRIVER;
+	id->ident = V4L2_IDENT_MT9M111;
+
+	id->match.type = V4L2_CHIP_MATCH_I2C_DRIVER;
 	strcpy(((struct v4l2_dbg_chip_ident *)id)->match.name, "mt9m111");
 
 	return 0;
