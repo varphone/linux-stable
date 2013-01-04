@@ -2471,6 +2471,520 @@ static unsigned int mxc_poll(struct file *file, struct poll_table_struct *wait)
 	return res;
 }
 
+static int mxc_capture_querycap(struct file *file, void  *priv,
+			       struct v4l2_capability *cap)
+{
+	strcpy(cap->driver, "mxc_v4l2");
+	cap->version = KERNEL_VERSION(0, 1, 11);
+	cap->capabilities = V4L2_CAP_VIDEO_CAPTURE |
+		V4L2_CAP_VIDEO_OVERLAY |
+		V4L2_CAP_STREAMING |
+		V4L2_CAP_READWRITE;
+	cap->card[0] = '\0';
+	cap->bus_info[0] = '\0';
+
+	return 0;
+}
+
+static int mxc_capture_g_fmt_vid_cap(struct file *file, void *priv,
+				    struct v4l2_format *f)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	return  mxc_v4l2_g_fmt(cam, f);
+}
+
+static int mxc_capture_enum_fmt_vid_cap(struct file *file, void  *priv,
+				       struct v4l2_fmtdesc *f)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	if (cam->sensor)
+		return vidioc_int_enum_fmt_cap(cam->sensor, f);
+	else {
+		pr_err("ERROR: v4l2 capture: slave not found!\n");
+		return -ENODEV;
+	}
+}
+
+static int mxc_capture_s_fmt_vid_cap(struct file *file, void *priv,
+				    struct v4l2_format *f)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	return mxc_v4l2_s_fmt(cam, f);
+}
+
+static int mxc_capture_enum_input(struct file *file, void *priv,
+				 struct v4l2_input *input)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	if (input->index >= MXC_V4L2_CAPTURE_NUM_INPUTS) {
+		return -EINVAL;
+	}
+	*input = mxc_capture_inputs[input->index];
+
+	return 0;
+}
+
+static int mxc_capture_g_input(struct file *file, void *priv, unsigned int *index)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	*index = cam->current_input;
+
+	return 0;
+}
+
+static int mxc_capture_s_input(struct file *file, void *priv, unsigned int index)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+	int retval = 0;
+
+	if (index >= MXC_V4L2_CAPTURE_NUM_INPUTS)
+		return -EINVAL;
+
+
+	if (index == cam->current_input)
+		return 0;
+
+	if ((mxc_capture_inputs[cam->current_input].status &
+				V4L2_IN_ST_NO_POWER) == 0) {
+		retval = mxc_streamoff(cam);
+		if (retval)
+			return retval;
+
+		mxc_capture_inputs[cam->current_input].status |=
+			V4L2_IN_ST_NO_POWER;
+	}
+
+	if (strcmp(mxc_capture_inputs[index].name, "CSI MEM") == 0) {
+#if defined(CONFIG_MXC_IPU_CSI_ENC) || defined(CONFIG_MXC_IPU_CSI_ENC_MODULE)
+		retval = csi_enc_select(cam);
+		if (retval)
+			return retval;
+#endif
+	} else if (strcmp(mxc_capture_inputs[index].name,
+				"CSI IC MEM") == 0) {
+#if defined(CONFIG_MXC_IPU_PRP_ENC) || defined(CONFIG_MXC_IPU_PRP_ENC_MODULE)
+		retval = prp_enc_select(cam);
+		if (retval)
+			return retval;
+#endif
+	}
+
+	mxc_capture_inputs[index].status &= ~V4L2_IN_ST_NO_POWER;
+	cam->current_input = index;
+
+	return 0;
+}
+
+static int mxc_capture_s_std(struct file *file, void *priv, v4l2_std_id *a)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	return mxc_v4l2_s_std(cam, *a);
+}
+
+static int mxc_capture_g_std(struct file *file, void *fh,
+		v4l2_std_id *norm)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	if (cam->sensor)
+		return mxc_v4l2_g_std(cam, norm);
+	else {
+		pr_err("ERROR: v4l2 capture: slave not found!\n");
+		return -ENODEV;
+	}
+}
+
+static int mxc_capture_enum_fsizes(struct file *file, void *fh,
+					 struct v4l2_frmsizeenum *fsize)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	if (cam->sensor)
+		return vidioc_int_enum_framesizes(cam->sensor, fsize);
+	else {
+		pr_err("ERROR: v4l2 capture: slave not found!\n");
+		return -ENODEV;
+	}
+}
+
+static int mxc_capture_reqbufs(struct file *file, void *priv,
+			      struct v4l2_requestbuffers *req)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+	int retval = 0;
+
+	if (req->count > FRAME_NUM) {
+		pr_err("ERROR: v4l2 capture: VIDIOC_REQBUFS: "
+				"not enough buffers\n");
+		req->count = FRAME_NUM;
+	}
+
+	if ((req->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)) {
+		pr_err("ERROR: v4l2 capture: VIDIOC_REQBUFS: "
+				"wrong buffer type\n");
+		return -EINVAL;
+	}
+
+	mxc_streamoff(cam);
+
+	if (req->memory & V4L2_MEMORY_MMAP)
+		mxc_free_frame_buf(cam);
+
+	cam->enc_counter = 0;
+	INIT_LIST_HEAD(&cam->ready_q);
+	INIT_LIST_HEAD(&cam->working_q);
+	INIT_LIST_HEAD(&cam->done_q);
+
+	if (req->memory & V4L2_MEMORY_MMAP)
+		retval = mxc_allocate_frame_buf(cam, req->count);
+
+	return retval;
+}
+
+static int mxc_capture_try_fmt_vid_cap(struct file *file, void *priv,
+				      struct v4l2_format *f)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	if (cam->sensor)
+		return vidioc_int_try_fmt_cap(cam->sensor, f);
+	else {
+		pr_err("ERROR: v4l2 capture: slave not found!\n");
+		return -ENODEV;
+	}
+}
+
+static int mxc_capture_querybuf(struct file *file, void *priv,
+			       struct v4l2_buffer *buf)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+	int index = buf->index;
+	int retval = 0;
+
+	if (buf->type != V4L2_BUF_TYPE_VIDEO_CAPTURE) {
+		pr_err("ERROR: v4l2 capture: "
+				"VIDIOC_QUERYBUFS: "
+				"wrong buffer type\n");
+		return -EINVAL;
+	}
+
+	if (buf->memory & V4L2_MEMORY_MMAP) {
+		memset(buf, 0, sizeof(buf));
+		buf->index = index;
+	}
+
+	down(&cam->param_lock);
+	if (buf->memory & V4L2_MEMORY_USERPTR) {
+		mxc_v4l2_release_bufs(cam);
+		retval = mxc_v4l2_prepare_bufs(cam, buf);
+	}
+
+	if (buf->memory & V4L2_MEMORY_MMAP)
+		retval = mxc_v4l2_buffer_status(cam, buf);
+	up(&cam->param_lock);
+
+	return retval;
+}
+
+static int mxc_capture_qbuf(struct file *file, void *priv,
+			   struct v4l2_buffer *buf)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+	int index = buf->index;
+	unsigned long lock_flags;
+	int retval = 0;
+
+	spin_lock_irqsave(&cam->queue_int_lock, lock_flags);
+	if ((cam->frame[index].buffer.flags & 0x7) ==
+			V4L2_BUF_FLAG_MAPPED) {
+		cam->frame[index].buffer.flags |=
+			V4L2_BUF_FLAG_QUEUED;
+		list_add_tail(&cam->frame[index].queue,
+				&cam->ready_q);
+	} else if (cam->frame[index].buffer.
+			flags & V4L2_BUF_FLAG_QUEUED) {
+		pr_err("ERROR: v4l2 capture: VIDIOC_QBUF: "
+				"buffer already queued\n");
+		retval = -EINVAL;
+	} else if (cam->frame[index].buffer.
+			flags & V4L2_BUF_FLAG_DONE) {
+		pr_err("ERROR: v4l2 capture: VIDIOC_QBUF: "
+				"overwrite done buffer.\n");
+		cam->frame[index].buffer.flags &=
+			~V4L2_BUF_FLAG_DONE;
+		cam->frame[index].buffer.flags |=
+			V4L2_BUF_FLAG_QUEUED;
+		retval = -EINVAL;
+	}
+
+	buf->flags = cam->frame[index].buffer.flags;
+	spin_unlock_irqrestore(&cam->queue_int_lock, lock_flags);
+
+	return retval;
+}
+
+static int mxc_capture_dqbuf(struct file *file, void *priv,
+			    struct v4l2_buffer *buf)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	if ((cam->enc_counter == 0) &&
+			(file->f_flags & O_NONBLOCK)) {
+		return -EAGAIN;
+	}
+
+	return mxc_v4l_dqueue(cam, buf);
+}
+
+static int mxc_capture_streamon(struct file *file, void *priv,
+			       enum v4l2_buf_type i)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	if (i != V4L2_BUF_TYPE_VIDEO_CAPTURE)
+		return -EINVAL;
+
+	return mxc_streamon(cam);
+}
+
+static int mxc_capture_streamoff(struct file *file, void *priv,
+				enum v4l2_buf_type i)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	if (i != V4L2_BUF_TYPE_VIDEO_CAPTURE)
+		return -EINVAL;
+
+	return mxc_streamoff(cam);
+}
+
+static int mxc_capture_queryctrl(struct file *file, void *priv,
+				struct v4l2_queryctrl *qc)
+{
+	//TODO
+	return -EINVAL;
+}
+
+static int mxc_capture_g_ctrl(struct file *file, void *priv,
+			     struct v4l2_control *ctrl)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	return mxc_v4l2_g_ctrl(cam, ctrl);
+}
+
+static int mxc_capture_s_ctrl(struct file *file, void *priv,
+			     struct v4l2_control *ctrl)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	return mxc_v4l2_s_ctrl(cam, ctrl);
+}
+
+static int mxc_capture_cropcap(struct file *file, void *fh,
+			      struct v4l2_cropcap *cap)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	if (cap->type != V4L2_BUF_TYPE_VIDEO_CAPTURE &&
+		cap->type != V4L2_BUF_TYPE_VIDEO_OVERLAY) {
+		return -EINVAL;
+	}
+	cap->bounds = cam->crop_bounds;
+	cap->defrect = cam->crop_defrect;
+
+	return 0;
+}
+
+static int mxc_capture_g_crop(struct file *file, void *fh,
+			     struct v4l2_crop *crop)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	if (crop->type != V4L2_BUF_TYPE_VIDEO_CAPTURE &&
+		crop->type != V4L2_BUF_TYPE_VIDEO_OVERLAY) {
+		return -EINVAL;
+	}
+	crop->c = cam->crop_current;
+
+	return 0;
+}
+
+static int mxc_capture_s_crop(struct file *file, void *fh,
+			     struct v4l2_crop *crop)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+	struct v4l2_rect *b = &cam->crop_bounds;
+
+	if (crop->type != V4L2_BUF_TYPE_VIDEO_CAPTURE &&
+		crop->type != V4L2_BUF_TYPE_VIDEO_OVERLAY) {
+		return -EINVAL;
+	}
+
+	crop->c.top = (crop->c.top < b->top) ? b->top
+		: crop->c.top;
+
+	if (crop->c.top > b->top + b->height)
+		crop->c.top = b->top + b->height - 1;
+
+	if (crop->c.height > b->top + b->height - crop->c.top)
+		crop->c.height =
+			b->top + b->height - crop->c.top;
+
+	crop->c.left = (crop->c.left < b->left) ? b->left
+		: crop->c.left;
+
+	if (crop->c.left > b->left + b->width)
+		crop->c.left = b->left + b->width - 1;
+
+	if (crop->c.width > b->left - crop->c.left + b->width)
+		crop->c.width =
+			b->left - crop->c.left + b->width;
+
+	crop->c.width -= crop->c.width % 8;
+	crop->c.left -= crop->c.left % 4;
+	cam->crop_current = crop->c;
+
+	pr_debug("   Cropping Input to ipu size %d x %d\n",
+			cam->crop_current.width,
+			cam->crop_current.height);
+	ipu_csi_set_window_size(cam->ipu, cam->crop_current.width,
+			cam->crop_current.height,
+			cam->csi);
+	ipu_csi_set_window_pos(cam->ipu, cam->crop_current.left,
+			cam->crop_current.top,
+			cam->csi);
+
+	return 0;
+}
+
+static int mxc_capture_g_parm(struct file *file, void *fh,
+			     struct v4l2_streamparm *parm)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	if (cam->sensor)
+		return vidioc_int_g_parm(cam->sensor, parm);
+	else {
+		pr_err("ERROR: v4l2 capture: slave not found!\n");
+		return -ENODEV;
+	}
+}
+
+static int mxc_capture_s_parm(struct file *file, void *fh,
+			     struct v4l2_streamparm *parm)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	if (cam->sensor)
+		return mxc_v4l2_s_param(cam, parm);
+	else {
+		pr_err("ERROR: v4l2 capture: slave not found!\n");
+		return -ENODEV;
+	}
+}
+
+static int mxc_capture_g_chip_ident(struct file *file, void *fh,
+				   struct v4l2_dbg_chip_ident *id)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	id->ident = V4L2_IDENT_NONE;
+	id->revision = 0;
+	if (cam->sensor)
+		return vidioc_int_g_chip_ident(cam->sensor, (int *)id);
+	else {
+		pr_err("ERROR: v4l2 capture: slave not found!\n");
+		return -ENODEV;
+	}
+}
+
+static int mxc_capture_overlay(struct file *file, void *fh, unsigned int on)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+	int retval = 0;
+
+	if (on) {
+		cam->overlay_on = true;
+		cam->overlay_pid = current->pid;
+		retval = start_preview(cam);
+	}
+	if (!on) {
+		retval = stop_preview(cam);
+		cam->overlay_on = false;
+	}
+
+	return retval;
+}
+
+static int mxc_capture_enum_output(struct file *file, void *fh,
+		struct v4l2_output *output)
+{
+	if (output->index >= MXC_V4L2_CAPTURE_NUM_OUTPUTS)
+		return -EINVAL;
+
+	*output = mxc_capture_outputs[output->index];
+
+	return 0;
+}
+
+static int mxc_capture_g_output(struct file *file, void *fh,
+		unsigned int *p_output_num)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	*p_output_num = cam->output;
+
+	return 0;
+}
+
+static int mxc_capture_s_output(struct file *file, void *fh,
+		unsigned int output_num)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	if (output_num >= MXC_V4L2_CAPTURE_NUM_OUTPUTS)
+		return -EINVAL;
+
+	cam->output = output_num;
+
+	return 0;
+}
+
+
 /*!
  * This structure defines the functions to be called in this driver.
  */
@@ -2479,15 +2993,54 @@ static struct v4l2_file_operations mxc_v4l_fops = {
 	.open = mxc_v4l_open,
 	.release = mxc_v4l_close,
 	.read = mxc_v4l_read,
-	.ioctl = mxc_v4l_ioctl,
+	.unlocked_ioctl = video_ioctl2,
 	.mmap = mxc_mmap,
 	.poll = mxc_poll,
+};
+
+static const struct v4l2_ioctl_ops mxc_capture_ioctl_ops = {
+	.vidioc_querycap	 = mxc_capture_querycap,
+	.vidioc_g_fmt_vid_cap    = mxc_capture_g_fmt_vid_cap,
+	.vidioc_enum_fmt_vid_cap = mxc_capture_enum_fmt_vid_cap,
+	.vidioc_s_fmt_vid_cap    = mxc_capture_s_fmt_vid_cap,
+	.vidioc_enum_input	 = mxc_capture_enum_input,
+	.vidioc_g_input		 = mxc_capture_g_input,
+	.vidioc_s_input		 = mxc_capture_s_input,
+	.vidioc_s_std		 = mxc_capture_s_std,
+	.vidioc_g_std		 = mxc_capture_g_std,
+	.vidioc_enum_framesizes  = mxc_capture_enum_fsizes,
+	.vidioc_reqbufs		 = mxc_capture_reqbufs,
+	.vidioc_try_fmt_vid_cap  = mxc_capture_try_fmt_vid_cap,
+	.vidioc_querybuf	 = mxc_capture_querybuf,
+	.vidioc_qbuf		 = mxc_capture_qbuf,
+	.vidioc_dqbuf		 = mxc_capture_dqbuf,
+	.vidioc_streamon	 = mxc_capture_streamon,
+	.vidioc_streamoff	 = mxc_capture_streamoff,
+	.vidioc_queryctrl	 = mxc_capture_queryctrl,
+	.vidioc_g_ctrl		 = mxc_capture_g_ctrl,
+	.vidioc_s_ctrl		 = mxc_capture_s_ctrl,
+	.vidioc_cropcap		 = mxc_capture_cropcap,
+	.vidioc_g_crop		 = mxc_capture_g_crop,
+	.vidioc_s_crop		 = mxc_capture_s_crop,
+	.vidioc_g_parm		 = mxc_capture_g_parm,
+	.vidioc_s_parm		 = mxc_capture_s_parm,
+	.vidioc_g_chip_ident     = mxc_capture_g_chip_ident,
+	.vidioc_enum_output	 = mxc_capture_enum_output,
+	.vidioc_g_output	 = mxc_capture_g_output,
+	.vidioc_s_output	 = mxc_capture_s_output,
+	.vidioc_overlay		 = mxc_capture_overlay,
 };
 
 static struct video_device mxc_v4l_template = {
 	.name = "Mxc Camera",
 	.fops = &mxc_v4l_fops,
+	.ioctl_ops = &mxc_capture_ioctl_ops,
 	.release = video_device_release,
+	.tvnorms = V4L2_STD_PAL | V4L2_STD_NTSC,
+	.current_norm = V4L2_STD_UNKNOWN,
+#ifdef DEBUG
+	.debug = V4L2_DEBUG_IOCTL | V4L2_DEBUG_IOCTL_ARG,
+#endif
 };
 
 /*!
