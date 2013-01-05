@@ -2511,6 +2511,14 @@ static int mxc_capture_s_fmt_vid_cap(struct file *file, void *priv,
 	return mxc_v4l2_s_fmt(cam, f);
 }
 
+static int mxc_capture_s_fmt_vid_overlay(struct file *file, void *priv,
+				    struct v4l2_format *f)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	return mxc_v4l2_s_fmt(cam, f);
+}
 static int mxc_capture_enum_input(struct file *file, void *priv,
 				 struct v4l2_input *input)
 {
@@ -2977,6 +2985,28 @@ static int mxc_capture_s_output(struct file *file, void *fh,
 	return 0;
 }
 
+static int mxc_capture_g_fbuf(struct file *file, void *priv,
+		struct v4l2_framebuffer *fb)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	*fb = cam->v4l2_fb;
+	fb->capability = V4L2_FBUF_CAP_EXTERNOVERLAY;
+
+	return 0;
+}
+
+static int mxc_capture_s_fbuf(struct file *file, void *priv,
+		struct v4l2_framebuffer *fb)
+{
+	struct video_device *dev = video_devdata(file);
+	cam_data *cam = video_get_drvdata(dev);
+
+	cam->v4l2_fb = *fb;
+
+	return 0;
+}
 
 /*!
  * This structure defines the functions to be called in this driver.
@@ -2994,8 +3024,10 @@ static struct v4l2_file_operations mxc_v4l_fops = {
 static const struct v4l2_ioctl_ops mxc_capture_ioctl_ops = {
 	.vidioc_querycap	 = mxc_capture_querycap,
 	.vidioc_g_fmt_vid_cap    = mxc_capture_g_fmt_vid_cap,
+	.vidioc_g_fmt_vid_overlay = mxc_capture_g_fmt_vid_cap,
 	.vidioc_enum_fmt_vid_cap = mxc_capture_enum_fmt_vid_cap,
 	.vidioc_s_fmt_vid_cap    = mxc_capture_s_fmt_vid_cap,
+	.vidioc_s_fmt_vid_overlay = mxc_capture_s_fmt_vid_overlay,
 	.vidioc_enum_input	 = mxc_capture_enum_input,
 	.vidioc_g_input		 = mxc_capture_g_input,
 	.vidioc_s_input		 = mxc_capture_s_input,
@@ -3022,6 +3054,8 @@ static const struct v4l2_ioctl_ops mxc_capture_ioctl_ops = {
 	.vidioc_g_output	 = mxc_capture_g_output,
 	.vidioc_s_output	 = mxc_capture_s_output,
 	.vidioc_overlay		 = mxc_capture_overlay,
+	.vidioc_g_fbuf		 = mxc_capture_g_fbuf,
+	.vidioc_s_fbuf		 = mxc_capture_s_fbuf,
 };
 
 static struct video_device mxc_v4l_template = {
