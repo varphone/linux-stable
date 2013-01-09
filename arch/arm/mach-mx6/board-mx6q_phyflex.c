@@ -964,7 +964,12 @@ static const struct imx_pcie_platform_data mx6_phyflex_pcie_data  __initconst = 
 //	.pcie_rst       = IMX_GPIO_NR(1, 27),
 	.pcie_pwr_en	= -EINVAL,
 	.pcie_rst	= -EINVAL,
-        .pcie_wake_up   = IMX_GPIO_NR(1, 30),
+/* ToDo: when new SoC ready to use, remove old data */
+#if defined (CONFIG_PHYFLEX_SOC_1362_0)
+	.pcie_wake_up   = IMX_GPIO_NR(1, 7),
+#else
+	.pcie_wake_up   = IMX_GPIO_NR(1, 30),
+#endif
         .pcie_dis       = -EINVAL,
 };
 
