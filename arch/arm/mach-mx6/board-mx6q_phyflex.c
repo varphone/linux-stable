@@ -949,7 +949,7 @@ static const struct imx_pcie_platform_data mx6_phyflex_pcie_data  __initconst = 
 //	.pcie_rst       = IMX_GPIO_NR(1, 27),
 	.pcie_pwr_en	= -EINVAL,
 	.pcie_rst	= -EINVAL,
-        .pcie_wake_up   = IMX_GPIO_NR(1, 30),
+	.pcie_wake_up   = IMX_GPIO_NR(1, 30),
         .pcie_dis       = -EINVAL,
 };
 
