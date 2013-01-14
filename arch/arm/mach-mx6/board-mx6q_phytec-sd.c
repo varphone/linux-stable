@@ -139,7 +139,7 @@ static int plt_sd3_pad_change(unsigned int index, int clock)
 static struct esdhc_platform_data mx6_phytec_sd2_data __initconst = {
 //	.cd_gpio		= 0,
 //	.wp_gpio		= 0,
-	.support_18v		= 1,
+	.support_18v		= 0,
 	.support_8bit		= 1,
 	.keep_power_at_suspend	= 1,
 	.delay_line		= 0,
@@ -150,7 +150,7 @@ static struct esdhc_platform_data mx6_phytec_sd2_data __initconst = {
 static struct esdhc_platform_data mx6_phytec_sd3_data __initconst = {
 //	.cd_gpio		= 0,
 //	.wp_gpio		= 0,
-	.support_18v		= 1,
+	.support_18v		= 0,
 	.support_8bit		= 1,
 	.keep_power_at_suspend	= 1,
 	.delay_line		= 0,
