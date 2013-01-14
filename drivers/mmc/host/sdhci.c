@@ -43,8 +43,6 @@
 
 #define MAX_TUNING_LOOP 40
 
-#define PHYFLEX_SD_STABILITY_FIX
-
 static unsigned int debug_quirks = 0;
 
 static void sdhci_finish_data(struct sdhci_host *);
@@ -2684,11 +2682,10 @@ int sdhci_add_host(struct sdhci_host *host)
 	 */
 	if (!(host->quirks & SDHCI_QUIRK_FORCE_1_BIT_DATA))
 		mmc->caps |= MMC_CAP_4_BIT_DATA;
-#ifndef PHYFLEX_SD_STABILITY_FIX
+
 	if (caps[0] & SDHCI_CAN_DO_HISPD)
 		mmc->caps |= MMC_CAP_SD_HIGHSPEED | MMC_CAP_MMC_HIGHSPEED;
-#endif
-    
+
 	if ((host->quirks & SDHCI_QUIRK_BROKEN_CARD_DETECTION) &&
 	    mmc_card_is_removable(mmc))
 		mmc->caps |= MMC_CAP_NEEDS_POLL;
@@ -2698,7 +2695,6 @@ int sdhci_add_host(struct sdhci_host *host)
 		mmc->caps |= MMC_CAP_UHS_SDR12 | MMC_CAP_UHS_SDR25;
 
 	/* SDR104 supports also implies SDR50 support */
-#ifndef PHYFLEX_SD_STABILITY_FIX
 	if (caps[1] & SDHCI_SUPPORT_SDR104)
 		mmc->caps |= MMC_CAP_UHS_SDR104 | MMC_CAP_UHS_SDR50;
 	else if (caps[1] & SDHCI_SUPPORT_SDR50)
@@ -2706,7 +2702,7 @@ int sdhci_add_host(struct sdhci_host *host)
 
 	if (caps[1] & SDHCI_SUPPORT_DDR50)
 		mmc->caps |= MMC_CAP_UHS_DDR50;
-#endif
+
 	/* Does the host needs tuning for SDR50? */
 	if (caps[1] & SDHCI_USE_SDR50_TUNING)
 		host->flags |= SDHCI_SDR50_NEEDS_TUNING;
