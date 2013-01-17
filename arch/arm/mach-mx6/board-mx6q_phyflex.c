@@ -72,6 +72,7 @@
 #include <mach/mxc_asrc.h>
 #include <mach/mipi_dsi.h>
 #include <mach/mipi_csi2.h>
+#include <mach/mxc_camera.h>
 
 #include <asm/irq.h>
 #include <asm/setup.h>
@@ -978,7 +979,44 @@ static struct platform_device w1_device = {
 	.dev.platform_data	= &w1_gpio_pdata,
 };
 
+#ifdef CONFIG_SOC_CAMERA
+static struct mxc_camera_pdata mxc_ipu1_csi0_pdata = {
+	.flags = MXC_CAMERA_DATAWIDTH_10,
+	.ipu = 0,
+	.csi = 0,
+};
 
+static u64 mxc_cam_dmamask = DMA_BIT_MASK(32);
+
+static struct platform_device mxc_ipu1_csi0_camera = {
+	.name   = "mxc-camera",
+	.id     = 0,
+	.dev    = {
+		.platform_data = &mxc_ipu1_csi0_pdata,
+		.dma_mask = &mxc_cam_dmamask,
+		.coherent_dma_mask = DMA_BIT_MASK(32),
+	},
+};
+
+static struct i2c_board_info phyflex_cam_mt9m111 = {
+		I2C_BOARD_INFO("mt9m111", 0x48)
+};
+
+static struct soc_camera_link iclink_mt9m111 = {
+	.bus_id         = 0,
+	.board_info     = &phyflex_cam_mt9m111,
+	.i2c_adapter_id = 2,
+};
+
+static struct platform_device mxc_ipu1_csi0_camera_mt9m111 = {
+	.name   = "soc-camera-pdrv",
+	.id     = 0,
+	.dev    = {
+		.platform_data = &iclink_mt9m111,
+	},
+};
+
+#else
 static void mx6_csi0_io_init(void)
 {
 	printk("::: mx6_csi0_io_init\n");
@@ -1017,6 +1055,7 @@ static struct i2c_board_info camera_i2c[] = {
 		.platform_data = (void *)&camera_data,
 	},
 };
+#endif
 
 static struct gpio_led gpio_leds[] = {
 	{
@@ -1085,8 +1124,21 @@ static void __init mx6_phyflex_init(void)
 	imx6q_add_ldb(&ldb_data);
 
 	imx6q_add_v4l2_output(0);
+
+#ifdef CONFIG_SOC_CAMERA
+	platform_device_register(&mxc_ipu1_csi0_camera_mt9m111);
+	platform_device_register(&mxc_ipu1_csi0_camera);
+#else
 	imx6q_add_v4l2_capture(0, &capture_data[0]);
 	imx6q_add_v4l2_capture(1, &capture_data[1]);
+
+	/* Registering cameras */
+	i2c_register_board_info(2, camera_i2c, ARRAY_SIZE(camera_i2c));
+
+	gpio_request(MX6_PHYFLEX_CAM_LVDS_PWRDN, "CSI0<->LVDS bridge #PWDN");
+	gpio_direction_output(MX6_PHYFLEX_CAM_LVDS_PWRDN, 0);
+
+#endif
 
 	imx_add_viv_gpu(&imx6_gpu_data, &imx6_gpu_pdata);
 	imx6q_add_vpu();
@@ -1111,12 +1163,6 @@ static void __init mx6_phyflex_init(void)
 	} else {
 	    i2c_register_board_info(2, &stmpe811_second_board_info, 1);
 	}
-
-	/* Registering cameras */
-	i2c_register_board_info(2, camera_i2c, ARRAY_SIZE(camera_i2c));
-
-	gpio_request(MX6_PHYFLEX_CAM_LVDS_PWRDN, "CSI0<->LVDS bridge #PWDN");
-	gpio_direction_output(MX6_PHYFLEX_CAM_LVDS_PWRDN, 0);
 
 	/* Init onboard can bus */
 	imx6q_add_flexcan0(&mx6_phyflex_flexcan0_pdata);
