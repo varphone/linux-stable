@@ -170,21 +170,12 @@ static inline void mx6_phyflex_init_uart(void)
 #ifdef ENABLE_PHY
 static int mx6_phyflex_fec_phy_init(struct phy_device *phydev)
 {
-	phydev->addr = 1;
-
 	/* from current linux-imx6, arch/arm/mach-imx/mach-imx6q.c, ksz9021rn_phy_fixup(): */
 	/* min rx data delay */
 
 
 	printk("FEC ID: 0x%X, 0x%X\n", phy_read(phydev, 0x02), phy_read(phydev, 0x02));
 
-
-	phy_write(phydev, 0x0b, 0x8105);
-	phy_write(phydev, 0x0c, 0x0000);
-
-	/* max rx/tx clock delay, min rx/tx control delay */
-	phy_write(phydev, 0x0b, 0x8104);
-	phy_write(phydev, 0x0c, 0xf0f0);
 	phy_write(phydev, 0x0b, 0x104);
 
 	/* enable all interrupts */

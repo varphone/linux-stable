@@ -53,13 +53,7 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_ENET_TXD0__GPIO_1_30,
 	MX6Q_PAD_ENET_TXD1__MLB_MLBCLK,
 	//MX6Q_PAD_ENET_TXD1__ENET_TDATA_1,
-	//Temporary workaround for TXC lane: the TXC rising edge arrives ca. 1ns before two of the
-	//data lane rising edges. This leads sometimes to wrong latched data.
-	//This fix sets the drive strength of the TXC lane to the weakest, so that the trigger point is
-	//delayed.
-	//Hardware fix planed for next revision!
-	IOMUX_PAD(0x036C, 0x0058, 1, 0x0000, 0, 0x0001b008),
-//	MX6Q_PAD_RGMII_TXC__ENET_RGMII_TXC,
+	MX6Q_PAD_RGMII_TXC__ENET_RGMII_TXC,
 	MX6Q_PAD_RGMII_TD0__ENET_RGMII_TD0,
 	MX6Q_PAD_RGMII_TD1__ENET_RGMII_TD1,
 	MX6Q_PAD_RGMII_TD2__ENET_RGMII_TD2,
