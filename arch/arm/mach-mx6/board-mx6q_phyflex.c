@@ -100,8 +100,10 @@
 
 /* GPIO PIN, sort by PORT/BIT */
 #define MX6_PHYFLEX_CAM_LVDS_PWRDN	IMX_GPIO_NR(1, 24)
-#define MX6_PHYFLEX_LDB0_BACKLIGHT      IMX_GPIO_NR(5, 24)
+
+#define MX6_PHYFLEX_LDB0_BACKLIGHT      IMX_GPIO_NR(1, 8)
 #define MX6_PHYFLEX_LDB1_BACKLIGHT	IMX_GPIO_NR(2, 25) // MX6Q_PAD_EIM_OE__GPIO_2_25
+
 #define MX6_PHYFLEX_ECSPI3_CS0		IMX_GPIO_NR(4, 24)
 #define MX6_PHYFLEX_ECSPI3_CS1		IMX_GPIO_NR(4, 25)
 #define MX6_PHYFLEX_ECSPI3_CS2		IMX_GPIO_NR(4, 26)
@@ -118,7 +120,8 @@
 #define MX6_PHYFLEX_USB_HOST1_OC	IMX_GPIO_NR(1, 3)
 
 #define MX6_PHYCARD_CAP_TCH_INT0	IMX_GPIO_NR(4, 29)
-#define MX6_PHYFLEX_CAP_TCH_INT0	IMX_GPIO_NR(1, 5)
+
+#define MX6_PHYFLEX_CAP_TCH_INT0	IMX_GPIO_NR(5, 8)
 #define MX6_PHYFLEX_CAP_TCH_INT1	IMX_GPIO_NR(2, 24)
 
 #define MX6_PHYFLEX_DISP0_DET_INT	IMX_GPIO_NR(3, 31)
@@ -376,9 +379,9 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 		I2C_BOARD_INFO("tlv320aic3007", 0x18),
 	}, {
 		I2C_BOARD_INFO("rtc8564", 0x51),
-//	}, {
-//		I2C_BOARD_INFO("pca9533", 0x62),
-//		.platform_data = &user_leds_data,
+	}, {
+		I2C_BOARD_INFO("pca9533", 0x62),
+		.platform_data = &user_leds_data,
 	},
 };
 
@@ -940,7 +943,7 @@ static const struct imx_pcie_platform_data mx6_phyflex_pcie_data  __initconst = 
 //	.pcie_rst       = IMX_GPIO_NR(1, 27),
 	.pcie_pwr_en	= -EINVAL,
 	.pcie_rst	= -EINVAL,
-	.pcie_wake_up   = IMX_GPIO_NR(1, 30),
+	.pcie_wake_up   = IMX_GPIO_NR(1, 7),
         .pcie_dis       = -EINVAL,
 };
 

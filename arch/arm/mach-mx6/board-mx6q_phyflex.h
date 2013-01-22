@@ -30,7 +30,6 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	/* User LEDs */
 	MX6Q_PAD_ENET_TXD0__GPIO_1_30,	// Led Green
 	MX6Q_PAD_EIM_EB3__GPIO_2_31,	// Led Red
-	
 	MX6Q_PAD_EIM_CS1__GPIO_2_24,	// User Led -> HW Changed to Second TS Interrupt
 
 	MX6Q_PAD_EIM_D25__UART3_RXD,
@@ -137,6 +136,7 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	/* DISPLAY */
 	MX6Q_PAD_DI0_DISP_CLK__IPU1_DI0_DISP_CLK,
 	MX6Q_PAD_DI0_PIN4__IPU1_DI0_PIN4,
+	MX6Q_PAD_DISP0_DAT6__IPU1_DISP0_DAT_6,
 	MX6Q_PAD_DISP0_DAT7__IPU1_DISP0_DAT_7,
 	MX6Q_PAD_DISP0_DAT9__IPU1_DISP0_DAT_9,
 	MX6Q_PAD_DISP0_DAT10__IPU1_DISP0_DAT_10,
@@ -149,7 +149,7 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_DISP0_DAT23__IPU1_DISP0_DAT_23,
 
 	/* LVDS0 BACKLIGHT ENABLE */
-	MX6Q_PAD_CSI0_DAT6__GPIO_5_24,
+	MX6Q_PAD_GPIO_8__GPIO_1_8,
 	MX6Q_PAD_EIM_OE__GPIO_2_25,
 
 	/* PWM1 */
@@ -157,7 +157,7 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_DISP0_DAT9__PWM2_PWMO,
 
         /* TS phyFLEX Int */
-//        MX6Q_PAD_GPIO_5__GPIO_1_5,
+	MX6Q_PAD_DISP0_DAT14__GPIO_5_8,
 
 	/* HDMI */
 	MX6Q_PAD_KEY_COL3__GPIO_4_12, /* MX6Q_PAD_KEY_COL3__HDMI_TX_DDC_SCL */
@@ -183,11 +183,6 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_DISP0_DAT17__AUDMUX_AUD5_TXD,
 	MX6Q_PAD_DISP0_DAT18__AUDMUX_AUD5_TXFS,
 	MX6Q_PAD_DISP0_DAT19__AUDMUX_AUD5_RXD,
-	MX6Q_PAD_DISP0_DAT13__AUDMUX_AUD5_RXFS,
-	MX6Q_PAD_DISP0_DAT14__AUDMUX_AUD5_RXC,
-	MX6Q_PAD_DI0_PIN2__AUDMUX_AUD6_TXD,
-	MX6Q_PAD_DI0_PIN3__AUDMUX_AUD6_TXFS,
-	MX6Q_PAD_DI0_PIN15__AUDMUX_AUD6_TXC,
 
 	/* ipu1 csi0 */
 	MX6Q_PAD_CSI0_MCLK__IPU1_CSI0_HSYNC,
@@ -236,8 +231,8 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	/* PCIE_PRSNT */
 	MX6Q_PAD_SD1_DAT3__GPIO_1_21,
 	/* PCIE_WAKE */
-	MX6Q_PAD_ENET_TXD0__GPIO_1_30,
-	
+	MX6Q_PAD_GPIO_7__GPIO_1_7,
+
 	/* PMIC interrupt */
 	MX6Q_PAD_DI0_PIN15__GPIO_4_17,
 
