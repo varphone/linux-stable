@@ -251,13 +251,17 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 
 	/* PCIE_PRSNT */
 #if defined (CONFIG_PHYFLEX_SOC_1362_0)
-	MX6Q_PAD_ENET_RXD0__GPIO_1_27,
+	MX6Q_PAD_ENET_RXD0__GPIO_1_27,	/* ToDo: remove later */
 #else
 	MX6Q_PAD_SD1_DAT3__GPIO_1_21,
 #endif
 	/* PCIE_WAKE */
-	MX6Q_PAD_ENET_TXD0__GPIO_1_30,
-	
+#if defined (CONFIG_PHYFLEX_SOC_1362_0)
+	MX6Q_PAD_ENET_TXD0__GPIO_1_30,	/* ToDo: remove later */
+#else
+	MX6Q_PAD_GPIO_7__GPIO_1_7,
+#endif
+
 #if !defined (CONFIG_PHYFLEX_SOC_1362_0)
 	/* PMIC interrupt */
 	MX6Q_PAD_DI0_PIN15__GPIO_4_17,
