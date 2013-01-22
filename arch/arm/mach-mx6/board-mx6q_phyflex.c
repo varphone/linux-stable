@@ -397,9 +397,9 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 		I2C_BOARD_INFO("tlv320aic3007", 0x18),
 	}, {
 		I2C_BOARD_INFO("rtc8564", 0x51),
-//	}, {
-//		I2C_BOARD_INFO("pca9533", 0x62),
-//		.platform_data = &user_leds_data,
+	}, {
+		I2C_BOARD_INFO("pca9533", 0x62),
+		.platform_data = &user_leds_data,
 	},
 };
 
@@ -968,9 +968,9 @@ static const struct imx_pcie_platform_data mx6_phyflex_pcie_data  __initconst = 
 	.pcie_rst	= -EINVAL,
 /* ToDo: when new SoC ready to use, remove old data */
 #if defined (CONFIG_PHYFLEX_SOC_1362_0)
-	.pcie_wake_up   = IMX_GPIO_NR(1, 7),
-#else
 	.pcie_wake_up   = IMX_GPIO_NR(1, 30),
+#else
+	.pcie_wake_up   = IMX_GPIO_NR(1, 7),
 #endif
         .pcie_dis       = -EINVAL,
 };
