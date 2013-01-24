@@ -55,9 +55,15 @@ u32 fourcc_to_ipu_pixfmt(u32 fourcc)
 	case V4L2_PIX_FMT_RGB32:
 		ipu_pixfmt = IPU_PIX_FMT_RGB32;
 		break;
+	case V4L2_PIX_FMT_GREY:
+		ipu_pixfmt = IPU_PIX_FMT_GREY;
+		break;
+	case V4L2_PIX_FMT_Y10:
+		ipu_pixfmt = IPU_PIX_FMT_Y16;
+		break;
 	default:
-		printk(KERN_ERR "format not supported\n");
-		ipu_pixfmt = 0;
+		printk(KERN_ERR "Format is not supported, use generic\n");
+		ipu_pixfmt = IPU_PIX_FMT_GENERIC;
 	}
 
 	return ipu_pixfmt;
