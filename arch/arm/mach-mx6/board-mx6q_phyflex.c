@@ -1144,6 +1144,7 @@ static void __init mx6_phyflex_init(void)
 	imx6q_add_v4l2_output(0);
 
 #ifdef CONFIG_SOC_CAMERA
+	mxc_iomux_set_gpr_register(1, 19, 2, 3);
 	platform_device_register(&mxc_ipu1_csi0_camera_mt9m111);
 //	platform_device_register(&mxc_ipu1_csi0_camera_mt9m001);
 	platform_device_register(&mxc_ipu1_csi0_camera);
