@@ -1016,6 +1016,24 @@ static struct platform_device mxc_ipu1_csi0_camera_mt9m111 = {
 	},
 };
 
+static struct i2c_board_info phyflex_cam_mt9m001 = {
+	I2C_BOARD_INFO("mt9m001", 0x5d),
+};
+
+static struct soc_camera_link iclink_mt9m001 = {
+	.bus_id 	= 0,
+	.board_info 	= &phyflex_cam_mt9m001,
+	.i2c_adapter_id = 2,
+};
+
+static struct platform_device mxc_ipu1_csi0_camera_mt9m001 = {
+	.name 	= "soc-camera-pdrv",
+	.id 	= 0,
+	.dev 	= {
+		.platform_data = &iclink_mt9m001,
+	},
+};
+
 #else
 static void mx6_csi0_io_init(void)
 {
@@ -1050,9 +1068,9 @@ static struct i2c_board_info camera_i2c[] = {
 	{
 		I2C_BOARD_INFO("mt9m111", 0x48),
 		.platform_data = (void *)&camera_data,
-	}, {
-		I2C_BOARD_INFO("mt9m001", 0x5d),
-		.platform_data = (void *)&camera_data,
+//	}, {
+//		I2C_BOARD_INFO("mt9m001", 0x5d),
+//		.platform_data = (void *)&camera_data,
 	},
 };
 #endif
@@ -1127,6 +1145,7 @@ static void __init mx6_phyflex_init(void)
 
 #ifdef CONFIG_SOC_CAMERA
 	platform_device_register(&mxc_ipu1_csi0_camera_mt9m111);
+//	platform_device_register(&mxc_ipu1_csi0_camera_mt9m001);
 	platform_device_register(&mxc_ipu1_csi0_camera);
 #else
 	imx6q_add_v4l2_capture(0, &capture_data[0]);
