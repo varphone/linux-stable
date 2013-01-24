@@ -132,6 +132,7 @@ typedef enum {
 /*! @name YUV Planar Formats */
 /*! @{ */
 #define IPU_PIX_FMT_GREY    fourcc('G', 'R', 'E', 'Y')	/*!< 8  Greyscale */
+#define IPU_PIX_FMT_Y16	    fourcc('Y', '1', '6', ' ')	/*!< 16 Greyscale */
 #define IPU_PIX_FMT_YVU410P fourcc('Y', 'V', 'U', '9')	/*!< 9  YVU 4:1:0 */
 #define IPU_PIX_FMT_YUV410P fourcc('Y', 'U', 'V', '9')	/*!< 9  YUV 4:1:0 */
 #define IPU_PIX_FMT_YVU420P fourcc('Y', 'V', '1', '2')	/*!< 12 YVU 4:2:0 */
