@@ -330,10 +330,18 @@ struct da9063_regulators_pdata da9063_regulators = {
 
 static int da9063_init(struct da9063 *da9063)
 {
-	unsigned int reg;
 
-	printk("\t\tDA9063 Initi function call!\n");
+#ifdef CONFIG_MX6_INTER_LDO_BYPASS
+	u32 reg;
 
+	/* Enable bypass for arm and soc internal LDO's. VDDPU isn't
+	 * controlled by PMIC so leave PU LDO at default 1.3V */
+	reg = __raw_readl(ANADIG_REG_CORE);
+	reg |= BF_ANADIG_REG_CORE_REG0_TRG(0x1f);   // turn off ARM LDO
+	reg |= BF_ANADIG_REG_CORE_REG1_TRG(0x18);   // set 1.3V for PU LDO
+	reg |= BF_ANADIG_REG_CORE_REG2_TRG(0x1f);   // turn off SOC LDO
+	__raw_writel(reg, ANADIG_REG_CORE);
+#else
 	// ANATOP regulators
 	struct regulator *cpu_regulator = regulator_get(NULL, "cpu_vddgp");
 	struct regulator *soc_regulator = regulator_get(NULL, "cpu_vddsoc");
@@ -343,7 +351,8 @@ static int da9063_init(struct da9063 *da9063)
 	regulator_set_voltage(cpu_regulator, 1300000, 1300000);
 	regulator_set_voltage(soc_regulator, 1300000, 1300000);
 	regulator_set_voltage(pu_regulator, 1300000, 1300000);
-
+#endif
+	
 	return 0;
 }
 
