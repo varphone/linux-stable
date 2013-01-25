@@ -901,7 +901,6 @@ static int __init mx6_phyflex_init_audio(void)
 static struct mxc_dvfs_platform_data phyflex_dvfscore_data = {
 	.reg_id                 = "VDDCORE",    // DA9063 regulator for vddcpu
 	.soc_id                 = "VDDSOC",     // DA9063 regulator for vddsoc
-	.pu_id                  = "cpu_vddvpu",
 	.clk1_id                = "cpu_clk",
 	.clk2_id                = "gpc_dvfs_clk",
 	.gpc_cntr_offset        = MXC_GPC_CNTR_OFFSET,
