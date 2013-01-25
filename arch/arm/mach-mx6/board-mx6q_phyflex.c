@@ -920,11 +920,11 @@ static struct mxc_dvfs_platform_data phyflex_dvfscore_data = {
 #if defined (CONFIG_PHYFLEX_SOC_1362_0)
 	.reg_id                 = "cpu_vddgp",  // ANATOP regulator for vddcpu
 	.soc_id                 = "cpu_vddsoc", // ANATOP regulator for vddsoc
+	.pu_id                  = "cpu_vddvpu", // ANATOP regulator for vddvpu
 #else
 	.reg_id                 = "VDDCORE",    // DA9063 regulator for vddcpu
 	.soc_id                 = "VDDSOC",     // DA9063 regulator for vddsoc
 #endif
-	.pu_id                  = "cpu_vddvpu",
 	.clk1_id                = "cpu_clk",
 	.clk2_id                = "gpc_dvfs_clk",
 	.gpc_cntr_offset        = MXC_GPC_CNTR_OFFSET,
