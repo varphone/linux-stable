@@ -227,6 +227,18 @@ int32_t ipu_csi_get_sensor_protocol(struct ipu_soc *ipu, uint32_t csi)
 }
 EXPORT_SYMBOL(ipu_csi_get_sensor_protocol);
 
+unsigned long ipu_csi_set_mclk_rate(struct ipu_soc *ipu, int csi,
+		unsigned long rate)
+{
+	struct clk *clk = ipu->csi_clk[csi];
+
+	rate = clk_round_rate(clk, rate);
+	clk_set_rate(clk, rate);
+
+	return rate;
+}
+EXPORT_SYMBOL(ipu_csi_set_mclk_rate);
+
 /*!
  * ipu_csi_enable_mclk
  *
