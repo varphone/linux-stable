@@ -50,7 +50,8 @@ struct mxc_v4l_frame {
 struct mxc_camera_dev;
 
 struct mxc_cam_enc_ops {
-	int (*enc_update_eba) (struct ipu_soc *ipu, dma_addr_t eba, int *bufferNum);
+	int (*enc_update_eba) (struct ipu_soc *ipu, int csi, dma_addr_t eba,
+			int *bufferNum);
 	int (*enc_enable) (struct mxc_camera_dev *);
 	int (*enc_disable) (struct mxc_camera_dev *);
 	int (*enc_enable_csi) (struct mxc_camera_dev *);
@@ -75,7 +76,7 @@ struct mxc_camera_dev {
 	int			csi_buf_num;
 
 	struct ipu_soc *ipu;
-	unsigned int csi; //TODO
+	unsigned int csi;
 
 	struct mxc_cam_enc_ops	*enc_ops;
 	void			*enc_private;

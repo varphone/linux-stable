@@ -315,7 +315,8 @@ static void mxc_videobuf_queue(struct vb2_buffer *vb)
 
 	spin_unlock_irq(&mxc_cam->lock);
 
-	ret = mxc_cam->enc_ops->enc_update_eba(mxc_cam->ipu, sg_dma_address(&buf->sg),
+	ret = mxc_cam->enc_ops->enc_update_eba(mxc_cam->ipu, mxc_cam->csi,
+			sg_dma_address(&buf->sg),
 			&mxc_cam->csi_buf_num);
 
 	dev_dbg(icd->dev.parent, "Submitted DMA 0x%08x\n",
