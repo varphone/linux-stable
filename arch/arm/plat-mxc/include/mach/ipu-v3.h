@@ -721,6 +721,9 @@ static inline int32_t ipu_csi_enable_mclk_if(struct ipu_soc *ipu, int src, uint3
 	return ipu_csi_enable_mclk(ipu, csi, flag, wait);
 }
 
+unsigned long ipu_csi_set_mclk_rate(struct ipu_soc *ipu, int csi,
+		unsigned long rate);
+
 int ipu_csi_read_mclk_flag(void);
 
 void ipu_csi_flash_strobe(bool flag);
