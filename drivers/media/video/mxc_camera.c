@@ -70,6 +70,23 @@ u32 fourcc_to_ipu_pixfmt(u32 fourcc)
 }
 EXPORT_SYMBOL_GPL(fourcc_to_ipu_pixfmt);
 
+static void mxc_camera_enable_mclk(struct mxc_camera_dev *mxc_cam)
+{
+	ipu_csi_enable_mclk(mxc_cam->ipu, mxc_cam->csi, true, true);
+}
+
+static void mxc_camera_disable_mclk(struct mxc_camera_dev *mxc_cam)
+{
+	ipu_csi_enable_mclk(mxc_cam->ipu, mxc_cam->csi, false, false);
+}
+
+static unsigned long mxc_camera_set_mclk_rate(struct mxc_camera_dev *mxc_cam,
+		unsigned long rate)
+{
+	rate = ipu_csi_set_mclk_rate(mxc_cam->ipu, mxc_cam->csi, rate);
+
+	return rate;
+}
 
 static struct mxc_camera_buffer *to_mxc_vb(struct vb2_buffer *vb)
 {
@@ -131,7 +148,7 @@ static void mxc_camera_activate(struct mxc_camera_dev *mxc_cam,
 	csi_param.data_en_pol = 0;
 	csi_param.data_fmt = 0;
 	csi_param.csi = mxc_cam->csi;
-	csi_param.mclk = 0;
+	csi_param.mclk = mxc_cam->mclk;
 
 	if (mxc_cam->platform_flags & MXC_CAMERA_DATAWIDTH_16)
 		csi_param.data_width = IPU_CSI_DATA_WIDTH_16;
@@ -1080,7 +1097,7 @@ static int __devinit mxc_camera_probe(struct platform_device *pdev)
 		mxc_cam->platform_flags |= MXC_CAMERA_DATAWIDTH_8;
 	}
 
-	mxc_cam->mclk = mxc_cam->pdata->mclk_default;
+	mxc_cam->mclk = mxc_cam->pdata->mclk_default_rate;
 	if (!mxc_cam->mclk) {
 		dev_warn(&pdev->dev,
 			 "mclk_default == 0! Please, fix your platform data. "
@@ -1104,6 +1121,11 @@ static int __devinit mxc_camera_probe(struct platform_device *pdev)
 	}
 
 	mxc_cam->csi = mxc_cam->pdata->csi;
+
+	mxc_cam->mclk = mxc_camera_set_mclk_rate(mxc_cam, mxc_cam->mclk);
+	dev_dbg(&pdev->dev, "MCLK rate was set to %lu Hz\n", mxc_cam->mclk);
+
+	mxc_camera_enable_mclk(mxc_cam);
 
 	soc_host		= &mxc_cam->soc_host;
 	soc_host->drv_name	= MXC_CAM_DRV_NAME;
@@ -1131,6 +1153,7 @@ ecamhostreg:
 	vb2_dma_contig_cleanup_ctx(mxc_cam->alloc_ctx);
 eallocctx:
 erripu:
+	mxc_camera_disable_mclk(mxc_cam);
 	vfree(mxc_cam);
 ealloc:
 
@@ -1148,6 +1171,8 @@ static int __devexit mxc_camera_remove(struct platform_device *pdev)
 
 	soc_camera_host_unregister(soc_host);
 	vb2_dma_contig_cleanup_ctx(mxc_cam->alloc_ctx);
+
+	mxc_camera_disable_mclk(mxc_cam);
 	vfree(mxc_cam);
 
 	dev_info(&pdev->dev, "i.MXC Camera driver unloaded\n");

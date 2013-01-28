@@ -727,7 +727,7 @@ static struct imx_ipuv3_platform_data ipu_data[] = {
 	.csi_clk[0]	= "clko_clk",
 	}, {
 	.rev		= 4,
-	.csi_clk[0]	= "clko_clk",
+	.csi_clk[1]	= "clko_clk",
 	},
 };
 
@@ -1014,10 +1014,12 @@ static struct mxc_camera_pdata mxc_ipu1_csi_pdata[] = {
 		.flags = MXC_CAMERA_DATAWIDTH_10,
 		.ipu = 0,
 		.csi = 0,
+		.mclk_default_rate = 27000000,
 	}, {
 		.flags = MXC_CAMERA_DATAWIDTH_10,
 		.ipu = 1,
 		.csi = 1,
+		.mclk_default_rate = 27000000,
 	},
 };
 
