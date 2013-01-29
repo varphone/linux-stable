@@ -1075,13 +1075,13 @@ static struct soc_camera_link iclink_mt9[] = {
 static struct platform_device mxc_ipu1_csi0_camera_mt9[] = {
 	{
 		.name   = "soc-camera-pdrv",
-		.id     = -1,
+		.id     = 0,
 		.dev    = {
 			.platform_data = &iclink_mt9[0],
 		},
 	}, {
 		.name 	= "soc-camera-pdrv",
-		.id 	= -1,
+		.id 	= 1,
 		.dev 	= {
 			.platform_data = &iclink_mt9[1],
 		},
