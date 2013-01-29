@@ -101,6 +101,8 @@
 
 /* GPIO PIN, sort by PORT/BIT */
 #define MX6_PHYFLEX_CAM_LVDS_PWRDN	IMX_GPIO_NR(1, 24)
+#define MX6_PHYFLEX_CAM0_OE		IMX_GPIO_NR(5, 20)
+#define MX6_PHYFLEX_CAM1_OE		IMX_GPIO_NR(3, 10)
 
 #define MX6_PHYFLEX_LDB0_BACKLIGHT      IMX_GPIO_NR(1, 8)
 #define MX6_PHYFLEX_LDB1_BACKLIGHT	IMX_GPIO_NR(2, 25) // MX6Q_PAD_EIM_OE__GPIO_2_25
@@ -1180,11 +1182,16 @@ static void __init mx6_phyflex_init(void)
 
 	/* Registering cameras */
 	i2c_register_board_info(2, camera_i2c, ARRAY_SIZE(camera_i2c));
+#endif
 
 	gpio_request(MX6_PHYFLEX_CAM_LVDS_PWRDN, "CSI0<->LVDS bridge #PWDN");
 	gpio_direction_output(MX6_PHYFLEX_CAM_LVDS_PWRDN, 0);
 
-#endif
+	gpio_request(MX6_PHYFLEX_CAM0_OE, "IPU1/CSI0 camera #OE");
+	gpio_direction_output(MX6_PHYFLEX_CAM0_OE, 0);
+
+	gpio_request(MX6_PHYFLEX_CAM1_OE, "IPU2/CSI1 camera #OE");
+	gpio_direction_output(MX6_PHYFLEX_CAM1_OE, 0);
 
 	imx_add_viv_gpu(&imx6_gpu_data, &imx6_gpu_pdata);
 	imx6q_add_vpu();
