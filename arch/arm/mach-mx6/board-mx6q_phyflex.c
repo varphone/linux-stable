@@ -118,6 +118,7 @@
 //#define MX6_PHYFLEX_DISP0_PWR		IMX_GPIO_NR(3, 24)
 #define MX6_PHYFLEX_DISP0_I2C_EN	IMX_GPIO_NR(3, 28)
 
+#define MX6_PHYFLEX_USB_HOST1_PWR	IMX_GPIO_NR(1, 0)
 #define MX6_PHYFLEX_USB_HOST1_OC	IMX_GPIO_NR(1, 3)
 
 #define MX6_PHYCARD_CAP_TCH_INT0	IMX_GPIO_NR(4, 29)
@@ -463,8 +464,14 @@ static void __init mx6_phyflex_init_usb(void)
 
 	mx6_usb_dr_init();
 
-	// gpio_direction_output(IMX_GPIO_NR(1, 0), 0); // Config PWR USB pin
-	// gpio_set_value(IMX_GPIO_NR(1, 0), 0);	// Set USB power On
+	/* Enable USB hub power */
+	ret = gpio_request(MX6_PHYFLEX_USB_HOST1_PWR, "usb-host1-pwr");
+	if (ret) {
+		pr_err("failed to get GPIO MX6_PHYFLEX_USB_OTG_PWR:%d\n", ret);
+		return;
+	}
+	gpio_direction_output(MX6_PHYFLEX_USB_HOST1_PWR, 1); // Config PWR USB pin
+	
 #ifdef CONFIG_USB_EHCI_ARC_HSIC
 	mx6_usb_h2_init();
 	mx6_usb_h3_init();
