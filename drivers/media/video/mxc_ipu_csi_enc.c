@@ -193,6 +193,7 @@ static int csi_enc_enabling_tasks(struct mxc_camera_dev *cam)
 {
 	int err = 0;
 	struct csi_enc_data *enc_data = mxc_cam_to_enc_data(cam);
+	uint32_t irq;
 
 	CAMERA_TRACE("IPU:In csi_enc_enabling_tasks\n");
 
@@ -210,8 +211,10 @@ static int csi_enc_enabling_tasks(struct mxc_camera_dev *cam)
 	    PAGE_ALIGN(cam->icd->sizeimage);
 	enc_data->dummy_frame.buffer.m.offset = enc_data->dummy_frame.paddress;
 
-	ipu_clear_irq(cam->ipu, IPU_IRQ_CSI0_OUT_EOF);
-	err = ipu_request_irq(cam->ipu, IPU_IRQ_CSI0_OUT_EOF,
+	irq = IPU_IRQ_CSI0_OUT_EOF + cam->csi;
+
+	ipu_clear_irq(cam->ipu, irq);
+	err = ipu_request_irq(cam->ipu, irq,
 			      csi_enc_callback, 0, "Mxc Camera", cam);
 	if (err != 0) {
 		printk(KERN_ERR "Error registering rot irq\n");
@@ -238,7 +241,7 @@ static int csi_enc_disabling_tasks(struct mxc_camera_dev *cam)
 	int err = 0;
 	struct csi_enc_data *enc_data = mxc_cam_to_enc_data(cam);
 
-	ipu_free_irq(cam->ipu, IPU_IRQ_CSI0_OUT_EOF, cam);
+	ipu_free_irq(cam->ipu, IPU_IRQ_CSI0_OUT_EOF + cam->csi, cam);
 
 	err = ipu_disable_channel(cam->ipu, get_csi_mem_dma_channel(cam->csi), true);
 
