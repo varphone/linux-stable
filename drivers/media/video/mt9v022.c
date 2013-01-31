@@ -47,12 +47,17 @@ MODULE_PARM_DESC(sensor_type, "Sensor type: \"colour\" or \"monochrome\"");
 #define MT9V022_PIXEL_OPERATION_MODE	0x0f
 #define MT9V022_LED_OUT_CONTROL		0x1b
 #define MT9V022_ADC_MODE_CONTROL	0x1c
+#define MT9V022_REG32 			0x20
 #define MT9V022_ANALOG_GAIN		0x35
 #define MT9V022_BLACK_LEVEL_CALIB_CTRL	0x47
 #define MT9V022_PIXCLK_FV_LV		0x74
 #define MT9V022_DIGITAL_TEST_PATTERN	0x7f
 #define MT9V022_AEC_AGC_ENABLE		0xAF
 #define MT9V022_MAX_TOTAL_SHUTTER_WIDTH	0xBD
+
+/* mt9v024 partial list register addresses changes with respect to mt9v022 */
+#define MT9V024_PIXCLK_FV_LV 		0x72
+#define MT9V024_MAX_TOTAL_SHUTTER_WIDTH 0xAD
 
 /* Progressive scan, master, defaults */
 #define MT9V022_CHIP_CONTROL_DEFAULT	0x188
@@ -63,6 +68,9 @@ MODULE_PARM_DESC(sensor_type, "Sensor type: \"colour\" or \"monochrome\"");
 #define MT9V022_MIN_HEIGHT		32
 #define MT9V022_COLUMN_SKIP		1
 #define MT9V022_ROW_SKIP		4
+
+#define is_mt9v022_rev3(id) 		(id == 0x1313)
+#define is_mt9v024(id) 			(id == 0x1324)
 
 /* MT9V022 has only one fixed colorspace per pixelcode */
 struct mt9v022_datafmt {
@@ -98,14 +106,31 @@ static const struct mt9v022_datafmt mt9v022_monochrome_fmts[] = {
 	{V4L2_MBUS_FMT_Y8_1X8, V4L2_COLORSPACE_JPEG},
 };
 
+struct mt9v02x_register {
+	u8 	max_total_shutter_width;
+	u8 	pixclk_fv_lv;
+};
+
+static const struct mt9v02x_register mt9v022_register = {
+	.max_total_shutter_width 	= MT9V022_MAX_TOTAL_SHUTTER_WIDTH,
+	.pixclk_fv_lv 			= MT9V022_PIXCLK_FV_LV,
+};
+
+static const struct mt9v02x_register mt9v024_register = {
+	.max_total_shutter_width 	= MT9V024_MAX_TOTAL_SHUTTER_WIDTH,
+	.pixclk_fv_lv 			= MT9V024_PIXCLK_FV_LV,
+};
+
 struct mt9v022 {
 	struct v4l2_subdev subdev;
 	struct v4l2_rect rect;	/* Sensor window */
 	const struct mt9v022_datafmt *fmt;
 	const struct mt9v022_datafmt *fmts;
+	const struct mt9v02x_register *reg;
 	int num_fmts;
 	int model;	/* V4L2_IDENT_MT9V022* codes from v4l2-chip-ident.h */
 	u16 chip_control;
+	u16 chip_version;
 	unsigned short y_skip_top;	/* Lines to skip at the top */
 };
 
@@ -187,12 +212,32 @@ static int mt9v022_s_stream(struct v4l2_subdev *sd, int enable)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct mt9v022 *mt9v022 = to_mt9v022(client);
 
-	if (enable)
+        if (enable) {      
 		/* Switch to master "normal" mode */
 		mt9v022->chip_control &= ~0x10;
-	else
-		/* Switch to snapshot mode */
-		mt9v022->chip_control |= 0x10;
+		if (is_mt9v022_rev3(mt9v022->chip_version) ||
+			is_mt9v024(mt9v022->chip_version)) {
+				/*
+				 * Unset snapshot mode specific settings: clear bit 9
+				 * and bit 2 in reg. 0x20 when in normal mode.
+				 */
+				if (reg_clear(client, MT9V022_REG32, 0x204))
+					return -EIO;                    
+			}
+		} else {
+			/* Switch to snapshot mode */   
+			mt9v022->chip_control |= 0x10;  
+			if (is_mt9v022_rev3(mt9v022->chip_version) ||
+				is_mt9v024(mt9v022->chip_version)) {
+					/*
+					 * Required settings for snapshot mode: set bit 9
+					 * (RST enable) and bit 2 (CR enable) in reg. 0x20
+					 * See TechNote TN0960 or TN-09-225.
+					 */
+					 if (reg_set(client, MT9V022_REG32, 0x204))
+						return -EIO;                    
+			}
+		}
 
 	if (reg_write(client, MT9V022_CHIP_CONTROL, mt9v022->chip_control) < 0)
 		return -EIO;
@@ -720,7 +765,7 @@ static int mt9v022_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
  * this wasn't our capture interface, so, we wait for the right one
  */
 static int mt9v022_video_probe(struct soc_camera_device *icd,
-			       struct i2c_client *client)
+		struct i2c_client *client)
 {
 	struct mt9v022 *mt9v022 = to_mt9v022(client);
 	struct soc_camera_link *icl = to_soc_camera_link(icd);
@@ -736,12 +781,17 @@ static int mt9v022_video_probe(struct soc_camera_device *icd,
 	data = reg_read(client, MT9V022_CHIP_VERSION);
 
 	/* must be 0x1311 or 0x1313 */
-	if (data != 0x1311 && data != 0x1313) {
+	if (data != 0x1311 && data != 0x1313 && data != 0x1324) {
 		ret = -ENODEV;
 		dev_info(&client->dev, "No MT9V022 found, ID register 0x%x\n",
 			 data);
 		goto ei2c;
 	}
+
+	mt9v022->chip_version = data;
+
+	mt9v022->reg = is_mt9v024(data) ? &mt9v024_register :
+			&mt9v022_register;
 
 	/* Soft reset */
 	ret = reg_write(client, MT9V022_RESET, 1);
