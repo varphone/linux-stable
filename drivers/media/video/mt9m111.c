@@ -153,7 +153,11 @@ static const struct mt9m111_datafmt mt9m111_colour_fmts[] = {
 	{V4L2_MBUS_FMT_UYVY8_2X8, V4L2_COLORSPACE_JPEG},
 	{V4L2_MBUS_FMT_VYUY8_2X8, V4L2_COLORSPACE_JPEG},
 	{V4L2_MBUS_FMT_RGB555_2X8_PADHI_LE, V4L2_COLORSPACE_SRGB},
+	{V4L2_MBUS_FMT_RGB555_2X8_PADHI_BE, V4L2_COLORSPACE_SRGB},
 	{V4L2_MBUS_FMT_RGB565_2X8_LE, V4L2_COLORSPACE_SRGB},
+	{V4L2_MBUS_FMT_RGB565_2X8_BE, V4L2_COLORSPACE_SRGB},
+	{V4L2_MBUS_FMT_BGR565_2X8_LE, V4L2_COLORSPACE_SRGB},
+	{V4L2_MBUS_FMT_BGR565_2X8_BE, V4L2_COLORSPACE_SRGB},
 	{V4L2_MBUS_FMT_SBGGR8_1X8, V4L2_COLORSPACE_SRGB},
 	{V4L2_MBUS_FMT_SBGGR10_2X8_PADHI_LE, V4L2_COLORSPACE_SRGB},
 };
@@ -522,9 +526,33 @@ static int mt9m111_set_pixfmt(struct i2c_client *client,
 		ret = mt9m111_setfmt_bayer10(client);
 		break;
 	case V4L2_MBUS_FMT_RGB555_2X8_PADHI_LE:
+		mt9m111->swap_rgb_even_odd = 1;
+		mt9m111->swap_rgb_red_blue = 0;
+		ret = mt9m111_setfmt_rgb555(client);
+		break;
+	case V4L2_MBUS_FMT_RGB555_2X8_PADHI_BE:
+		mt9m111->swap_rgb_even_odd = 0;
+		mt9m111->swap_rgb_red_blue = 0;
 		ret = mt9m111_setfmt_rgb555(client);
 		break;
 	case V4L2_MBUS_FMT_RGB565_2X8_LE:
+		mt9m111->swap_rgb_even_odd = 1;
+		mt9m111->swap_rgb_red_blue = 0;
+		ret = mt9m111_setfmt_rgb565(client);
+		break;
+	case V4L2_MBUS_FMT_RGB565_2X8_BE:
+		mt9m111->swap_rgb_even_odd = 0;
+		mt9m111->swap_rgb_red_blue = 0;
+		ret = mt9m111_setfmt_rgb565(client);
+		break;
+	case V4L2_MBUS_FMT_BGR565_2X8_LE:
+		mt9m111->swap_rgb_even_odd = 1;
+		mt9m111->swap_rgb_red_blue = 1;
+		ret = mt9m111_setfmt_rgb565(client);
+		break;
+	case V4L2_MBUS_FMT_BGR565_2X8_BE:
+		mt9m111->swap_rgb_even_odd = 0;
+		mt9m111->swap_rgb_red_blue = 1;
 		ret = mt9m111_setfmt_rgb565(client);
 		break;
 	case V4L2_MBUS_FMT_UYVY8_2X8:
@@ -982,8 +1010,8 @@ static int mt9m111_video_probe(struct soc_camera_device *icd,
 	mt9m111->autoexposure = 1;
 	mt9m111->autowhitebalance = 1;
 
-	mt9m111->swap_rgb_even_odd = 1;
-	mt9m111->swap_rgb_red_blue = 1;
+	mt9m111->swap_rgb_even_odd = 0;
+	mt9m111->swap_rgb_red_blue = 0;
 
 	data = reg_read(CHIP_VERSION);
 
