@@ -351,14 +351,27 @@ static int mt9v022_s_crop(struct v4l2_subdev *sd, struct v4l2_crop *a)
 		ret = reg_write(client, MT9V022_COLUMN_START, rect.left);
 	if (!ret)
 		ret = reg_write(client, MT9V022_ROW_START, rect.top);
-	if (!ret)
-		/*
-		 * Default 94, Phytec driver says:
-		 * "width + horizontal blank >= 660"
-		 */
-		ret = reg_write(client, MT9V022_HORIZONTAL_BLANKING,
-				rect.width > 660 - 43 ? 43 :
-				660 - rect.width);
+
+	if (is_mt9v024(mt9v022->chip_version)) {
+		if (!ret)
+			/*
+			 * Default is 94. The Datasheet says:
+			 * "width + horizontal blank >= 690"
+			 */
+			ret = reg_write(client, MT9V022_HORIZONTAL_BLANKING,
+					rect.width > 690 - 61 ? 61 :
+					690 - rect.width);
+	} else {
+		if (!ret)
+			/*
+			 * Default 94, Phytec driver says:
+			 * "width + horizontal blank >= 660"
+			 */
+			ret = reg_write(client, MT9V022_HORIZONTAL_BLANKING,
+					rect.width > 660 - 43 ? 43 :
+					660 - rect.width);
+	}
+
 	if (!ret)
 		ret = reg_write(client, MT9V022_VERTICAL_BLANKING, 45);
 	if (!ret)
