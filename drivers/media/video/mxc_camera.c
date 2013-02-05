@@ -753,19 +753,61 @@ static int mxc_camera_try_bus_param(struct soc_camera_device *icd,
 	return ret;
 }
 
-static const struct soc_mbus_pixelfmt mxc_camera_formats[] = {
+static const struct soc_mbus_lookup mxc_camera_formats[] = {
 	{
-		.fourcc			= V4L2_PIX_FMT_SBGGR8,
-		.name			= "Bayer BGGR (sRGB) 8 bit",
-		.bits_per_sample	= 8,
-		.packing		= SOC_MBUS_PACKING_NONE,
-		.order			= SOC_MBUS_ORDER_LE,
+		.code = V4L2_MBUS_FMT_SBGGR10_1X10,
+		.fmt = {
+			.fourcc			= V4L2_PIX_FMT_SBGGR8,
+			.name			= "Bayer BGGR (sRGB) 8 bit",
+			.bits_per_sample	= 8,
+			.packing		= SOC_MBUS_PACKING_NONE,
+			.order			= SOC_MBUS_ORDER_LE,
+		},
 	}, {
-		.fourcc			= V4L2_PIX_FMT_GREY,
-		.name			= "Monochrome 8 bit",
-		.bits_per_sample	= 8,
-		.packing		= SOC_MBUS_PACKING_NONE,
-		.order			= SOC_MBUS_ORDER_LE,
+		.code = V4L2_MBUS_FMT_Y10_1X10,
+		.fmt = {
+			.fourcc			= V4L2_PIX_FMT_GREY,
+			.name			= "Monochrome 8 bit",
+			.bits_per_sample	= 8,
+			.packing		= SOC_MBUS_PACKING_NONE,
+			.order			= SOC_MBUS_ORDER_LE,
+		},
+	}, {
+		.code = V4L2_MBUS_FMT_RGB555_2X8_PADHI_BE,
+		.fmt = {
+			.fourcc			= V4L2_PIX_FMT_RGB555,
+			.name			= "RGB555",
+			.bits_per_sample	= 8,
+			.packing		= SOC_MBUS_PACKING_2X8_PADHI,
+			.order			= SOC_MBUS_ORDER_BE,
+		},
+	}, {
+		.code = V4L2_MBUS_FMT_RGB555_2X8_PADHI_LE,
+		.fmt = {
+			.fourcc			= V4L2_PIX_FMT_RGB555X,
+			.name			= "RGB555X",
+			.bits_per_sample	= 8,
+			.packing		= SOC_MBUS_PACKING_2X8_PADHI,
+			.order			= SOC_MBUS_ORDER_BE,
+		},
+	}, {
+		.code = V4L2_MBUS_FMT_RGB565_2X8_BE,
+		.fmt = {
+			.fourcc                 = V4L2_PIX_FMT_RGB565,
+			.name                   = "RGB565",
+			.bits_per_sample        = 8,
+			.packing                = SOC_MBUS_PACKING_2X8_PADHI,
+			.order                  = SOC_MBUS_ORDER_LE,
+		},
+	}, {
+		.code = V4L2_MBUS_FMT_RGB565_2X8_LE,
+		.fmt = {
+			.fourcc                 = V4L2_PIX_FMT_RGB565X,
+			.name                   = "RGB565X",
+			.bits_per_sample        = 8,
+			.packing                = SOC_MBUS_PACKING_2X8_PADHI,
+			.order                  = SOC_MBUS_ORDER_BE,
+		},
 	},
 };
 
@@ -796,7 +838,7 @@ static int mxc_camera_get_formats(struct soc_camera_device *icd, unsigned int id
 	fmt = soc_mbus_get_fmtdesc(code);
 	if (!fmt) {
 		dev_warn(icd->dev.parent,
-			 "Unsupported format code #%u: %d\n", idx, code);
+				"Unsupported format code #%u: %d\n", idx, code);
 		return 0;
 	}
 
@@ -807,45 +849,40 @@ static int mxc_camera_get_formats(struct soc_camera_device *icd, unsigned int id
 
 	switch (code) {
 	case V4L2_MBUS_FMT_SBGGR10_1X10:
-		formats++;
-		if (xlate) {
-			xlate->host_fmt	= &mxc_camera_formats[0];
-			xlate->code	= code;
-			xlate++;
-			dev_dbg(dev, "Providing format %s using code %d\n",
-				mxc_camera_formats[0].name, code);
-		}
-		break;
 	case V4L2_MBUS_FMT_Y10_1X10:
+	case V4L2_MBUS_FMT_RGB555_2X8_PADHI_BE:
+	case V4L2_MBUS_FMT_RGB555_2X8_PADHI_LE:
+	case V4L2_MBUS_FMT_RGB565_2X8_BE:
+	case V4L2_MBUS_FMT_RGB565_2X8_LE:
 		formats++;
 		if (xlate) {
-			xlate->host_fmt	= &mxc_camera_formats[1];
+			xlate->host_fmt	= soc_mbus_find_fmtdesc(code,
+						mxc_camera_formats,
+						ARRAY_SIZE(mxc_camera_formats));
 			xlate->code	= code;
-			xlate++;
 			dev_dbg(dev, "Providing format %s using code %d\n",
-				mxc_camera_formats[1].name, code);
+				xlate->host_fmt->name, code);
+			xlate++;
 		}
 		break;
 	default:
 		if (!mxc_camera_packing_supported(fmt))
 			return 0;
-	}
 
-	/* Generic pass-through */
-	formats++;
-	if (xlate) {
-		xlate->host_fmt	= fmt;
-		xlate->code	= code;
-		dev_dbg(dev, "Providing format %c%c%c%c in pass-through mode\n",
-			(fmt->fourcc >> (0*8)) & 0xFF,
-			(fmt->fourcc >> (1*8)) & 0xFF,
-			(fmt->fourcc >> (2*8)) & 0xFF,
-			(fmt->fourcc >> (3*8)) & 0xFF);
-		xlate++;
+		/* Generic pass-through */
+		formats++;
+		if (xlate) {
+			xlate->host_fmt	= fmt;
+			xlate->code	= code;
+			dev_dbg(dev, "Providing format %s in pass-through mode\n",
+					fmt->name);
+			xlate++;
+		}
 	}
 
 	return formats;
 }
+
 static int mxc_camera_init_videobuf(struct vb2_queue *q,
 				     struct soc_camera_device *icd)
 {
