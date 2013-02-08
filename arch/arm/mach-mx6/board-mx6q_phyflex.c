@@ -1078,10 +1078,6 @@ static struct platform_device mxc_ipu_cameras[] = {
 		SOC_CAM_PDRV(2, phyflex_iclinks),
 	}, {
 		SOC_CAM_PDRV(3, phyflex_iclinks),
-	}, {
-		SOC_CAM_PDRV(4, phyflex_iclinks),
-	}, {
-		SOC_CAM_PDRV(5, phyflex_iclinks),
 	},
 };
 
