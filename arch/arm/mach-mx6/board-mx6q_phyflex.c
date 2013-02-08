@@ -989,7 +989,7 @@ static struct platform_device w1_device = {
 };
 
 #ifdef CONFIG_SOC_CAMERA
-static struct mxc_camera_pdata mxc_ipu1_csi_pdata[] = {
+static struct mxc_camera_pdata mxc_ipu_csi_pdata[] = {
 	{
 		.flags = MXC_CAMERA_DATAWIDTH_10,
 		.ipu = 0,
@@ -1005,12 +1005,12 @@ static struct mxc_camera_pdata mxc_ipu1_csi_pdata[] = {
 
 static u64 mxc_cam_dmamask = DMA_BIT_MASK(32);
 
-static struct platform_device mxc_ipu1_csi_camera[] = {
+static struct platform_device mxc_ipu_csi_devices[] = {
 	{
 		.name   = "mxc-camera",
 		.id     = 0,
 		.dev    = {
-			.platform_data = &mxc_ipu1_csi_pdata[0],
+			.platform_data = &mxc_ipu_csi_pdata[0],
 			.dma_mask = &mxc_cam_dmamask,
 			.coherent_dma_mask = DMA_BIT_MASK(32),
 		},
@@ -1018,14 +1018,14 @@ static struct platform_device mxc_ipu1_csi_camera[] = {
 		.name   = "mxc-camera",
 		.id     = 1,
 		.dev    = {
-			.platform_data = &mxc_ipu1_csi_pdata[1],
+			.platform_data = &mxc_ipu_csi_pdata[1],
 			.dma_mask = &mxc_cam_dmamask,
 			.coherent_dma_mask = DMA_BIT_MASK(32),
 		},
 	},
 };
 
-static struct i2c_board_info phyflex_cam_mt9[] = {
+static struct i2c_board_info phyflex_cameras[] = {
 	{
 		I2C_BOARD_INFO("mt9m111", 0x48),
 	}, {
@@ -1033,31 +1033,34 @@ static struct i2c_board_info phyflex_cam_mt9[] = {
 	},
 };
 
-static struct soc_camera_link iclink_mt9[] = {
+#define SOC_CAM_LINK(bus, bi, i2c_adapter) \
+	.bus_id = bus, .board_info = bi, .i2c_adapter_id = i2c_adapter
+
+
+static struct soc_camera_link phyflex_iclinks[] = {
 	{
-		.bus_id         = 0,
-		.board_info     = &phyflex_cam_mt9[0],
-		.i2c_adapter_id = 2,
+		SOC_CAM_LINK(0, &phyflex_cameras[0], 2)
 	}, {
-		.bus_id 	= 0,
-		.board_info 	= &phyflex_cam_mt9[1],
-		.i2c_adapter_id = 2,
+		SOC_CAM_LINK(0, &phyflex_cameras[1], 2)
+	}, {
+		SOC_CAM_LINK(1, &phyflex_cameras[0], 2)
+	}, {
+		SOC_CAM_LINK(1, &phyflex_cameras[1], 2)
 	},
 };
 
-static struct platform_device mxc_ipu1_csi0_camera_mt9[] = {
+#define SOC_CAM_PDRV(dev_id, iclinks) \
+	.name = "soc-camera-pdrv", .id = dev_id, .dev = { .platform_data = &iclinks[dev_id] }
+
+static struct platform_device mxc_ipu_cameras[] = {
 	{
-		.name   = "soc-camera-pdrv",
-		.id     = 0,
-		.dev    = {
-			.platform_data = &iclink_mt9[0],
-		},
+		SOC_CAM_PDRV(0, phyflex_iclinks),
 	}, {
-		.name 	= "soc-camera-pdrv",
-		.id 	= 1,
-		.dev 	= {
-			.platform_data = &iclink_mt9[1],
-		},
+		SOC_CAM_PDRV(1, phyflex_iclinks),
+	}, {
+		SOC_CAM_PDRV(2, phyflex_iclinks),
+	}, {
+		SOC_CAM_PDRV(3, phyflex_iclinks),
 	},
 };
 
@@ -1172,10 +1175,11 @@ static void __init mx6_phyflex_init(void)
 
 #ifdef CONFIG_SOC_CAMERA
 	mxc_iomux_set_gpr_register(1, 19, 2, 3);
-	platform_device_register(&mxc_ipu1_csi0_camera_mt9[0]);
-	platform_device_register(&mxc_ipu1_csi0_camera_mt9[1]);
-	platform_device_register(&mxc_ipu1_csi_camera[0]);
-	platform_device_register(&mxc_ipu1_csi_camera[1]);
+	for (i = 0; i < ARRAY_SIZE(mxc_ipu_cameras); i++)
+		platform_device_register(&mxc_ipu_cameras[i]);
+
+	platform_device_register(&mxc_ipu_csi_devices[0]);
+	platform_device_register(&mxc_ipu_csi_devices[1]);
 #else
 	imx6q_add_v4l2_capture(0, &capture_data[0]);
 	imx6q_add_v4l2_capture(1, &capture_data[1]);
