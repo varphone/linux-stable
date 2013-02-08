@@ -1188,6 +1188,19 @@ static struct platform_device leds_gpio = {
 	},
 };
 
+#define SNVS_LPCR 0x38
+static void mx6_snvs_poweroff(void)
+{
+        u32 value;
+        void __iomem *mx6_snvs_base = MX6_IO_ADDRESS(MX6Q_SNVS_BASE_ADDR);
+
+	printk(KERN_INFO "Goodbye phyFLEX-i.MX6!\n");
+
+        value = readl(mx6_snvs_base + SNVS_LPCR);
+        /* set TOP and DP_EN bit */
+        writel(value | 0x60, mx6_snvs_base + SNVS_LPCR);
+}
+
 /*
  * Board specific initialization.
  */
@@ -1199,6 +1212,8 @@ static void __init mx6_phyflex_init(void)
 	mx6_setup_cpuinfo();
 
 	mxc_iomux_v3_setup_multiple_pads(mx6q_phytec_common_pads, ARRAY_SIZE(mx6q_phytec_common_pads));
+
+	pm_power_off = mx6_snvs_poweroff;
 
 	/* Init GPIO Led's */
 	platform_device_register(&leds_gpio);
