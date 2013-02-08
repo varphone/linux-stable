@@ -1025,10 +1025,27 @@ static struct platform_device mxc_ipu_csi_devices[] = {
 	},
 };
 
+/*
+ * Cameras configuration:
+ * CTRL1 on bus 0 is 0 (there is a jumper at pins 5 and 7 of X3 connector)
+ * CTRL1 on bus 1 is 1 (there is a jumper at pins 5 and 3 of X4 connector)
+ *
+ * VM-009 is allowed for bus 1 (X6 conn.) only
+ * VM-006 is allowed for bus 0 (X5 conn.) only
+ * VM-007 and VM-010 can be connected to any bus
+ */
+
 static struct i2c_board_info phyflex_cameras[] = {
-	{
+	[0] = {
+		I2C_BOARD_INFO("mt9v022", 0x48), /* CTRL1 = 0 */
+	},
+	[1] = {
+		I2C_BOARD_INFO("mt9v022", 0x4c), /* CTRL1 = 1 */
+	},
+	[2] = {
 		I2C_BOARD_INFO("mt9m111", 0x48),
-	}, {
+	},
+	[3] = {
 		I2C_BOARD_INFO("mt9m001", 0x5d),
 	},
 };
@@ -1041,11 +1058,11 @@ static struct soc_camera_link phyflex_iclinks[] = {
 	{
 		SOC_CAM_LINK(0, &phyflex_cameras[0], 2)
 	}, {
-		SOC_CAM_LINK(0, &phyflex_cameras[1], 2)
-	}, {
-		SOC_CAM_LINK(1, &phyflex_cameras[0], 2)
+		SOC_CAM_LINK(0, &phyflex_cameras[2], 2)
 	}, {
 		SOC_CAM_LINK(1, &phyflex_cameras[1], 2)
+	}, {
+		SOC_CAM_LINK(1, &phyflex_cameras[3], 2)
 	},
 };
 
@@ -1061,6 +1078,10 @@ static struct platform_device mxc_ipu_cameras[] = {
 		SOC_CAM_PDRV(2, phyflex_iclinks),
 	}, {
 		SOC_CAM_PDRV(3, phyflex_iclinks),
+	}, {
+		SOC_CAM_PDRV(4, phyflex_iclinks),
+	}, {
+		SOC_CAM_PDRV(5, phyflex_iclinks),
 	},
 };
 
