@@ -1030,8 +1030,8 @@ static struct platform_device mxc_ipu_csi_devices[] = {
  * CTRL1 on bus 0 is 0 (there is a jumper at pins 5 and 7 of X3 connector)
  * CTRL1 on bus 1 is 1 (there is a jumper at pins 5 and 3 of X4 connector)
  *
- * VM-009 is allowed for bus 1 (X6 conn.) only
- * VM-006 is allowed for bus 0 (X5 conn.) only
+ * VM-009 is allowed for bus 0 (X5 conn.) only
+ * VM-006 is allowed for bus 1 (X6 conn.) only
  * VM-007 and VM-010 can be connected to any bus
  */
 
