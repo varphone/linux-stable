@@ -124,8 +124,8 @@
 #define DDR_2GB    // for board versions with 2GB instead of 1GB
 
 /* Kernel cmdline param to select TS */
-static bool second_ts = false;
-module_param(second_ts, bool, 0644);
+//static bool second_ts = false;
+//module_param(second_ts, bool, 0644);
 
 void __init early_console_setup(unsigned long base, struct clk *clk);
 static struct clk *sata_clk;
@@ -248,6 +248,9 @@ static struct aic3x_pdata tlv320_phycard_pdata = {
 
 static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 	{
+		I2C_BOARD_INFO("max7300", 0x40),
+		.platform_data = &max7301_i2c_data,
+	}, {
 		I2C_BOARD_INFO("max1037", 0x64),
 	}, {
 		I2C_BOARD_INFO("24c04", 0x54),
