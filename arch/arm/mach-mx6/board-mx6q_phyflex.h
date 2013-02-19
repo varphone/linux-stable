@@ -186,6 +186,7 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 
 	/* TS phyFLEX Int */
 	MX6Q_PAD_EIM_CS0__GPIO_2_23, // phyFlex ts 2 interrupt
+	MX6Q_PAD_GPIO_17__GPIO_7_12,
 
 	/* ipu1 csi0 */
 	MX6Q_PAD_CSI0_MCLK__IPU1_CSI0_HSYNC,
