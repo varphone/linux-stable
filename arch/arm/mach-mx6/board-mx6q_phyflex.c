@@ -53,6 +53,7 @@
 #include <linux/regulator/machine.h>
 #include <linux/regulator/fixed.h>
 #include <linux/mfd/stmpe.h>
+#include <linux/input/edt-ft5x06.h>
 #include <linux/spi/max7301.h> 
 #include <linux/can/platform/mcp251x.h> 
 #include <sound/tlv320aic3x.h>
@@ -127,6 +128,7 @@
 
 #define MX6_PHYFLEX_CAP_TCH_INT0	IMX_GPIO_NR(5, 8)
 #define MX6_PHYFLEX_CAP_TCH_INT1	IMX_GPIO_NR(2, 24)
+#define MX6_PHYFLEX_KAPA_TOUCH_INT0	IMX_GPIO_NR(7, 12)
 
 #define MX6_PHYFLEX_DISP0_DET_INT	IMX_GPIO_NR(3, 31)
 #define MX6_PHYFLEX_CSI0_RST		IMX_GPIO_NR(4, 5)
@@ -369,6 +371,10 @@ static struct pca9532_platform_data user_leds_data = {
 	.pwm = { 0, 0 },
 };
 
+static struct edt_ft5x06_platform_data mx6_phyflex_ft5x06_data = {
+	.reset_pin      = -1,   /* static high */
+};
+
 static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
 	{
 		I2C_BOARD_INFO("24c32", 0x50),
@@ -386,7 +392,12 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 	}, {
 		I2C_BOARD_INFO("pca9533", 0x62),
 		.platform_data = &user_leds_data,
+	}, {
+		I2C_BOARD_INFO("edt-ft5x06", 0x38),
+		.irq = gpio_to_irq(MX6_PHYFLEX_KAPA_TOUCH_INT0),
+		.platform_data = (void *)&mx6_phyflex_ft5x06_data,
 	},
+
 };
 
 static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {

@@ -158,6 +158,7 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 
         /* TS phyFLEX Int */
 	MX6Q_PAD_DISP0_DAT14__GPIO_5_8,
+	MX6Q_PAD_GPIO_17__GPIO_7_12,
 
 	/* HDMI */
 	MX6Q_PAD_KEY_COL3__GPIO_4_12, /* MX6Q_PAD_KEY_COL3__HDMI_TX_DDC_SCL */
