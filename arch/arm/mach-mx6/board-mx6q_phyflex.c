@@ -705,6 +705,22 @@ static const struct fb_videomode ldb_modedb[] = {
 		.sync         = 0,
 		.vmode        = FB_VMODE_NONINTERLACED,
 		.flag         = 0,
+	}, {
+		/* 7.0 inch display */
+		.name         = "ETM0700G0DH6",
+		.refresh      = 60,
+		.xres         = 800,
+		.yres         = 480,
+		.pixclock     = 30066, /* in ps (33,26 MHz) */
+		.hsync_len    = 128,
+		.left_margin  = 40,
+		.right_margin = 216,
+		.vsync_len    = 2,
+		.upper_margin = 10,
+		.lower_margin = 35,
+		.sync         = 0,
+		.vmode        = FB_VMODE_NONINTERLACED,
+		.flag         = 0,
 	}
 };
 
