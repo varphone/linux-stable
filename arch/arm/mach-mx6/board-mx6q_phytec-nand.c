@@ -77,7 +77,7 @@ static struct mtd_partition phyflex_nand_partitions[] = {
 	}, {
 		.name	= "env",
 		.offset	= MTDPART_OFS_NXTBLK,
-		.size	= SZ_512K,
+		.size	= SZ_4M, // SZ_512K,
 	}, {
 		.name	= "kernel",
 		.offset	= MTDPART_OFS_NXTBLK,
