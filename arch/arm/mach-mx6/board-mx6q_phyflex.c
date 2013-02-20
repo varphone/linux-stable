@@ -101,8 +101,9 @@
 #define MX6_PHYFLEX_SD2_WP		IMX_GPIO_NR(1, 2)
 
 /* GPIO PIN, sort by PORT/BIT */
-#define MX6_PHYFLEX_CAM_LVDS_PWRDN	IMX_GPIO_NR(1, 24)
+#define MX6_PHYFLEX_CAM0_LVDS_PWRDN	IMX_GPIO_NR(1, 24)
 #define MX6_PHYFLEX_CAM0_OE		IMX_GPIO_NR(5, 20)
+#define MX6_PHYFLEX_CAM1_LVDS_PWRDN	IMX_GPIO_NR(2, 28)
 #define MX6_PHYFLEX_CAM1_OE		IMX_GPIO_NR(3, 10)
 
 #define MX6_PHYFLEX_LDB0_BACKLIGHT      IMX_GPIO_NR(1, 8)
@@ -152,6 +153,12 @@
 /* Kernel cmdline param to select TS */
 static bool second_ts = false;
 module_param(second_ts, bool, 0644);
+
+static char* csi0 = "phyCAM-P";
+module_param(csi0, charp, S_IRUGO);
+
+static char* csi1 = "phyCAM-P";
+module_param(csi1, charp, S_IRUGO);
 
 void __init early_console_setup(unsigned long base, struct clk *clk);
 static struct clk *sata_clk;
@@ -1232,14 +1239,32 @@ static void __init mx6_phyflex_init(void)
 	i2c_register_board_info(2, camera_i2c, ARRAY_SIZE(camera_i2c));
 #endif
 
-	gpio_request(MX6_PHYFLEX_CAM_LVDS_PWRDN, "CSI0<->LVDS bridge #PWDN");
-	gpio_direction_output(MX6_PHYFLEX_CAM_LVDS_PWRDN, 0);
-
+	gpio_request(MX6_PHYFLEX_CAM0_LVDS_PWRDN, "CSI0<->LVDS bridge #PWDN");
 	gpio_request(MX6_PHYFLEX_CAM0_OE, "IPU1/CSI0 camera #OE");
-	gpio_direction_output(MX6_PHYFLEX_CAM0_OE, 0);
-
+	gpio_request(MX6_PHYFLEX_CAM1_LVDS_PWRDN, "CSI1<->LVDS bridge #PWDN");
 	gpio_request(MX6_PHYFLEX_CAM1_OE, "IPU2/CSI1 camera #OE");
-	gpio_direction_output(MX6_PHYFLEX_CAM1_OE, 0);
+
+	if (!strcmp("phyCAM-S+", csi0)) {
+		gpio_direction_output(MX6_PHYFLEX_CAM0_LVDS_PWRDN, 1);
+		gpio_direction_output(MX6_PHYFLEX_CAM0_OE, 1);
+	} else if (!strcmp("none", csi0)) {
+		gpio_direction_output(MX6_PHYFLEX_CAM0_LVDS_PWRDN, 0);
+		gpio_direction_output(MX6_PHYFLEX_CAM0_OE, 1);
+	} else {
+		gpio_direction_output(MX6_PHYFLEX_CAM0_LVDS_PWRDN, 0);
+		gpio_direction_output(MX6_PHYFLEX_CAM0_OE, 0);
+	}
+	
+	if (!strcmp("phyCAM-S+", csi1)) {
+		gpio_direction_output(MX6_PHYFLEX_CAM1_LVDS_PWRDN, 1);
+		gpio_direction_output(MX6_PHYFLEX_CAM1_OE, 1);
+	} else if (!strcmp("none", csi1)) {
+		gpio_direction_output(MX6_PHYFLEX_CAM1_LVDS_PWRDN, 0);
+		gpio_direction_output(MX6_PHYFLEX_CAM1_OE, 1);
+	} else {
+		gpio_direction_output(MX6_PHYFLEX_CAM1_LVDS_PWRDN, 0);
+		gpio_direction_output(MX6_PHYFLEX_CAM1_OE, 0);
+	}
 
 	imx_add_viv_gpu(&imx6_gpu_data, &imx6_gpu_pdata);
 	imx6q_add_vpu();
