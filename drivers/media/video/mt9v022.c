@@ -1,5 +1,5 @@
 /*
- * Driver for MT9V022 CMOS Image Sensor from Micron
+ * Driver for MT9V022/MT9V024 CMOS Image Sensor from Micron
  *
  * Copyright (C) 2008, Guennadi Liakhovetski <kernel@pengutronix.de>
  *
@@ -19,7 +19,7 @@
 #include <media/soc_camera.h>
 
 /*
- * mt9v022 i2c address 0x48, 0x4c, 0x58, 0x5c
+ * MT9V022 and MT9V024 i2c address 0x48, 0x4c, 0x58, 0x5c
  * The platform has to define ctruct i2c_board_info objects and link to them
  * from struct soc_camera_link
  */
@@ -27,6 +27,8 @@
 static char *sensor_type;
 module_param(sensor_type, charp, S_IRUGO);
 MODULE_PARM_DESC(sensor_type, "Sensor type: \"colour\" or \"monochrome\"");
+
+#define is_mt9v024()   (mt9v022->model == V4L2_IDENT_MT9V024 ? 1 : 0)
 
 /* mt9v022 selected register addresses */
 #define MT9V022_CHIP_VERSION		0x00
@@ -47,17 +49,12 @@ MODULE_PARM_DESC(sensor_type, "Sensor type: \"colour\" or \"monochrome\"");
 #define MT9V022_PIXEL_OPERATION_MODE	0x0f
 #define MT9V022_LED_OUT_CONTROL		0x1b
 #define MT9V022_ADC_MODE_CONTROL	0x1c
-#define MT9V022_REG32 			0x20
 #define MT9V022_ANALOG_GAIN		0x35
 #define MT9V022_BLACK_LEVEL_CALIB_CTRL	0x47
-#define MT9V022_PIXCLK_FV_LV		0x74
+#define MT9V022_PIXCLK_FV_LV		(is_mt9v024() ? 0x72 : 0x74)
 #define MT9V022_DIGITAL_TEST_PATTERN	0x7f
 #define MT9V022_AEC_AGC_ENABLE		0xAF
-#define MT9V022_MAX_TOTAL_SHUTTER_WIDTH	0xBD
-
-/* mt9v024 partial list register addresses changes with respect to mt9v022 */
-#define MT9V024_PIXCLK_FV_LV 		0x72
-#define MT9V024_MAX_TOTAL_SHUTTER_WIDTH 0xAD
+#define MT9V022_MAX_TOTAL_SHUTTER_WIDTH	(is_mt9v024() ? 0xAD : 0xBD)
 
 /* Progressive scan, master, defaults */
 #define MT9V022_CHIP_CONTROL_DEFAULT	0x188
@@ -68,9 +65,6 @@ MODULE_PARM_DESC(sensor_type, "Sensor type: \"colour\" or \"monochrome\"");
 #define MT9V022_MIN_HEIGHT		32
 #define MT9V022_COLUMN_SKIP		1
 #define MT9V022_ROW_SKIP		4
-
-#define is_mt9v022_rev3(id) 		(id == 0x1313)
-#define is_mt9v024(id) 			(id == 0x1324)
 
 /* MT9V022 has only one fixed colorspace per pixelcode */
 struct mt9v022_datafmt {
@@ -106,31 +100,14 @@ static const struct mt9v022_datafmt mt9v022_monochrome_fmts[] = {
 	{V4L2_MBUS_FMT_Y8_1X8, V4L2_COLORSPACE_JPEG},
 };
 
-struct mt9v02x_register {
-	u8 	max_total_shutter_width;
-	u8 	pixclk_fv_lv;
-};
-
-static const struct mt9v02x_register mt9v022_register = {
-	.max_total_shutter_width 	= MT9V022_MAX_TOTAL_SHUTTER_WIDTH,
-	.pixclk_fv_lv 			= MT9V022_PIXCLK_FV_LV,
-};
-
-static const struct mt9v02x_register mt9v024_register = {
-	.max_total_shutter_width 	= MT9V024_MAX_TOTAL_SHUTTER_WIDTH,
-	.pixclk_fv_lv 			= MT9V024_PIXCLK_FV_LV,
-};
-
 struct mt9v022 {
 	struct v4l2_subdev subdev;
 	struct v4l2_rect rect;	/* Sensor window */
 	const struct mt9v022_datafmt *fmt;
 	const struct mt9v022_datafmt *fmts;
-	const struct mt9v02x_register *reg;
 	int num_fmts;
-	int model;	/* V4L2_IDENT_MT9V022* codes from v4l2-chip-ident.h */
+	int model;	/* V4L2_IDENT_MT9V02x codes from v4l2-chip-ident.h */
 	u16 chip_control;
-	u16 chip_version;
 	unsigned short y_skip_top;	/* Lines to skip at the top */
 };
 
@@ -212,32 +189,12 @@ static int mt9v022_s_stream(struct v4l2_subdev *sd, int enable)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct mt9v022 *mt9v022 = to_mt9v022(client);
 
-        if (enable) {      
+	if (enable)
 		/* Switch to master "normal" mode */
 		mt9v022->chip_control &= ~0x10;
-		if (is_mt9v022_rev3(mt9v022->chip_version) ||
-			is_mt9v024(mt9v022->chip_version)) {
-				/*
-				 * Unset snapshot mode specific settings: clear bit 9
-				 * and bit 2 in reg. 0x20 when in normal mode.
-				 */
-				if (reg_clear(client, MT9V022_REG32, 0x204))
-					return -EIO;                    
-			}
-		} else {
-			/* Switch to snapshot mode */   
-			mt9v022->chip_control |= 0x10;  
-			if (is_mt9v022_rev3(mt9v022->chip_version) ||
-				is_mt9v024(mt9v022->chip_version)) {
-					/*
-					 * Required settings for snapshot mode: set bit 9
-					 * (RST enable) and bit 2 (CR enable) in reg. 0x20
-					 * See TechNote TN0960 or TN-09-225.
-					 */
-					 if (reg_set(client, MT9V022_REG32, 0x204))
-						return -EIO;                    
-			}
-		}
+	else
+		/* Switch to snapshot mode */
+		mt9v022->chip_control |= 0x10;
 
 	if (reg_write(client, MT9V022_CHIP_CONTROL, mt9v022->chip_control) < 0)
 		return -EIO;
@@ -321,7 +278,6 @@ static int mt9v022_s_crop(struct v4l2_subdev *sd, struct v4l2_crop *a)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct mt9v022 *mt9v022 = to_mt9v022(client);
 	struct v4l2_rect rect = a->c;
-	int min_row, min_blank;
 	int ret;
 
 	/* Bayer format - even size lengths */
@@ -339,35 +295,25 @@ static int mt9v022_s_crop(struct v4l2_subdev *sd, struct v4l2_crop *a)
 
 	/* Like in example app. Contradicts the datasheet though */
 	ret = reg_read(client, MT9V022_AEC_AGC_ENABLE);
-	if (ret >= 0) {
-		if (ret & 1) /* Autoexposure */
-			ret = reg_write(client, MT9V022_MAX_TOTAL_SHUTTER_WIDTH,
+	if (ret >= 0 && ret & 1) /* Autoexposure */
+		ret = reg_write(client, MT9V022_MAX_TOTAL_SHUTTER_WIDTH,
 					rect.height + mt9v022->y_skip_top + 43);
-		else
-			ret = reg_write(client, MT9V022_TOTAL_SHUTTER_WIDTH,
-					rect.height + mt9v022->y_skip_top + 43);
-	}
 	/* Setup frame format: defaults apart from width and height */
 	if (!ret)
 		ret = reg_write(client, MT9V022_COLUMN_START, rect.left);
 	if (!ret)
 		ret = reg_write(client, MT9V022_ROW_START, rect.top);
-
-	/*
- 	 * mt9v022: min total row time is 660 columns, min blanking is 43
- 	 * mt9v024: min total row time is 690 columns, min blanking is 61
- 	 */
-	if (is_mt9v024(mt9v022->chip_version)) {
-		min_row = 690;
-		min_blank = 61;
-	} else {
-		min_row = 660;
-		min_blank = 43;
+	if (!ret) {
+		if (is_mt9v024()) {
+			ret =  reg_write(client, MT9V022_HORIZONTAL_BLANKING,
+				rect.width > 690 - 61 ? 61 :
+				690 - rect.width);
+		} else {
+			ret = reg_write(client, MT9V022_HORIZONTAL_BLANKING,
+				rect.width > 660 - 43 ? 43 :
+				660 - rect.width);
+		}
 	}
-	if (!ret)
-		ret = reg_write(client, MT9V022_HORIZONTAL_BLANKING,
-					rect.width > min_row - min_blank ?
-					min_blank : min_row - rect.width);
 
 	if (!ret)
 		ret = reg_write(client, MT9V022_VERTICAL_BLANKING, 45);
@@ -449,12 +395,14 @@ static int mt9v022_s_fmt(struct v4l2_subdev *sd,
 	switch (mf->code) {
 	case V4L2_MBUS_FMT_Y8_1X8:
 	case V4L2_MBUS_FMT_Y10_1X10:
-		if (mt9v022->model != V4L2_IDENT_MT9V022IX7ATM)
+		if (mt9v022->model != V4L2_IDENT_MT9V022IX7ATM &&
+			mt9v022->model != V4L2_IDENT_MT9V024)
 			return -EINVAL;
 		break;
 	case V4L2_MBUS_FMT_SBGGR8_1X8:
 	case V4L2_MBUS_FMT_SBGGR10_1X10:
-		if (mt9v022->model != V4L2_IDENT_MT9V022IX7ATC)
+		if (mt9v022->model != V4L2_IDENT_MT9V022IX7ATC &&
+			mt9v022->model != V4L2_IDENT_MT9V024)
 			return -EINVAL;
 		break;
 	default:
@@ -775,33 +723,44 @@ static int mt9v022_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
  * this wasn't our capture interface, so, we wait for the right one
  */
 static int mt9v022_video_probe(struct soc_camera_device *icd,
-		struct i2c_client *client)
+			       struct i2c_client *client)
 {
 	struct mt9v022 *mt9v022 = to_mt9v022(client);
 	struct soc_camera_link *icl = to_soc_camera_link(icd);
 	s32 data;
 	int ret;
 	unsigned long flags;
+	int color = 0;
 
 	if (!icd->dev.parent ||
 	    to_soc_camera_host(icd->dev.parent)->nr != icd->iface)
 		return -ENODEV;
 
+	if (sensor_type && (!strcmp("colour", sensor_type) ||
+			!strcmp("color", sensor_type)))
+		color = 1;
+
 	/* Read out the chip version register */
 	data = reg_read(client, MT9V022_CHIP_VERSION);
 
-	/* must be 0x1311 or 0x1313 */
-	if (data != 0x1311 && data != 0x1313 && data != 0x1324) {
+	/* must be 0x1311, 0x1313 or 0x1324 */
+	switch (data) {
+	case 0x1324:
+		mt9v022->model = V4L2_IDENT_MT9V024;
+		break;
+	case 0x1311:
+	case 0x1313:
+		if (color)
+			mt9v022->model = V4L2_IDENT_MT9V022IX7ATC;
+		else
+			mt9v022->model = V4L2_IDENT_MT9V022IX7ATM;
+		break;
+	default:
 		ret = -ENODEV;
-		dev_info(&client->dev, "No MT9V022 found, ID register 0x%x\n",
-			 data);
+		dev_info(&client->dev, "No MT9V02x found, ID register 0x%x\n",
+			data);
 		goto ei2c;
 	}
-
-	mt9v022->chip_version = data;
-
-	mt9v022->reg = is_mt9v024(data) ? &mt9v024_register :
-			&mt9v022_register;
 
 	/* Soft reset */
 	ret = reg_write(client, MT9V022_RESET, 1);
@@ -810,21 +769,38 @@ static int mt9v022_video_probe(struct soc_camera_device *icd,
 	/* 15 clock cycles */
 	udelay(200);
 	if (reg_read(client, MT9V022_RESET)) {
-		dev_err(&client->dev, "Resetting MT9V022 failed!\n");
+		dev_err(&client->dev, "Resetting MT9V02x failed!\n");
 		if (ret > 0)
 			ret = -EIO;
 		goto ei2c;
 	}
 
 	/* Set monochrome or colour sensor type */
-	if (sensor_type && (!strcmp("colour", sensor_type) ||
-			    !strcmp("color", sensor_type))) {
-		ret = reg_write(client, MT9V022_PIXEL_OPERATION_MODE, 4 | 0x11);
-		mt9v022->model = V4L2_IDENT_MT9V022IX7ATC;
+	if (color) {
+		switch (mt9v022->model) {
+		case V4L2_IDENT_MT9V022IX7ATC:
+			ret = reg_write(client,
+				MT9V022_PIXEL_OPERATION_MODE, 0x4 | 0x11);
+			break;
+		case V4L2_IDENT_MT9V024:
+			ret = reg_write(client,
+				MT9V022_PIXEL_OPERATION_MODE, 0x02 | 0x100);
+			break;
+		}
+
 		mt9v022->fmts = mt9v022_colour_fmts;
 	} else {
-		ret = reg_write(client, MT9V022_PIXEL_OPERATION_MODE, 0x11);
-		mt9v022->model = V4L2_IDENT_MT9V022IX7ATM;
+		switch (mt9v022->model) {
+		case V4L2_IDENT_MT9V022IX7ATM:
+			ret = reg_write(client,
+				MT9V022_PIXEL_OPERATION_MODE, 0x11);
+			break;
+		case V4L2_IDENT_MT9V024:
+			ret = reg_write(client,
+				MT9V022_PIXEL_OPERATION_MODE, 0x100);
+			break;
+		}
+
 		mt9v022->fmts = mt9v022_monochrome_fmts;
 	}
 
@@ -853,7 +829,7 @@ static int mt9v022_video_probe(struct soc_camera_device *icd,
 
 	mt9v022->fmt = &mt9v022->fmts[0];
 
-	dev_info(&client->dev, "Detected a MT9V022 chip ID %x, %s sensor\n",
+	dev_info(&client->dev, "Detected a MT9V02x chip ID %x, %s sensor\n",
 		 data, mt9v022->model == V4L2_IDENT_MT9V022IX7ATM ?
 		 "monochrome" : "colour");
 
@@ -939,13 +915,13 @@ static int mt9v022_probe(struct i2c_client *client,
 	int ret;
 
 	if (!icd) {
-		dev_err(&client->dev, "MT9V022: missing soc-camera data!\n");
+		dev_err(&client->dev, "MT9V02x: missing soc-camera data!\n");
 		return -EINVAL;
 	}
 
 	icl = to_soc_camera_link(icd);
 	if (!icl) {
-		dev_err(&client->dev, "MT9V022 driver needs platform data\n");
+		dev_err(&client->dev, "MT9V02x driver needs platform data\n");
 		return -EINVAL;
 	}
 
@@ -1022,6 +998,6 @@ static void __exit mt9v022_mod_exit(void)
 module_init(mt9v022_mod_init);
 module_exit(mt9v022_mod_exit);
 
-MODULE_DESCRIPTION("Micron MT9V022 Camera driver");
+MODULE_DESCRIPTION("Micron MT9V022/MT9V024 Camera driver");
 MODULE_AUTHOR("Guennadi Liakhovetski <kernel@pengutronix.de>");
 MODULE_LICENSE("GPL");
