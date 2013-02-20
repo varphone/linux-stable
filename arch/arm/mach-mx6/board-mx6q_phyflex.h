@@ -223,7 +223,7 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_EIM_DA1__IPU2_CSI1_D_8,
 	MX6Q_PAD_EIM_DA0__IPU2_CSI1_D_9,
 	MX6Q_PAD_EIM_EB1__IPU2_CSI1_D_10,
-	MX6Q_PAD_EIM_EB0__IPU2_CSI1_D_11,
+	MX6Q_PAD_EIM_EB0__GPIO_2_28,
 	MX6Q_PAD_EIM_A17__IPU2_CSI1_D_12,
 	MX6Q_PAD_EIM_A18__IPU2_CSI1_D_13,
 	MX6Q_PAD_EIM_A19__IPU2_CSI1_D_14,
@@ -234,9 +234,7 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_EIM_A24__IPU2_CSI1_D_19,
 
     /* Enable CAM1 clocking only if it is needed for camera 1 lvds */
-#if defined (CONFIG_CAM1_LVDS)
 	MX6Q_PAD_NANDF_CS2__CCM_CLKO2,
-#endif
 	
 	/* PCIE_PRSNT */
 	MX6Q_PAD_SD1_DAT3__GPIO_1_21,
