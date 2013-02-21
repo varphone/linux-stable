@@ -147,6 +147,8 @@
 #define MX6_PHYFLEX_PEB1_RDY		IMX_GPIO_NR(7, 12)
 #define MX6_PHYFLEX_PEB1_INT		IMX_GPIO_NR(7, 13)
 
+#define MX6_PHYFLEX_HW_INTRO		IMX_GPIO_NR(3, 20)
+
 #define ENABLE_HDMI
 #define ENABLE_PHY
 
@@ -1013,7 +1015,7 @@ static struct spi_board_info mcp251x_board_info[] = {
  * Dallas 1-Wire GPIO interface
  */
 static struct w1_gpio_platform_data w1_gpio_pdata = {
-	.pin			= IMX_GPIO_NR(5, 26),
+	.pin			= MX6_PHYFLEX_HW_INTRO,
 	.is_open_drain		= 0,
 	.enable_external_pullup	= NULL,
 };

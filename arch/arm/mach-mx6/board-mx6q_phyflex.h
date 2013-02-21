@@ -176,8 +176,8 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_KEY_COL2__CAN1_TXCAN,
 	MX6Q_PAD_KEY_ROW2__CAN1_RXCAN,
 
-	/* 1-Wire interface data pin */
-	MX6Q_PAD_CSI0_DAT8__GPIO_5_26,
+	/* HW Introspection / 1-Wire interface data pin */
+	MX6Q_PAD_EIM_D20__GPIO_3_20,
 
 	/* AUDIO PADS */
 	MX6Q_PAD_DISP0_DAT16__AUDMUX_AUD5_TXC,
