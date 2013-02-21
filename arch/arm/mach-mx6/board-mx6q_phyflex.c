@@ -408,9 +408,11 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 };
 
 static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
+#if 0
 	{
-//		I2C_BOARD_INFO("max1037", 0x64),
+		I2C_BOARD_INFO("max1037", 0x64),
 	}
+#endif
 };
 
 static struct i2c_board_info stmpe811_first_board_info = {
