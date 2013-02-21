@@ -199,7 +199,7 @@ static int mx6_phyflex_fec_phy_init(struct phy_device *phydev)
 	/* min rx data delay */
 
 
-	printk("FEC ID: 0x%X, 0x%X\n", phy_read(phydev, 0x02), phy_read(phydev, 0x02));
+	printk("FEC ID: 0x%X, 0x%X\n", phy_read(phydev, 0x02), phy_read(phydev, 0x03));
 
 	phy_write(phydev, 0x0b, 0x104);
 
