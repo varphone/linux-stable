@@ -594,6 +594,7 @@ static struct ipuv3_fb_platform_data phyflex_fb_data[] = {
         .default_bpp		= 16,
         .int_clk		= false,
     },
+#ifndef ENABLE_HDMI
     {
         .disp_dev		= "ldb",
         .interface_pix_fmt	= IPU_PIX_FMT_RGB666,
@@ -601,7 +602,7 @@ static struct ipuv3_fb_platform_data phyflex_fb_data[] = {
         .default_bpp		= 16,
         .int_clk		= false,
     },
-#ifdef ENABLE_HDMI
+#else
     {
         .disp_dev = "hdmi",
         .interface_pix_fmt = IPU_PIX_FMT_RGB24,
