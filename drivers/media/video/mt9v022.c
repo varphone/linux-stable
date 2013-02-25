@@ -66,6 +66,10 @@ MODULE_PARM_DESC(sensor_type, "Sensor type: \"colour\" or \"monochrome\"");
 #define MT9V022_COLUMN_SKIP		1
 #define MT9V022_ROW_SKIP		4
 
+
+#define ENABLE_LVDS_OUT
+#define LVDS_OUT_8BIT
+
 /* MT9V022 has only one fixed colorspace per pixelcode */
 struct mt9v022_datafmt {
 	enum v4l2_mbus_pixelcode	code;
@@ -775,6 +779,16 @@ static int mt9v022_video_probe(struct soc_camera_device *icd,
 		goto ei2c;
 	}
 
+#ifdef ENABLE_LVDS_OUT
+	reg_write(client, 0xb3, 0);
+	reg_write(client, 0xb1, 0);
+#ifdef LVDS_OUT_8BIT
+	reg_write(client, 0xb6, 0);
+#else
+	reg_write(client, 0xb6, 1);
+#endif
+#endif
+	
 	/* Set monochrome or colour sensor type */
 	if (color) {
 		switch (mt9v022->model) {
