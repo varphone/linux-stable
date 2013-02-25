@@ -647,7 +647,7 @@ static struct fsl_mxc_hdmi_core_platform_data hdmi_core_data = {
 };
 #endif
 
-static const struct fb_videomode ldb_modedb[] = {
+static struct fb_videomode ldb_modedb[] = {
 	{
 		/* 5.0 inch display */
 		.name         = "Primeview-PD050VL1",
