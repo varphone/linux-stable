@@ -62,40 +62,11 @@ static int __init gpmi_nand_platform_init(void)
 	return mxc_iomux_v3_setup_multiple_pads(mx6q_gpmi_nand, ARRAY_SIZE(mx6q_gpmi_nand));
 }
 
-/*  To be shure with sizes on bootloader, please check definitions in
-    barebox-phytec/arch/arm/boards/phyflex-imx6/board.c
-	NAND_PART_BAREBOX_SIZE
-	NAND_PART_BAREBOXENV_SIZE
-	NAND_PART_KERNEL_SIZE
-	NAND_PART_ROOT_SIZE
-*/
-static struct mtd_partition phyflex_nand_partitions[] = {
-	{
-		.name	= "bootloader",
-		.offset	= 0,
-		.size	= SZ_2M,
-	}, {
-		.name	= "env",
-		.offset	= MTDPART_OFS_NXTBLK,
-		.size	= SZ_512K,
-	}, {
-		.name	= "kernel",
-		.offset	= MTDPART_OFS_NXTBLK,
-		.size	= SZ_8M,
-	}, {
-		.name	= "filesystem",
-		.offset	= MTDPART_OFS_NXTBLK,
-		.size	= MTDPART_SIZ_FULL,
-	},
-};
-
 static const struct gpmi_nand_platform_data mx6_gpmi_nand_platform_data __initconst = {
 	.platform_init           = gpmi_nand_platform_init,
 	.min_prop_delay_in_ns    = 5,
 	.max_prop_delay_in_ns    = 9,
 	.max_chip_count          = 1,
-	.partitions              = phyflex_nand_partitions,
-	.partition_count         = ARRAY_SIZE(phyflex_nand_partitions),
 	.enable_bbt              = 1,
 };
 
