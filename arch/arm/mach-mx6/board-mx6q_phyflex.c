@@ -259,27 +259,11 @@ static const struct spi_imx_master mx6_phyflex_spi_data __initconst = {
 	.num_chipselect = ARRAY_SIZE(mx6_phyflex_spi_cs),
 };
 
+
 #if defined(CONFIG_MTD_M25P80) || defined(CONFIG_MTD_M25P80_MODULE)
-static struct mtd_partition n25q128_partitions[] = {
-	{
-		.name   = "bootloader",
-		.offset = 0,
-		.size   = 0x00200000,
-	}, {
-		.name   = "env",
-		.offset = MTDPART_OFS_APPEND,
-		.size   = 0x00080000,
-	}, {
-		.name   = "kernel",
-		.offset = MTDPART_OFS_APPEND,
-		.size   = MTDPART_SIZ_FULL,
-	},
-};
 static struct flash_platform_data n25q128_spi_flash_data = {
 	.name		= "n25q128",
 	.type		= "n25q128",
-	.parts          = n25q128_partitions,
-	.nr_parts       = ARRAY_SIZE(n25q128_partitions),
 };
 #endif
 
