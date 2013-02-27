@@ -1101,7 +1101,7 @@ static struct soc_camera_link phyflex_iclinks[] = {
 	}, {
 		SOC_CAM_LINK(1, &phyflex_cameras[1], 2)
 	}, {
-		SOC_CAM_LINK(1, &phyflex_cameras[3], 2)
+		SOC_CAM_LINK(0, &phyflex_cameras[3], 2)
 	},
 };
 
