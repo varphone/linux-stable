@@ -144,9 +144,6 @@
 // #define MX6_PHYFLEX_CAN2_STBY		MX6_PHYFLEX_IO_EXP_GPIO2(1)
 // #define BMCR_PDOWN			0x0800 /* PHY Powerdown */
 
-#define MX6_PHYFLEX_PEB1_RDY		IMX_GPIO_NR(7, 12)
-#define MX6_PHYFLEX_PEB1_INT		IMX_GPIO_NR(7, 13)
-
 #define MX6_PHYFLEX_HW_INTRO		IMX_GPIO_NR(3, 20)
 
 #define ENABLE_HDMI
@@ -970,23 +967,6 @@ static const struct imx_pcie_platform_data mx6_phyflex_pcie_data  __initconst = 
         .pcie_dis       = -EINVAL,
 };
 
-
-static struct mcp251x_platform_data mcp251x_info = {
-	.oscillator_frequency = 24*1000*1000,
-};
-
-static struct spi_board_info mcp251x_board_info[] = {
-	{
-		.modalias	= "mcp2515",
-		.platform_data	= &mcp251x_info,
-		.max_speed_hz	= 2*1000*1000,
-		.bus_num	= 2,
-		.mode		= SPI_MODE_0,
-		.chip_select	= 3,
-		.irq		= gpio_to_irq(MX6_PHYFLEX_PEB1_INT),
-	},
-};
-
 /*
  * Dallas 1-Wire GPIO interface
  */
@@ -1301,9 +1281,6 @@ static void __init mx6_phyflex_init(void)
 	/* SPI */
 	imx6q_add_ecspi(2, &mx6_phyflex_spi_data);
 	spi_register_board_info(n25q128_spi2_board_info, ARRAY_SIZE(n25q128_spi2_board_info));
-#if defined(CONFIG_CAN_MCP251X)
-	spi_register_board_info(mcp251x_board_info, ARRAY_SIZE(mcp251x_board_info));
-#endif
 
 #ifdef ENABLE_PHY
 	imx6_init_fec(fec_data);
