@@ -736,7 +736,7 @@ static struct imx_ipuv3_platform_data ipu_data[] = {
 	.csi_clk[0]	= "clko_clk",
 	}, {
 	.rev		= 4,
-	.csi_clk[1]	= "clko_clk",
+	.csi_clk[1]	= "clko2_clk",
 	},
 };
 
@@ -1077,6 +1077,9 @@ static struct i2c_board_info phyflex_cameras[] = {
 	[3] = {
 		I2C_BOARD_INFO("mt9m001", 0x5d),
 	},
+	[4] = {
+		I2C_BOARD_INFO("mt9v022", 0x48), /* CTRL1 = 1 */
+	},
 };
 
 #define SOC_CAM_LINK(bus, bi, i2c_adapter) \
@@ -1092,6 +1095,8 @@ static struct soc_camera_link phyflex_iclinks[] = {
 		SOC_CAM_LINK(1, &phyflex_cameras[1], 2)
 	}, {
 		SOC_CAM_LINK(1, &phyflex_cameras[3], 2)
+	}, {
+		SOC_CAM_LINK(1, &phyflex_cameras[4], 2)
 	},
 };
 
@@ -1107,6 +1112,8 @@ static struct platform_device mxc_ipu_cameras[] = {
 		SOC_CAM_PDRV(2, phyflex_iclinks),
 	}, {
 		SOC_CAM_PDRV(3, phyflex_iclinks),
+	}, {
+		SOC_CAM_PDRV(4, phyflex_iclinks),
 	},
 };
 
