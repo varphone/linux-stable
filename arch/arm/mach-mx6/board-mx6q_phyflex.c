@@ -974,15 +974,6 @@ static struct mxc_dvfs_platform_data phyflex_dvfscore_data = {
 static void __init mx6_phyflex_fixup(struct machine_desc *desc, struct tag *tags,
 				   char **cmdline, struct meminfo *mi)
 {
-	// Specify manually addressing for first memory bank
-	mi->nr_banks=1;
-	mi->bank[0].start = 0x10000000;
-#ifdef DDR_2GB
-	mi->bank[0].size = SZ_2G;
-#else
-	mi->bank[0].size = SZ_1G;
-#endif
-	mi->bank[0].highmem = 0;
 }
 
 
