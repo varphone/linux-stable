@@ -144,8 +144,8 @@
 #else
 #define MX6_PHYFLEX_CAP_TCH_INT0	IMX_GPIO_NR(5, 8)
 #endif
-#define MX6_PHYFLEX_CAP_TCH_INT1	IMX_GPIO_NR(2, 24)
-
+#define MX6_PHYFLEX_CAP_TCH_INT1	IMX_GPIO_NR(2, 23)
+ 
 #define MX6_PHYFLEX_DISP0_DET_INT	IMX_GPIO_NR(3, 31)
 #define MX6_PHYFLEX_CSI0_RST		IMX_GPIO_NR(4, 5)
 // #define MX6_PHYFLEX_CSI0_PWN		IMX_GPIO_NR(5, 23)
@@ -389,6 +389,9 @@ static struct pca9532_platform_data user_leds_data = {
 
 static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
 	{
+		I2C_BOARD_INFO("max7300", 0x40),
+		.platform_data = &max7301_i2c_data,
+	},{
 		I2C_BOARD_INFO("24c32", 0x50),
 		.platform_data = &at24c32,
 	},
