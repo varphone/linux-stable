@@ -170,8 +170,6 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_DISP0_DAT8__PWM1_PWMO,
 	MX6Q_PAD_DISP0_DAT9__PWM2_PWMO,
 
-        /* TS phyFLEX Int */
-	MX6Q_PAD_DISP0_DAT14__GPIO_5_8,
 
 	/* HDMI */
 	MX6Q_PAD_KEY_COL3__GPIO_4_12, /* MX6Q_PAD_KEY_COL3__HDMI_TX_DDC_SCL */
@@ -205,12 +203,20 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_DI0_PIN15__AUDMUX_AUD6_TXC,	/* ToDo: remove later*/
 #endif
 
+	/* TS phyFLEX Int */
+	MX6Q_PAD_EIM_CS0__GPIO_2_23, // phyFlex ts 2 interrupt
+
 	/* ipu1 csi0 */
 	MX6Q_PAD_CSI0_MCLK__IPU1_CSI0_HSYNC,
 	MX6Q_PAD_CSI0_PIXCLK__IPU1_CSI0_PIXCLK,
 	MX6Q_PAD_CSI0_VSYNC__IPU1_CSI0_VSYNC,
 	MX6Q_PAD_CSI0_DATA_EN__GPIO_5_20,
-	PHYFLEX_PAD_GPIO_5__CCM_CLKO,
+#if defined (CONFIG_PHYFLEX_SOC_1362_0)
+	MX6Q_PAD_GPIO_5__GPIO_1_5,	// phyFlex ts 1 interrupt
+#else
+	PHYFLEX_PAD_GPIO_5__CCM_CLKO,	// conflict with interrupt ts 1 soc1362.0
+	MX6Q_PAD_DISP0_DAT14__GPIO_5_8,	// phyFlex ts 1 interrupt
+#endif
 	MX6Q_PAD_ENET_RX_ER__GPIO_1_24,
 	MX6Q_PAD_CSI0_DAT10__IPU1_CSI0_D_10,
 	MX6Q_PAD_CSI0_DAT11__IPU1_CSI0_D_11,
