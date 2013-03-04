@@ -198,15 +198,31 @@ static int mx6_phyflex_fec_phy_init(struct phy_device *phydev)
 	/* from current linux-imx6, arch/arm/mach-imx/mach-imx6q.c, ksz9021rn_phy_fixup(): */
 	/* min rx data delay */
 
-
 	printk("FEC ID: 0x%X, 0x%X\n", phy_read(phydev, 0x02), phy_read(phydev, 0x03));
+
+#if defined (CONFIG_PHYFLEX_SOC_1362_0)
+	phy_write(phydev, 0x09, 0x1f00);
+//	phy_write(phydev, 0x0c, 0x0000);
+//	phy_write(phydev, 0x0d, 0x7777);
+
+	phy_write(phydev, 0x0b, 0x8105);
+	phy_write(phydev, 0x0c, 0x0000);
+
+	/* max rx/tx clock delay, min rx/tx control delay */
+	phy_write(phydev, 0x0b, 0x8104);
+	phy_write(phydev, 0x0c, 0xf0f0);
+#endif
 
 	phy_write(phydev, 0x0b, 0x104);
 
 	/* enable all interrupts */
 	phy_write(phydev, 0x1b, 0xff00);
 #if 0
-	unsigned short val;
+	unsigned short val, i;
+	for (i = 0; i < 16; ++i) {
+		val = phy_read(phydev, i);
+		printk("%s() PHY register %d: 0x%04x\n", __FUNCTION__, i, val);
+	}
 
 	/* To enable AR8031 ouput a 125MHz clk from CLK_25M */
 	phy_write(phydev, 0xd, 0x7);
@@ -1274,9 +1290,9 @@ static void __init mx6_phyflex_init(void)
 	 * ToDo: At this moment only one STMPE811 device can work, must be fixed!
 	 */
 	if (!second_ts) {
-	    i2c_register_board_info(1, &stmpe811_first_board_info, 1);
+		i2c_register_board_info(1, &stmpe811_first_board_info, 1);
 	} else {
-	    i2c_register_board_info(2, &stmpe811_second_board_info, 1);
+		i2c_register_board_info(2, &stmpe811_second_board_info, 1);
 	}
 
 	/* Init onboard can bus */
