@@ -959,10 +959,8 @@ static void __init mx6_phyflex_fixup(struct machine_desc *desc, struct tag *tags
 
 
 static const struct imx_pcie_platform_data mx6_phyflex_pcie_data  __initconst = {
-//	.pcie_pwr_en    = MX6_ARM2_PCIE_PWR_EN,
-//	.pcie_rst       = IMX_GPIO_NR(1, 27),
+	.pcie_rst       = IMX_GPIO_NR(1, 21),
 	.pcie_pwr_en	= -EINVAL,
-	.pcie_rst	= -EINVAL,
 	.pcie_wake_up   = IMX_GPIO_NR(1, 7),
         .pcie_dis       = -EINVAL,
 };
