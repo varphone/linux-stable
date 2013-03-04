@@ -165,9 +165,6 @@
 #define ENABLE_HDMI
 #define ENABLE_PHY
 
-/* Kernel cmdline param to select TS */
-static bool second_ts = false;
-module_param(second_ts, bool, 0644);
 
 void __init early_console_setup(unsigned long base, struct clk *clk);
 static struct clk *sata_clk;
@@ -423,25 +420,21 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 	}, {
 		I2C_BOARD_INFO("pca9533", 0x62),
 		.platform_data = &user_leds_data,
-	},
+	}, {
+		I2C_BOARD_INFO("stmpe811", 0x41),
+		.irq = gpio_to_irq(MX6_PHYFLEX_CAP_TCH_INT0),
+		.platform_data = (void *)&stmpe811_data0,
+	}
 };
 
 static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 	{
 //		I2C_BOARD_INFO("max1037", 0x64),
+	} , {
+		I2C_BOARD_INFO("stmpe811", 0x41),
+		.irq = gpio_to_irq(MX6_PHYFLEX_CAP_TCH_INT1),
+		.platform_data = (void *)&stmpe811_data1,
 	}
-};
-
-static struct i2c_board_info stmpe811_first_board_info = {
-	I2C_BOARD_INFO("stmpe811", 0x41),
-	.irq = gpio_to_irq(MX6_PHYFLEX_CAP_TCH_INT0),
-	.platform_data = (void *)&stmpe811_data0,
-};
-
-static struct i2c_board_info stmpe811_second_board_info = {
-	I2C_BOARD_INFO("stmpe811", 0x41),
-	.irq = gpio_to_irq(MX6_PHYFLEX_CAP_TCH_INT1),
-	.platform_data = (void *)&stmpe811_data1,
 };
 
 
@@ -1285,15 +1278,6 @@ static void __init mx6_phyflex_init(void)
 
 	imx6q_add_imx_i2c(2, &mx6_phyflex_i2c2_data);
 	i2c_register_board_info(2, mxc_i2c2_board_info, ARRAY_SIZE(mxc_i2c2_board_info));
-
-	/* Initialize stmpe811 touch screen.
-	 * ToDo: At this moment only one STMPE811 device can work, must be fixed!
-	 */
-	if (!second_ts) {
-		i2c_register_board_info(1, &stmpe811_first_board_info, 1);
-	} else {
-		i2c_register_board_info(2, &stmpe811_second_board_info, 1);
-	}
 
 	/* Init onboard can bus */
 	imx6q_add_flexcan0(&mx6_phyflex_flexcan0_pdata);
