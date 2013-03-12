@@ -99,7 +99,7 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_SD3_RST__GPIO_7_8,
 	/* SD3_CD and SD3_WP */
 	MX6Q_PAD_ENET_RXD0__GPIO_1_27,
-	MX6Q_PAD_CSI0_DAT5__GPIO_5_23,
+	MX6Q_PAD_ENET_TXD1__GPIO_1_29,
 
 	/* SPI3 */
 	MX6Q_PAD_DISP0_DAT0__ECSPI3_SCLK,

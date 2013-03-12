@@ -96,7 +96,7 @@
 #include "board-mx6q_phytec-pmic.h"
 
 #define MX6_PHYFLEX_SD3_CD		IMX_GPIO_NR(1, 27)
-#define MX6_PHYFLEX_SD3_WP		IMX_GPIO_NR(5, 23)
+#define MX6_PHYFLEX_SD3_WP		IMX_GPIO_NR(1, 29)
 #define MX6_PHYFLEX_SD2_CD		IMX_GPIO_NR(1, 4)
 #define MX6_PHYFLEX_SD2_WP		IMX_GPIO_NR(1, 2)
 
