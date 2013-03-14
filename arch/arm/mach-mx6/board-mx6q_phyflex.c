@@ -494,7 +494,7 @@ static void __init mx6_phyflex_init_usb(void)
 	// ToDo: remove next line when usb pwr are fixed. Turn on VBUS power for USB.
 	imx6_phyflex_usbotg_vbus(true);
 
-	mx6_usb_dr_init();
+/*	mx6_usb_dr_init(); */
 
 	/* Enable USB hub power */
 	ret = gpio_request(MX6_PHYFLEX_USB_HOST1_PWR, "usb-host1-pwr");
