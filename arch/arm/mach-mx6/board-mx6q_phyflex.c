@@ -245,18 +245,17 @@ static int mx6_phyflex_fec_phy_init(struct phy_device *phydev)
 	return 0;
 }
 
+#define PHY_POWERDOWN 	(1 << 11)
 static int mx6_phyflex_fec_power_hibernate(struct phy_device *phydev)
 {
-#if 0
 	unsigned short val;
 
-	/*set AR8031 debug reg 0xb to hibernate power*/
-	phy_write(phydev, 0x1d, 0xb);
-	val = phy_read(phydev, 0x1e);
+	/*set ksz9021rn reg 0x0 bit 11 to hibernate power*/
+	val = phy_read(phydev, 0x0);
 
-	val |= 0x8000;
-	phy_write(phydev, 0x1e, val);
-#endif
+	val |= PHY_POWERDOWN;
+	phy_write(phydev, 0x0, val);
+
 	return 0;
 }
 
