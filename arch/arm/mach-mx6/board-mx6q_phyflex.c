@@ -1077,7 +1077,7 @@ static struct platform_device mxc_ipu_csi_devices[] = {
 
 static struct i2c_board_info phyflex_cameras[] = {
 	[0] = {
-		I2C_BOARD_INFO("mt9v022", 0x48), /* CTRL1 = 0 */
+		I2C_BOARD_INFO("mt9p031", 0x48), /* CTRL1 = 0 */
 	},
 	[1] = {
 		I2C_BOARD_INFO("mt9v022", 0x4c), /* CTRL1 = 1 */
