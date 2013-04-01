@@ -490,10 +490,14 @@ static void __init mx6_phyflex_init_usb(void)
 
 	mxc_iomux_set_gpr_register(1, 13, 1, 1);
 
-	// ToDo: uncoment mx6_set_otghost_vbus_func when usb pwr hardware fixes are available
+	/* TODO: uncoment mx6_set_otghost_vbus_func
+	* when usb pwr hardware fixes are available
+	*/
 	// mx6_set_otghost_vbus_func(imx6_phyflex_usbotg_vbus);
 
-	// ToDo: remove next line when usb pwr are fixed. Turn on VBUS power for USB.
+	/* TODO: remove next line when usb pwr are fixed.
+	* Turn on VBUS power for USB.
+	*/
 	imx6_phyflex_usbotg_vbus(true);
 
 /*	mx6_usb_dr_init(); */
@@ -1198,7 +1202,7 @@ static struct gpio_led gpio_leds[] = {
 		.default_trigger        = "nand-disk",
 		.gpio                   = MX6_PHYFLEX_LED_RED,
 /*
-	ToDo: Uncoment next lines, when second phyFlex TS interupt fixed
+	TODO: Uncoment next lines, when second phyFlex TS interupt fixed
 	}, {
 		.name                   = "usr2",
 		.default_trigger        = "default-off",

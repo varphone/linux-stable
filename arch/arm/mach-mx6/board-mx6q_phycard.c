@@ -275,7 +275,7 @@ static struct i2c_board_info mxc_i2c1_board_info_hda[] __initdata = {
 };
 
 static struct i2c_board_info __initdata hdmi_i2c_data[] = {
-// ToDo: Uncoment next lines to make HDMI work
+/* TODO: Uncoment next lines to make HDMI work */
 	{
 		I2C_BOARD_INFO("mxc_hdmi_i2c", 0x50),
 	},
@@ -325,10 +325,14 @@ static void __init mx6_phyflex_init_usb(void)
 
 	mxc_iomux_set_gpr_register(1, 13, 1, 1);
 
-	// ToDo: uncoment mx6_set_otghost_vbus_func when usb pwr hardware fixes are available
+	/* TODO: uncoment mx6_set_otghost_vbus_func when usb pwr hardware
+	* fixes are available
+	*/
 	// mx6_set_otghost_vbus_func(imx6_phyflex_usbotg_vbus);
 
-	// ToDo: remove next line when usb pwr are fixed. Turn on VBUS power for USB.
+	/* TODO: remove next line when usb pwr are fixed.
+	* Turn on VBUS power for USB.
+	*/
 	imx6_phyflex_usbotg_vbus(true);
 
 	mx6_usb_dr_init();
@@ -1005,7 +1009,7 @@ static void __init mx6_phyflex_init(void)
 	/* imx6q SoC revision and CPU uniq ID setup */
 	mx6_setup_cpuinfo();
 
-	/* ToDo: common_pads for both PhyFlex and PhyCard.
+	/* TODO: common_pads for both PhyFlex and PhyCard.
 	 *All differents pads must initialised separated
 	 */
 	mxc_iomux_v3_setup_multiple_pads(mx6q_phytec_common_pads, ARRAY_SIZE(mx6q_phytec_common_pads));
