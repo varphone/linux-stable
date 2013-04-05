@@ -359,7 +359,7 @@ static int da9063_init(struct da9063 *da9063)
 struct da9063_pdata da9063_data = {
 	.bcores_merged = 0,
 	.bmem_bio_merged = 0,
-	.key_power = 0,
+	.key_power = 1,
 	.t_offset = 0,
 	.regulators_pdata = &da9063_regulators,
 	.init = da9063_init,
