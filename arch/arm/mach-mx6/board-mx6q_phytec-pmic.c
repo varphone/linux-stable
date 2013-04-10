@@ -374,6 +374,5 @@ struct i2c_board_info da9063_i2c = {
 
 int __init mx6_phyflex_init_da9063(void)
 {
-	printk("::: mx6_phyflex_init_da9063\n");
 	return i2c_register_board_info(0, &da9063_i2c, 1);
 }
