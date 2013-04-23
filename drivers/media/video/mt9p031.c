@@ -211,7 +211,8 @@ static void mt9p031_video_remove(struct soc_camera_device *icd)
 /*TODO: add new dividers */
 static const struct mt9p031_pll_divs mt9p031_divs[] = {
 	/* ext_freq	target_freq	m	n	p1 */
-	{27000000,	MT9P031_TARGET_FREQ_DEF,	90,	4,	6}
+//	{26400000,	MT9P031_TARGET_FREQ_DEF,	29,	2,	8} //This is for 48MHz PCLK
+	{26400000,	MT9P031_TARGET_FREQ_DEF,	58,	2,	8}
 };
 
 static int mt9p031_pll_get_divs(struct mt9p031 *mt9p031)
@@ -344,7 +345,7 @@ static int mt9p031_set_params(struct mt9p031 *mt9p031)
 	unsigned int yskip;
 	unsigned int xbin;
 	unsigned int ybin;
-	int ret;
+	int ret, i, k;
 
 	/* Windows position and size.
 	 *
@@ -369,8 +370,22 @@ static int mt9p031_set_params(struct mt9p031 *mt9p031)
 	/* Row and column binning and skipping. Use the maximum binning value
 	 * compatible with the skipping settings.
 	 */
-	xskip = DIV_ROUND_CLOSEST(crop->width, MT9P031_WINDOW_WIDTH_DEF);
-	yskip = DIV_ROUND_CLOSEST(crop->height, MT9P031_WINDOW_HEIGHT_DEF);
+	i = (crop->width + (MT9P031_WINDOW_WIDTH_DEF / 2)) / MT9P031_WINDOW_WIDTH_DEF;
+	k = ((crop->width + (MT9P031_WINDOW_WIDTH_DEF / 2)) * 10 / MT9P031_WINDOW_WIDTH_DEF);
+	if (k >= 10)
+		k -= 10;
+	if ((k > 5) && (k <= 9))
+		i++;
+	xskip = i;
+
+	i = (crop->height + (MT9P031_WINDOW_HEIGHT_DEF / 2)) / MT9P031_WINDOW_HEIGHT_DEF;
+	k = ((crop->height + (MT9P031_WINDOW_HEIGHT_DEF / 2)) * 10 / MT9P031_WINDOW_HEIGHT_DEF);
+	if (k >= 10)
+		k -= 10;
+	if ((k > 5) && (k <= 9))
+		i++;
+	yskip = i;
+
 	xbin = 1 << (ffs(xskip) - 1);
 	ybin = 1 << (ffs(yskip) - 1);
 
@@ -383,16 +398,16 @@ static int mt9p031_set_params(struct mt9p031 *mt9p031)
 	if (ret < 0)
 		return ret;
 
-	/* Blanking - use minimum value for horizontal blanking and default
-	 * value for vertical blanking.
+	/* 
+	 * Blanking - calculate values according to the MT9P031's datasheet
 	 */
-	hblank = 346 * ybin + 64 + (80 >> max_t(unsigned int, xbin, 3));
-	vblank = MT9P031_VERTICAL_BLANK_DEF;
+	hblank = 346 * (xbin + 1) + 64 + ((80 >> clamp_t(unsigned int, xbin, 0, 3)) / 2);
+	vblank = max(8, ((crop->height - 1) - crop->height)) + 1;
 
-	ret = mt9p031_write(client, MT9P031_HORIZONTAL_BLANK, hblank);
+	ret = mt9p031_write(client, MT9P031_HORIZONTAL_BLANK, hblank - 1);
 	if (ret < 0)
 		return ret;
-	ret = mt9p031_write(client, MT9P031_VERTICAL_BLANK, vblank);
+	ret = mt9p031_write(client, MT9P031_VERTICAL_BLANK, vblank - 1);
 	if (ret < 0)
 		return ret;
 
@@ -426,8 +441,8 @@ static int mt9p031_s_stream(struct v4l2_subdev *sd, int enable)
 		return ret;
 	if (mt9p031->use_pll)
 		return mt9p031_pll_enable(mt9p031);
-	else
-		return 0;
+
+	return 0;
 }
 
 static int mt9p031_s_crop(struct v4l2_subdev *sd, struct v4l2_crop *a)
@@ -436,10 +451,19 @@ static int mt9p031_s_crop(struct v4l2_subdev *sd, struct v4l2_crop *a)
 	struct mt9p031 *mt9p031 = to_mt9p031(client);
 	struct v4l2_rect rect = a->c;
 
-	if (mt9p031->fmts == mt9p031_colour_fmts) {
-		rect.width	= ALIGN(rect.width, 2);
-		rect.height	= ALIGN(rect.height, 2);
-	}
+	rect.left = clamp(ALIGN(a->c.left, 2), MT9P031_COLUMN_START_MIN,
+			MT9P031_COLUMN_START_MAX);
+	rect.top = clamp(ALIGN(a->c.top, 2), MT9P031_ROW_START_MIN,
+			MT9P031_COLUMN_START_MAX);
+	rect.width = clamp(ALIGN(a->c.width, 2),
+			MT9P031_WINDOW_WIDTH_MIN,
+			MT9P031_WINDOW_WIDTH_MAX);
+	rect.height = clamp(ALIGN(a->c.height, 2),
+			MT9P031_WINDOW_HEIGHT_MIN,
+			MT9P031_WINDOW_HEIGHT_MAX);
+
+	rect.width = min(rect.width, MT9P031_PIXEL_ARRAY_WIDTH - rect.left);
+	rect.height = min(rect.height, MT9P031_PIXEL_ARRAY_HEIGHT - rect.top);
 
 	soc_camera_limit_side(&rect.left, &rect.width,
 		     MT9P031_COLUMN_START_DEF, MT9P031_WINDOW_WIDTH_MIN, MT9P031_WINDOW_WIDTH_MAX);
