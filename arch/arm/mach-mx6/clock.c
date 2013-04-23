@@ -5467,7 +5467,13 @@ int __init mx6_clocks_init(unsigned long ckil, unsigned long osc,
 	clk_set_parent(&clko2_clk, &osc_clk);
 	clk_set_rate(&clko2_clk, 2400000);
 
+#if defined(CONFIG_MACH_MX6Q_PHYFLEX) || defined(CONFIG_MACH_MX6Q_PHYCARD)	
+	clk_set_parent(&clko_clk, &ahb_clk);
+	clk_set_rate(&clko_clk, 2400000);
+#else
 	clk_set_parent(&clko_clk, &pll4_audio_main_clk);
+#endif
+
 	/*
 	 * FIXME: asrc needs to use asrc_serial(spdif1) clock to do sample
 	 * rate convertion and this clock frequency can not be too high, set
