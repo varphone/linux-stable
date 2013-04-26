@@ -28,13 +28,8 @@
 static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 
 	/* User LEDs */
-#if defined (CONFIG_PHYFLEX_SOC_1362_0)
-	MX6Q_PAD_GPIO_7__GPIO_1_7,	    // Led Green
-	MX6Q_PAD_EIM_D20__GPIO_3_20,	// Led Red
-#else
 	MX6Q_PAD_ENET_TXD0__GPIO_1_30,	// Led Green
 	MX6Q_PAD_EIM_EB3__GPIO_2_31,	// Led Red
-#endif
 
 	MX6Q_PAD_EIM_CS1__GPIO_2_24,	// User Led -> HW Changed to Second TS Interrupt
 
@@ -59,11 +54,7 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 //MX6Q_PAD_ENET_RXD1__ENET_RDATA_1,
 //MX6Q_PAD_ENET_TXD1__ENET_TDATA_1,
 //MX6Q_PAD_RGMII_TXC__ENET_RGMII_TXC,
-#if defined (CONFIG_PHYFLEX_SOC_1362_0)
-	IOMUX_PAD(0x036C, 0x0058, 1, 0x0000, 0, 0x0001b008),
-#else
 	MX6Q_PAD_RGMII_TXC__ENET_RGMII_TXC,
-#endif
 	MX6Q_PAD_RGMII_TD0__ENET_RGMII_TD0,
 	MX6Q_PAD_RGMII_TD1__ENET_RGMII_TD1,
 	MX6Q_PAD_RGMII_TD2__ENET_RGMII_TD2,
@@ -109,11 +100,7 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_SD3_DAT7__USDHC3_DAT7_50MHZ,
 	MX6Q_PAD_SD3_RST__GPIO_7_8,
 	/* SD3_CD and SD3_WP */
-#if defined (CONFIG_PHYFLEX_SOC_1362_0)
-	MX6Q_PAD_CSI0_DAT4__GPIO_5_22,
-#else
 	MX6Q_PAD_ENET_RXD0__GPIO_1_27,
-#endif
 	MX6Q_PAD_CSI0_DAT5__GPIO_5_23,
 
 	/* SPI3 */
@@ -164,11 +151,7 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_DISP0_DAT23__IPU1_DISP0_DAT_23,
 
 	/* LVDS0 BACKLIGHT ENABLE */
-#if defined (CONFIG_PHYFLEX_SOC_1362_0)
-	MX6Q_PAD_CSI0_DAT6__GPIO_5_24,	/* ToDo: delete later */
-#else
 	MX6Q_PAD_GPIO_8__GPIO_1_8,
-#endif
 	MX6Q_PAD_EIM_OE__GPIO_2_25,
 
 	/* PWM1 */
@@ -200,13 +183,6 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_DISP0_DAT17__AUDMUX_AUD5_TXD,
 	MX6Q_PAD_DISP0_DAT18__AUDMUX_AUD5_TXFS,
 	MX6Q_PAD_DISP0_DAT19__AUDMUX_AUD5_RXD,
-#if defined (CONFIG_PHYFLEX_SOC_1362_0)
-	MX6Q_PAD_DISP0_DAT13__AUDMUX_AUD5_RXFS,	/* ToDo: remove later*/
-	MX6Q_PAD_DISP0_DAT14__AUDMUX_AUD5_RXC,	/* ToDo: remove later*/
-	MX6Q_PAD_DI0_PIN2__AUDMUX_AUD6_TXD,	/* ToDo: remove later*/
-	MX6Q_PAD_DI0_PIN3__AUDMUX_AUD6_TXFS,	/* ToDo: remove later*/
-	MX6Q_PAD_DI0_PIN15__AUDMUX_AUD6_TXC,	/* ToDo: remove later*/
-#endif
 
 	/* TS phyFLEX Int */
 	MX6Q_PAD_EIM_CS0__GPIO_2_23, // phyFlex ts 2 interrupt
@@ -216,12 +192,8 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_CSI0_PIXCLK__IPU1_CSI0_PIXCLK,
 	MX6Q_PAD_CSI0_VSYNC__IPU1_CSI0_VSYNC,
 	MX6Q_PAD_CSI0_DATA_EN__GPIO_5_20,
-#if defined (CONFIG_PHYFLEX_SOC_1362_0)
-	MX6Q_PAD_GPIO_5__GPIO_1_5,	// phyFlex ts 1 interrupt
-#else
 	PHYFLEX_PAD_GPIO_5__CCM_CLKO,	// conflict with interrupt ts 1 soc1362.0
 	MX6Q_PAD_DISP0_DAT14__GPIO_5_8,	// phyFlex ts 1 interrupt
-#endif
 	MX6Q_PAD_ENET_RX_ER__GPIO_1_24,
 	MX6Q_PAD_CSI0_DAT10__IPU1_CSI0_D_10,
 	MX6Q_PAD_CSI0_DAT11__IPU1_CSI0_D_11,
@@ -266,22 +238,13 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 #endif
 	
 	/* PCIE_PRSNT */
-#if defined (CONFIG_PHYFLEX_SOC_1362_0)
-	MX6Q_PAD_ENET_RXD0__GPIO_1_27,	/* ToDo: remove later */
-#else
 	MX6Q_PAD_SD1_DAT3__GPIO_1_21,
-#endif
-	/* PCIE_WAKE */
-#if defined (CONFIG_PHYFLEX_SOC_1362_0)
-	MX6Q_PAD_ENET_TXD0__GPIO_1_30,	/* ToDo: remove later */
-#else
-	MX6Q_PAD_GPIO_7__GPIO_1_7,
-#endif
 
-#if !defined (CONFIG_PHYFLEX_SOC_1362_0)
+	/* PCIE_WAKE */
+	MX6Q_PAD_GPIO_7__GPIO_1_7,
+
 	/* PMIC interrupt */
 	MX6Q_PAD_DI0_PIN15__GPIO_4_17,
-#endif
 
 	/* Default high speed pin settings for sd-cards */
 	MX6Q_PAD_SD3_CLK__USDHC3_CLK_200MHZ,
