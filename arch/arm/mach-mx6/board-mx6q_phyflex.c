@@ -94,11 +94,7 @@
 #include "board-mx6q_phytec-nand.h"
 #include "board-mx6q_phytec-pmic.h"
 
-#if defined (CONFIG_PHYFLEX_SOC_1362_0)
-#define MX6_PHYFLEX_SD3_CD		IMX_GPIO_NR(5, 22)
-#else
 #define MX6_PHYFLEX_SD3_CD		IMX_GPIO_NR(1, 27)
-#endif
 #define MX6_PHYFLEX_SD3_WP		IMX_GPIO_NR(5, 23)
 #define MX6_PHYFLEX_SD2_CD		IMX_GPIO_NR(1, 4)
 #define MX6_PHYFLEX_SD2_WP		IMX_GPIO_NR(1, 2)
@@ -108,11 +104,7 @@
 #define MX6_PHYFLEX_CAM0_OE		IMX_GPIO_NR(5, 20)
 #define MX6_PHYFLEX_CAM1_OE		IMX_GPIO_NR(3, 10)
 
-#if defined (CONFIG_PHYFLEX_SOC_1362_0)
-#define MX6_PHYFLEX_LDB0_BACKLIGHT      IMX_GPIO_NR(5, 24)	/* ToDo: remove later */
-#else
 #define MX6_PHYFLEX_LDB0_BACKLIGHT      IMX_GPIO_NR(1, 8)
-#endif
 #define MX6_PHYFLEX_LDB1_BACKLIGHT	IMX_GPIO_NR(2, 25) // MX6Q_PAD_EIM_OE__GPIO_2_25
 
 #define MX6_PHYFLEX_ECSPI3_CS0		IMX_GPIO_NR(4, 24)
@@ -121,14 +113,8 @@
 #define MX6_PHYFLEX_ECSPI3_CS3		IMX_GPIO_NR(4, 27)
 #define MX6_PHYFLEX_ECSPI3_WP		IMX_GPIO_NR(3, 29)
 
-#if defined (CONFIG_PHYFLEX_SOC_1362_0)
-#define MX6_PHYFLEX_LED_GREEN IMX_GPIO_NR(1, 7)
-#define MX6_PHYFLEX_LED_RED IMX_GPIO_NR(3, 20)
-#else
 #define MX6_PHYFLEX_LED_GREEN		IMX_GPIO_NR(1, 30)
 #define MX6_PHYFLEX_LED_RED		IMX_GPIO_NR(2, 31)
-#endif
-
 
 #define MX6_PHYFLEX_USB_OTG_PWR		IMX_GPIO_NR(4, 15)
 //#define MX6_PHYFLEX_DISP0_PWR		IMX_GPIO_NR(3, 24)
@@ -139,11 +125,7 @@
 
 #define MX6_PHYCARD_CAP_TCH_INT0	IMX_GPIO_NR(4, 29)
 
-#if defined (CONFIG_PHYFLEX_SOC_1362_0)
-#define MX6_PHYFLEX_CAP_TCH_INT0	IMX_GPIO_NR(1, 5)	/* ToDo: remove later */
-#else
 #define MX6_PHYFLEX_CAP_TCH_INT0	IMX_GPIO_NR(5, 8)
-#endif
 #define MX6_PHYFLEX_CAP_TCH_INT1	IMX_GPIO_NR(2, 23)
  
 #define MX6_PHYFLEX_DISP0_DET_INT	IMX_GPIO_NR(3, 31)
@@ -196,19 +178,6 @@ static int mx6_phyflex_fec_phy_init(struct phy_device *phydev)
 	/* min rx data delay */
 
 	printk("FEC ID: 0x%X, 0x%X\n", phy_read(phydev, 0x02), phy_read(phydev, 0x03));
-
-#if defined (CONFIG_PHYFLEX_SOC_1362_0)
-	phy_write(phydev, 0x09, 0x1f00);
-//	phy_write(phydev, 0x0c, 0x0000);
-//	phy_write(phydev, 0x0d, 0x7777);
-
-	phy_write(phydev, 0x0b, 0x8105);
-	phy_write(phydev, 0x0c, 0x0000);
-
-	/* max rx/tx clock delay, min rx/tx control delay */
-	phy_write(phydev, 0x0b, 0x8104);
-	phy_write(phydev, 0x0c, 0xf0f0);
-#endif
 
 	phy_write(phydev, 0x0b, 0x104);
 
@@ -938,14 +907,8 @@ static int __init mx6_phyflex_init_audio(void)
 }
 
 static struct mxc_dvfs_platform_data phyflex_dvfscore_data = {
-#if defined (CONFIG_PHYFLEX_SOC_1362_0)
-	.reg_id                 = "cpu_vddgp",  // ANATOP regulator for vddcpu
-	.soc_id                 = "cpu_vddsoc", // ANATOP regulator for vddsoc
-	.pu_id                  = "cpu_vddvpu", // ANATOP regulator for vddvpu
-#else
 	.reg_id                 = "VDDCORE",    // DA9063 regulator for vddcpu
 	.soc_id                 = "VDDSOC",     // DA9063 regulator for vddsoc
-#endif
 	.clk1_id                = "cpu_clk",
 	.clk2_id                = "gpc_dvfs_clk",
 	.gpc_cntr_offset        = MXC_GPC_CNTR_OFFSET,
@@ -987,12 +950,7 @@ static const struct imx_pcie_platform_data mx6_phyflex_pcie_data  __initconst = 
 //	.pcie_rst       = IMX_GPIO_NR(1, 27),
 	.pcie_pwr_en	= -EINVAL,
 	.pcie_rst	= -EINVAL,
-/* ToDo: when new SoC ready to use, remove old data */
-#if defined (CONFIG_PHYFLEX_SOC_1362_0)
-	.pcie_wake_up   = IMX_GPIO_NR(1, 30),
-#else
 	.pcie_wake_up   = IMX_GPIO_NR(1, 7),
-#endif
         .pcie_dis       = -EINVAL,
 };
 
@@ -1221,10 +1179,8 @@ static void __init mx6_phyflex_init(void)
 	soc_reg_id = phyflex_dvfscore_data.soc_id;
 	pu_reg_id = phyflex_dvfscore_data.pu_id;
 
-#if !defined (CONFIG_PHYFLEX_SOC_1362_0)
 	/* Init PMIC */
 	mx6_phyflex_init_da9063();
-#endif
 
 	/* UART initialization*/
 	mx6_phyflex_init_uart();
