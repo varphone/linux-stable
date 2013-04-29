@@ -100,16 +100,12 @@
 /* GPIO PIN, sort by PORT/BIT */
 #define MX6_PHYFLEX_ECSPI3_CS0		IMX_GPIO_NR(4, 24)
 #define MX6_PHYFLEX_ECSPI3_CS1		IMX_GPIO_NR(4, 25)
-#define MX6_PHYFLEX_ECSPI3_CS2		IMX_GPIO_NR(4, 26)
-#define MX6_PHYFLEX_ECSPI3_CS3		IMX_GPIO_NR(4, 27)
 
 #define MX6_PHYFLEX_USB_OTG_PWR		IMX_GPIO_NR(4, 15)
 
 #define MX6_PHYFLEX_USB_HOST1_OC	IMX_GPIO_NR(1, 3)
 
 #define MX6_PHYCARD_CAP_TCH_INT0	IMX_GPIO_NR(4, 29)
-#define MX6_PHYFLEX_CAP_TCH_INT0	IMX_GPIO_NR(1, 5)
-#define MX6_PHYFLEX_CAP_TCH_INT1	IMX_GPIO_NR(2, 24)
 
 #define MX6_PHYFLEX_CSI0_RST		IMX_GPIO_NR(4, 5)
 #define MX6_PHYFLEX_CSI0_RST_TVIN	IMX_GPIO_NR(5, 25)
@@ -119,13 +115,6 @@
 #define MX6_PHYCARD_PEB1_INT		IMX_GPIO_NR(1, 6)
 #define MX6_PHYCARD_SSI_RESET		IMX_GPIO_NR(7, 12)
 #define	MX6_PHYCARD_AC97_INT		IMX_GPIO_NR(5, 14)
-
-#define ENABLE_PHY
-#define DDR_2GB    // for board versions with 2GB instead of 1GB
-
-/* Kernel cmdline param to select TS */
-//static bool second_ts = false;
-//module_param(second_ts, bool, 0644);
 
 void __init early_console_setup(unsigned long base, struct clk *clk);
 static struct clk *sata_clk;
@@ -147,7 +136,6 @@ static inline void mx6_phyflex_init_uart(void)
 	imx6q_add_imx_uart(3, NULL);
 }
 
-#ifdef ENABLE_PHY
 static int mx6_phycard_fec_phy_init(struct phy_device *phydev)
 {
 	printk("FEC Manufacturer ID: 0x%X, chip ID: 0x%X\n", phy_read(phydev, 0x02), phy_read(phydev, 0x03));
@@ -164,7 +152,6 @@ static struct fec_platform_data fec_data __initdata = {
 	.power_hibernate	= mx6_phycard_fec_power_hibernate,
 	.phy			= PHY_INTERFACE_MODE_MII,
 };
-#endif /* ENABLE_PHY */
 
 static int mx6_phyflex_spi_cs[] = {
 	MX6_PHYFLEX_ECSPI3_CS0,
@@ -274,13 +261,6 @@ static struct i2c_board_info mxc_i2c1_board_info_hda[] __initdata = {
 	},
 };
 
-static struct i2c_board_info __initdata hdmi_i2c_data[] = {
-// ToDo: Uncoment next lines to make HDMI work
-	{
-		I2C_BOARD_INFO("mxc_hdmi_i2c", 0x50),
-	},
-};
-
 static struct i2c_gpio_platform_data i2c_gpio_data = {
 	.sda_pin		= IMX_GPIO_NR(4, 13),
 	.sda_is_open_drain      = 0,
@@ -331,7 +311,7 @@ static void __init mx6_phyflex_init_usb(void)
 	// ToDo: remove next line when usb pwr are fixed. Turn on VBUS power for USB.
 	imx6_phyflex_usbotg_vbus(true);
 
-	mx6_usb_dr_init();
+	//mx6_usb_dr_init();
 
 	// gpio_direction_output(IMX_GPIO_NR(1, 0), 0); // Config PWR USB pin
 	// gpio_set_value(IMX_GPIO_NR(1, 0), 0);	// Set USB power On
@@ -345,90 +325,6 @@ static struct viv_gpu_platform_data imx6_gpu_pdata __initdata = {
 	.reserved_mem_size = SZ_128M,
 };
 
-
-/* HW Initialization, if return 0, initialization is successful. */
-static int mx6_phyflex_sata_init(struct device *dev, void __iomem *addr)
-{
-	u32 tmpdata;
-	int ret = 0;
-	struct clk *clk;
-
-	/* Enable SATA PWR CTRL_0 of MAX7310 */
-	gpio_request(MX6_PHYFLEX_MAX7310_1_BASE_ADDR, "SATA_PWR_EN");
-	gpio_direction_output(MX6_PHYFLEX_MAX7310_1_BASE_ADDR, 1);
-
-	sata_clk = clk_get(dev, "imx_sata_clk");
-	if (IS_ERR(sata_clk)) {
-		dev_err(dev, "no sata clock.\n");
-		return PTR_ERR(sata_clk);
-	}
-	ret = clk_enable(sata_clk);
-	if (ret) {
-		dev_err(dev, "can't enable sata clock.\n");
-		goto put_sata_clk;
-	}
-
-	/* Set PHY Paremeters, two steps to configure the GPR13,
-	 * one write for rest of parameters, mask of first write is 0x07FFFFFD,
-	 * and the other one write for setting the mpll_clk_off_b
-	 *.rx_eq_val_0(iomuxc_gpr13[26:24]),
-	 *.los_lvl(iomuxc_gpr13[23:19]),
-	 *.rx_dpll_mode_0(iomuxc_gpr13[18:16]),
-	 *.sata_speed(iomuxc_gpr13[15]),
-	 *.mpll_ss_en(iomuxc_gpr13[14]),
-	 *.tx_atten_0(iomuxc_gpr13[13:11]),
-	 *.tx_boost_0(iomuxc_gpr13[10:7]),
-	 *.tx_lvl(iomuxc_gpr13[6:2]),
-	 *.mpll_ck_off(iomuxc_gpr13[1]),
-	 *.tx_edgerate_0(iomuxc_gpr13[0]),
-	 */
-	tmpdata = readl(IOMUXC_GPR13);
-	writel(((tmpdata & ~0x07FFFFFD) | 0x0593A044), IOMUXC_GPR13);
-
-	/* enable SATA_PHY PLL */
-	tmpdata = readl(IOMUXC_GPR13);
-	writel(((tmpdata & ~0x2) | 0x2), IOMUXC_GPR13);
-
-	/* Get the AHB clock rate, and configure the TIMER1MS reg later */
-	clk = clk_get(NULL, "ahb");
-	if (IS_ERR(clk)) {
-		dev_err(dev, "no ahb clock.\n");
-		ret = PTR_ERR(clk);
-		goto release_sata_clk;
-	}
-	tmpdata = clk_get_rate(clk) / 1000;
-	clk_put(clk);
-
-	ret = sata_init(addr, tmpdata);
-	if (ret == 0)
-		return ret;
-
-release_sata_clk:
-	clk_disable(sata_clk);
-put_sata_clk:
-	clk_put(sata_clk);
-	/* Disable SATA PWR CTRL_0 of MAX7310 */
-	gpio_request(MX6_PHYFLEX_MAX7310_1_BASE_ADDR, "SATA_PWR_EN");
-	gpio_direction_output(MX6_PHYFLEX_MAX7310_1_BASE_ADDR, 0);
-
-	return ret;
-}
-
-static void mx6_phyflex_sata_exit(struct device *dev)
-{
-	clk_disable(sata_clk);
-	clk_put(sata_clk);
-
-	/* Disable SATA PWR CTRL_0 of MAX7310 */
-	gpio_request(MX6_PHYFLEX_MAX7310_1_BASE_ADDR, "SATA_PWR_EN");
-	gpio_direction_output(MX6_PHYFLEX_MAX7310_1_BASE_ADDR, 0);
-
-}
-
-static struct ahci_platform_data mx6_phyflex_sata_data = {
-	.init	= mx6_phyflex_sata_init,
-	.exit	= mx6_phyflex_sata_exit,
-};
 
 static struct imx_asrc_platform_data imx_asrc_data = {
 	.channel_bits	= 4,
@@ -450,60 +346,14 @@ static struct ipuv3_fb_platform_data phyflex_fb_data[] = {
         .default_bpp		= 16,
         .int_clk		= false,
     },
-#ifdef ENABLE_HDMI
-    {
-        .disp_dev = "hdmi",
-        .interface_pix_fmt = IPU_PIX_FMT_RGB24,
-        .mode_str = "1280x1024M@60",
-        .default_bpp = 16,
-        .int_clk = false,
-    },
-#endif
 };
-
-#ifdef ENABLE_HDMI
-static void hdmi_init(int ipu_id, int disp_id)
-{
-	int hdmi_mux_setting;
-	int max_ipu_id = cpu_is_mx6q() ? 1 : 0;
-
-	if ((ipu_id > max_ipu_id) || (ipu_id < 0)) {
-		pr_err("Invalid IPU select for HDMI: %d. Set to 0\n", ipu_id);
-		ipu_id = 0;
-	}
-
-	if ((disp_id > 1) || (disp_id < 0)) {
-		pr_err("Invalid DI select for HDMI: %d. Set to 0\n", disp_id);
-		disp_id = 0;
-	}
-
-	/* Configure the connection between IPU1/2 and HDMI */
-	hdmi_mux_setting = 2 * ipu_id + disp_id;
-
-	/* GPR3, bits 2-3 = HDMI_MUX_CTL */
-	mxc_iomux_set_gpr_register(3, 2, 2, hdmi_mux_setting);
-}
-
-static struct fsl_mxc_hdmi_platform_data hdmi_data = {
-	.init		= hdmi_init,
-};
-
-static struct fsl_mxc_hdmi_core_platform_data hdmi_core_data = {
-	.ipu_id		= 1,
-	.disp_id	= 1,
-};
-#endif
 
 static struct fsl_mxc_ldb_platform_data ldb_data = {
 	.ipu_id		= 0,
 	.disp_id	= 0,
 	.ext_ref	= 1,
 	//.mode		= LDB_SIN0,
-#ifdef ENABLE_HDMI
-	.mode		= LDB_DUL_DI0,
-#else
 	.mode		= LDB_SEP0,
-#endif
 	.sec_ipu_id	= 1,
 	.sec_disp_id	= 1,
 };
@@ -838,70 +688,7 @@ static struct mxc_dvfs_platform_data phyflex_dvfscore_data = {
 static void __init mx6_phyflex_fixup(struct machine_desc *desc, struct tag *tags,
 				   char **cmdline, struct meminfo *mi)
 {
-	// Specify manually addressing for first memory bank
-	mi->nr_banks=1;
-	mi->bank[0].start = 0x10000000;
-#ifdef DDR_2GB
-	mi->bank[0].size = SZ_2G;
-#else
-	mi->bank[0].size = SZ_1G;
-#endif
-	mi->bank[0].highmem = 0;
 }
-
-#if 0
-static int __init early_enable_sgtl5000(char *p)
-{
-	sgtl5000_en = 1;
-	return 0;
-}
-
-early_param("sgtl5000", early_enable_sgtl5000);
-
-static int __init early_enable_spdif(char *p)
-{
-	spdif_en = 1;
-	return 0;
-}
-
-early_param("spdif", early_enable_spdif);
-
-static int spdif_clk_set_rate(struct clk *clk, unsigned long rate)
-{
-	unsigned long rate_actual;
-	rate_actual = clk_round_rate(clk, rate);
-	clk_set_rate(clk, rate_actual);
-	return 0;
-}
-
-static struct mxc_spdif_platform_data mxc_spdif_data = {
-	.spdif_tx		= 1,		/* enable tx */
-	.spdif_rx		= 1,		/* enable rx */
-	/*
-	 * spdif0_clk will be 454.7MHz divided by ccm dividers.
-	 *
-	 * 44.1KHz: 454.7MHz / 7 (ccm) / 23 (spdif) = 44,128 Hz ~ 0.06% error
-	 * 48KHz:   454.7MHz / 4 (ccm) / 37 (spdif) = 48,004 Hz ~ 0.01% error
-	 * 32KHz:   454.7MHz / 6 (ccm) / 37 (spdif) = 32,003 Hz ~ 0.01% error
-	 */
-	.spdif_clk_44100	= 1,    /* tx clk from spdif0_clk_root */
-	.spdif_clk_48000	= 1,    /* tx clk from spdif0_clk_root */
-	.spdif_div_44100	= 23,
-	.spdif_div_48000	= 37,
-	.spdif_div_32000	= 37,
-	.spdif_rx_clk		= 0,    /* rx clk from spdif stream */
-	.spdif_clk_set_rate	= spdif_clk_set_rate,
-	.spdif_clk		= NULL, /* spdif bus clk */
-};
-#endif
-
-static const struct imx_pcie_platform_data mx6_phyflex_pcie_data  __initconst = {
-//	.pcie_pwr_en    = MX6_ARM2_PCIE_PWR_EN,
-//        .pcie_rst       = MX6_ARM2_PCIE_RESET,
-        .pcie_wake_up   = -EINVAL,
-        .pcie_dis       = -EINVAL,
-};
-
 
 static struct mcp251x_platform_data mcp251x_info = {
 	.oscillator_frequency = 24*1000*1000,
@@ -1031,9 +818,7 @@ static void __init mx6_phyflex_init(void)
 	/* SPI */
 	imx6q_add_ecspi(2, &mx6_phyflex_spi_data);
 
-#ifdef ENABLE_PHY
 	imx6_init_fec(fec_data);
-#endif /* ENABLE_PHY */
 
 	imx6q_add_anatop_thermal_imx(1, &mx6_phyflex_anatop_thermal_data);
 
@@ -1056,19 +841,6 @@ static void __init mx6_phyflex_init(void)
 
 	platform_device_register(&phyflex_vmmc_reg_devices);
 	mx6_cpu_regulator_init();
-
-#if 0
-	/* DISP0 Reset - Assert for i2c disabled mode */
-	gpio_request(MX6_PHYFLEX_DISP0_RESET, "disp0-reset");
-	gpio_direction_output(MX6_PHYFLEX_DISP0_RESET, 0);
-
-	/* DISP0 I2C enable */
-	gpio_request(MX6_PHYFLEX_DISP0_I2C_EN, "disp0-i2c");
-	gpio_direction_output(MX6_PHYFLEX_DISP0_I2C_EN, 0);
-
-	gpio_request(MX6_PHYFLEX_DISP0_PWR, "disp0-pwr");
-	gpio_direction_output(MX6_PHYFLEX_DISP0_PWR, 1);
-#endif
 
 	imx6q_add_otp();
 	imx6q_add_viim();
