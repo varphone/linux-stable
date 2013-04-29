@@ -283,6 +283,74 @@ static struct ipuv3_fb_platform_data phycard_fb_data[] = {
     },
 };
 
+static struct fb_videomode ldb_modedb[] = {
+        {
+		/* 5.0 inch display */
+		.name         = "Primeview-PD050VL1",
+		.refresh      = 60,
+		.xres         = 640,
+		.yres         = 480,
+		.pixclock     = 40000, /* in ps (25 MHz) */
+		.hsync_len    = 32,
+		.left_margin  = 112,
+		.right_margin = 36,
+		.vsync_len    = 2,
+		.upper_margin = 33,
+		.lower_margin = 33,
+		.sync         = 0,
+		.vmode        = FB_VMODE_NONINTERLACED,
+		.flag         = 0,
+	}, {
+		/* 10.4 inch display */
+		.name         = "Primeview-PD104SLF",
+		.refresh      = 60,
+		.xres         = 800,
+		.yres         = 600,
+		.pixclock     = 25000, /* in ps (40,0 MHz) */
+		.hsync_len    = 128,
+		.left_margin  = 42,
+		.right_margin = 42,
+		.vsync_len    = 4,
+		.upper_margin = 23,
+		.lower_margin = 1,
+		.sync         = 0,
+		.vmode        = FB_VMODE_NONINTERLACED,
+		.flag         = 0,
+	}, {
+		/* 7.0 inch display */
+		.name         = "Primeview-PM070WL4",
+		.refresh      = 60,
+		.xres         = 800,
+		.yres         = 480,
+		.pixclock     = 50505, /* in ps (19,8 MHz) */
+		.hsync_len    = 128,
+		.left_margin  = 42,
+		.right_margin = 42,
+		.vsync_len    = 2,
+		.upper_margin = 33,
+		.lower_margin = 33,
+		.sync         = 0,
+		.vmode        = FB_VMODE_NONINTERLACED,
+		.flag         = 0,
+	}, {
+		/* 7.0 inch display */
+		.name         = "ETM0700G0DH6",
+		.refresh      = 60,
+		.xres         = 800,
+		.yres         = 480,
+		.pixclock     = 30066, /* in ps (33,26 MHz) */
+		.hsync_len    = 128,
+		.left_margin  = 40,
+		.right_margin = 216,
+		.vsync_len    = 2,
+		.upper_margin = 10,
+		.lower_margin = 35,
+		.sync         = 0,
+		.vmode        = FB_VMODE_NONINTERLACED,
+		.flag         = 0,
+	}
+};
+
 static struct fsl_mxc_ldb_platform_data ldb_data = {
 	.ipu_id		= 0,
 	.disp_id	= 0,
@@ -291,6 +359,8 @@ static struct fsl_mxc_ldb_platform_data ldb_data = {
 	.mode		= LDB_SEP0,
 	.sec_ipu_id	= 1,
 	.sec_disp_id	= 1,
+	.modes		= ldb_modedb,
+	.num_modes	= ARRAY_SIZE(ldb_modedb),
 };
 
 static struct imx_ipuv3_platform_data ipu_data[] = {
