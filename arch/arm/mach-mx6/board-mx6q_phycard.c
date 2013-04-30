@@ -26,6 +26,7 @@
 #include <linux/regulator/machine.h>
 #include <linux/regulator/fixed.h>
 #include <linux/mfd/stmpe.h>
+#include <linux/input/edt-ft5x06.h>
 #include <linux/spi/max7301.h> 
 #include <sound/tlv320aic3x.h>
 #include <media/tw9910.h>
@@ -60,7 +61,8 @@
 
 #define MX6_PHYCARD_USB_HOST1_OC	IMX_GPIO_NR(1, 3)
 
-#define MX6_PHYCARD_CAP_TCH_INT0	IMX_GPIO_NR(4, 29)
+#define MX6_PHYCARD_RES_TOUCH_INT0	IMX_GPIO_NR(4, 29)
+#define MX6_PHYCARD_CAP_TOUCH_INT0	IMX_GPIO_NR(1, 6)
 
 #define MX6_PHYCARD_CSI0_RST		IMX_GPIO_NR(4, 5)
 #define MX6_PHYCARD_CSI0_RST_TVIN	IMX_GPIO_NR(5, 25)
@@ -199,6 +201,10 @@ static struct pca953x_platform_data pca9538_platdata = {
 	.setup		= pca9538_setup,
 };
 
+static struct edt_ft5x06_platform_data mx6_phycard_ft5x06_data = {
+	.reset_pin      = -1,   /* static high */
+};
+
 static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 	{
 		I2C_BOARD_INFO("max7300", 0x40),
@@ -213,7 +219,11 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 	}, {
 		I2C_BOARD_INFO("pca9538", 0x70),
 		.platform_data = &pca9538_platdata,
-	},
+	}, {   
+		I2C_BOARD_INFO("edt-ft5x06", 0x38),
+		.irq = gpio_to_irq(MX6_PHYCARD_CAP_TOUCH_INT0),
+		.platform_data = (void *)&mx6_phycard_ft5x06_data,
+        },
 };
 
 static struct i2c_board_info mxc_i2c1_board_info_hda[] __initdata = {
@@ -222,9 +232,9 @@ static struct i2c_board_info mxc_i2c1_board_info_hda[] __initdata = {
 		.platform_data = &tlv320_phycard_pdata,
 	}, {
 		I2C_BOARD_INFO("stmpe811", 0x44),
-		.irq = gpio_to_irq(MX6_PHYCARD_CAP_TCH_INT0),
+		.irq = gpio_to_irq(MX6_PHYCARD_RES_TOUCH_INT0),
 		.platform_data = (void *)&stmpe811_data0,
-	},
+	}, 
 };
 
 static void imx6_phycard_usbotg_vbus(bool on)
