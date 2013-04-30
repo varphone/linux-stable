@@ -345,7 +345,11 @@ static int mt9p031_set_params(struct mt9p031 *mt9p031)
 	unsigned int yskip;
 	unsigned int xbin;
 	unsigned int ybin;
-	int ret, i, k;
+	unsigned int width;
+	unsigned int height;
+	int shutter_width_upper;
+	int shutter_width_lower;
+	int ret;
 
 	/* Windows position and size.
 	 *
@@ -366,25 +370,20 @@ static int mt9p031_set_params(struct mt9p031 *mt9p031)
 	if (ret < 0)
 		return ret;
 
-
 	/* Row and column binning and skipping. Use the maximum binning value
 	 * compatible with the skipping settings.
 	 */
-	i = (crop->width + (MT9P031_WINDOW_WIDTH_DEF / 2)) / MT9P031_WINDOW_WIDTH_DEF;
-	k = ((crop->width + (MT9P031_WINDOW_WIDTH_DEF / 2)) * 10 / MT9P031_WINDOW_WIDTH_DEF);
-	if (k >= 10)
-		k -= 10;
-	if ((k > 5) && (k <= 9))
-		i++;
-	xskip = i;
+	width = clamp_t(unsigned int, ALIGN(mt9p031->rect.width, 2),
+			max(crop->width / 7, MT9P031_WINDOW_WIDTH_MIN),
+			crop->width);
+	height = clamp_t(unsigned int, ALIGN(mt9p031->rect.height, 2),
+			max(crop->height / 8, MT9P031_WINDOW_HEIGHT_MIN),
+			 crop->height);
 
-	i = (crop->height + (MT9P031_WINDOW_HEIGHT_DEF / 2)) / MT9P031_WINDOW_HEIGHT_DEF;
-	k = ((crop->height + (MT9P031_WINDOW_HEIGHT_DEF / 2)) * 10 / MT9P031_WINDOW_HEIGHT_DEF);
-	if (k >= 10)
-		k -= 10;
-	if ((k > 5) && (k <= 9))
-		i++;
-	yskip = i;
+	mt9p031_write(client, MT9P031_SHUTTER_WIDTH_LOWER, height - 1);
+
+	xskip = DIV_ROUND_CLOSEST(crop->width, width);
+	yskip = DIV_ROUND_CLOSEST(crop->height, height);
 
 	xbin = 1 << (ffs(xskip) - 1);
 	ybin = 1 << (ffs(yskip) - 1);
@@ -401,8 +400,14 @@ static int mt9p031_set_params(struct mt9p031 *mt9p031)
 	/* 
 	 * Blanking - calculate values according to the MT9P031's datasheet
 	 */
-	hblank = 346 * (xbin + 1) + 64 + ((80 >> clamp_t(unsigned int, xbin, 0, 3)) / 2);
-	vblank = max(8, ((crop->height - 1) - crop->height)) + 1;
+	hblank = 346 * (ybin + 1) + 64 +
+		((80 >> clamp_t(unsigned int, xbin, 0, 3)) / 2);
+
+	shutter_width_upper = mt9p031_read(client, MT9P031_SHUTTER_WIDTH_UPPER);
+	shutter_width_lower = mt9p031_read(client, MT9P031_SHUTTER_WIDTH_LOWER);
+
+	vblank = max(8, (max(1, (2 * 16 * shutter_width_upper) +
+			shutter_width_lower) - crop->height)) + 1;
 
 	ret = mt9p031_write(client, MT9P031_HORIZONTAL_BLANK, hblank - 1);
 	if (ret < 0)
