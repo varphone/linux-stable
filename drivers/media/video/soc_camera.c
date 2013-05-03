@@ -202,11 +202,10 @@ static int soc_camera_enum_input(struct file *file, void *priv,
 	struct soc_camera_device *icd = file->private_data;
 	int ret = 0;
 
-	if (inp->index != 0)
-		return -EINVAL;
-
 	if (icd->ops->enum_input)
 		ret = icd->ops->enum_input(icd, inp);
+	else if (inp->index != 0)
+		return -EINVAL;
 	else {
 		/* default is camera */
 		inp->type = V4L2_INPUT_TYPE_CAMERA;
@@ -219,17 +218,28 @@ static int soc_camera_enum_input(struct file *file, void *priv,
 
 static int soc_camera_g_input(struct file *file, void *priv, unsigned int *i)
 {
-	*i = 0;
+	struct soc_camera_device *icd = file->private_data;
+	int ret = 0;
 
-	return 0;
+	if (icd->ops->g_input)
+		ret = icd->ops->g_input(icd, i);
+	else
+		*i = 0;
+
+	return ret;
 }
 
 static int soc_camera_s_input(struct file *file, void *priv, unsigned int i)
 {
-	if (i > 0)
+	struct soc_camera_device *icd = file->private_data;
+	int ret = 0;
+
+	if (icd->ops->s_input)
+		ret = icd->ops->s_input(icd, i);
+	else if (i > 0)
 		return -EINVAL;
 
-	return 0;
+	return ret;
 }
 
 static int soc_camera_s_std(struct file *file, void *priv, v4l2_std_id *a)

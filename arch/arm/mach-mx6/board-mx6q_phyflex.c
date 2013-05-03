@@ -57,6 +57,7 @@
 #include <linux/spi/max7301.h> 
 #include <linux/can/platform/mcp251x.h> 
 #include <sound/tlv320aic3x.h>
+#include <media/tw9910.h>
 
 #include <linux/i2c-gpio.h>
 #include <linux/w1-gpio.h>
@@ -1037,17 +1038,27 @@ static struct i2c_board_info phyflex_cameras[] = {
 	[4] = {
 		I2C_BOARD_INFO("mt9v022", 0x48), /* CTRL1 = 1 */
 	},
+	[5] = {
+		I2C_BOARD_INFO("tw9910", 0x45), /* CTRL1 = 1 */
+	},
 };
 
 #define SOC_CAM_LINK(bus, bi, i2c_adapter) \
 	.bus_id = bus, .board_info = bi, .i2c_adapter_id = i2c_adapter
 
+struct tw9910_video_info tw9910_info = {
+	.buswidth = SOCAM_DATAWIDTH_8,
+	.mpout = TW9910_MPO_RTCO,
+};
 
 static struct soc_camera_link phyflex_iclinks[] = {
 	{
 		SOC_CAM_LINK(0, &phyflex_cameras[0], 2)
 	}, {
 		SOC_CAM_LINK(0, &phyflex_cameras[2], 2)
+	}, {
+		SOC_CAM_LINK(1, &phyflex_cameras[5], 2),
+		.priv = &tw9910_info,
 	}, {
 		SOC_CAM_LINK(1, &phyflex_cameras[1], 2)
 	}, {
@@ -1071,6 +1082,8 @@ static struct platform_device mxc_ipu_cameras[] = {
 		SOC_CAM_PDRV(3, phyflex_iclinks),
 	}, {
 		SOC_CAM_PDRV(4, phyflex_iclinks),
+	}, {
+		SOC_CAM_PDRV(5, phyflex_iclinks),
 	},
 };
 
