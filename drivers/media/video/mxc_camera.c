@@ -660,6 +660,8 @@ static int mxc_camera_try_fmt(struct soc_camera_device *icd,
 		break;
 	case V4L2_FIELD_NONE:
 		break;
+	case V4L2_FIELD_INTERLACED_BT:
+		break;
 	default:
 		dev_err(icd->dev.parent, "Field type %d unsupported.\n",
 			mf.field);
