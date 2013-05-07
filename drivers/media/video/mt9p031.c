@@ -83,8 +83,6 @@
 #define MT9P031_TEST_PATTERN_RED			0xa2
 #define MT9P031_TEST_PATTERN_BLUE			0xa3
 
-#define MT9P031_TARGET_FREQ_DEF	96000000
-
 static bool		g_is_mono;
 module_param_named(mono, g_is_mono, bool, 0444);
 
@@ -211,8 +209,8 @@ static void mt9p031_video_remove(struct soc_camera_device *icd)
 /*TODO: add new dividers */
 static const struct mt9p031_pll_divs mt9p031_divs[] = {
 	/* ext_freq	target_freq	m	n	p1 */
-//	{26400000,	MT9P031_TARGET_FREQ_DEF,	29,	2,	8} //This is for 48MHz PCLK
-	{26400000,	MT9P031_TARGET_FREQ_DEF,	58,	2,	8}
+	{26400000,	48000000,	29,	2,	8},
+	{26400000,	96000000,	58,	2,	8}
 };
 
 static int mt9p031_pll_get_divs(struct mt9p031 *mt9p031)
@@ -223,17 +221,22 @@ static int mt9p031_pll_get_divs(struct mt9p031 *mt9p031)
 	struct mxc_camera_dev *mxc_cam = ici->priv;
 	int i;
 
+	if ((mxc_cam->pdata->mclk_default_rate ==
+		mxc_cam->pdata->mclk_target_rate) ||
+			(!mxc_cam->pdata->use_pll)) {
+		mt9p031->use_pll = false;
+		return 0;
+	}
+
 	for (i = 0; i < ARRAY_SIZE(mt9p031_divs); i++) {
-		if (mt9p031_divs[i].ext_freq == mxc_cam->pdata->mclk_default_rate) {
+		if (mt9p031_divs[i].ext_freq ==
+				mxc_cam->pdata->mclk_default_rate &&
+				mt9p031_divs[i].target_freq ==
+				mxc_cam->pdata->mclk_target_rate) {
 			mt9p031->pll = &mt9p031_divs[i];
 			mt9p031->use_pll = true;
 			return 0;
 		}
-	}
-
-	if (mxc_cam->pdata->mclk_default_rate == MT9P031_TARGET_FREQ_DEF) {
-		mt9p031->use_pll = false;
-		return 0;
 	}
 
 	dev_err(&client->dev, "Couldn't find PLL dividers for ext_freq = %ld\n", mxc_cam->pdata->mclk_default_rate);
@@ -347,28 +350,13 @@ static int mt9p031_set_params(struct mt9p031 *mt9p031)
 	unsigned int ybin;
 	unsigned int width;
 	unsigned int height;
+	unsigned int crop_top = crop->top;
+	unsigned int crop_left = crop->left;
+	unsigned int crop_width = crop->width;
+	unsigned int crop_height = crop->height;
 	int shutter_width_upper;
 	int shutter_width_lower;
 	int ret;
-
-	/* Windows position and size.
-	 *
-	 * TODO: Make sure the start coordinates and window size match the
-	 * skipping, binning and mirroring (see description of registers 2 and 4
-	 * in table 13, and Binning section on page 41).
-	 */
-	ret = mt9p031_write(client, MT9P031_COLUMN_START, crop->left);
-	if (ret < 0)
-		return ret;
-	ret = mt9p031_write(client, MT9P031_ROW_START, crop->top);
-	if (ret < 0)
-		return ret;
-	ret = mt9p031_write(client, MT9P031_WINDOW_WIDTH, crop->width - 1);
-	if (ret < 0)
-		return ret;
-	ret = mt9p031_write(client, MT9P031_WINDOW_HEIGHT, crop->height - 1);
-	if (ret < 0)
-		return ret;
 
 	/* Row and column binning and skipping. Use the maximum binning value
 	 * compatible with the skipping settings.
@@ -382,9 +370,67 @@ static int mt9p031_set_params(struct mt9p031 *mt9p031)
 
 	mt9p031_write(client, MT9P031_SHUTTER_WIDTH_LOWER, height - 1);
 
-	xskip = DIV_ROUND_CLOSEST(crop->width, width);
-	yskip = DIV_ROUND_CLOSEST(crop->height, height);
+	switch (width) {
+	case (2048):
+		crop_top = crop->top + ((2592 - 2048) / 2);
+		crop_left = crop->left + ((1944 - 1536) / 2);
+		break;
+	case (1920):
+		crop_top = crop->top + ((2592 - 1920) / 2);
+		crop_left = crop->left + ((1944 - 1080) / 2);
+		break;
+	case (1600):
+		crop_top = crop->top + ((2592 - 1600) / 2);
+		crop_left = crop->left + ((1944 - 1200) / 2);
+		break;
+	case (1280):
+		if (height == 1024) {
+			crop_top = crop->top + ((2592 - width) / 2);
+			crop_left = crop->left + ((1944 - height) / 2);
+		} else if (height == 720) {
+			crop_width = 2560;
+			crop_top = crop->top + ((2592 - crop_width) / 2);
+			crop_height = 1440;
+			crop_left = crop->left + ((1944 - crop_height) / 2);
+		}
+		break;
+	case (1024):
+		crop_width = 2048;
+		crop_top = crop->top + ((2592 - crop_width) / 2);
+		crop_height = 1536;
+		crop_left = crop->left + ((1944 - crop_height) / 2);
+		break;
+	case (800):
+		crop_width = 1600;
+		crop_top = crop->top + ((2592 - crop_width) / 2);
+		crop_height = 1200;
+		crop_left = crop->left + ((1944 - crop_height) / 2);
+		break;
+	case (640):
+		crop_width = 2560;
+		crop_top = crop->top + ((2592 - crop_width) / 2);
+		crop_height = 1920;
+		crop_left = crop->left + ((1944 - crop_height) / 2);
+		break;
+	default:
+		break;
+	}
 
+	ret = mt9p031_write(client, MT9P031_COLUMN_START, crop_left);
+	if (ret < 0)
+		return ret;
+	ret = mt9p031_write(client, MT9P031_ROW_START, crop_top);
+	if (ret < 0)
+		return ret;
+	ret = mt9p031_write(client, MT9P031_WINDOW_WIDTH, crop_width - 1);
+	if (ret < 0)
+		return ret;
+	ret = mt9p031_write(client, MT9P031_WINDOW_HEIGHT, crop_height - 1);
+	if (ret < 0)
+		return ret;
+
+	xskip = DIV_ROUND_CLOSEST(crop_width, width);
+	yskip = DIV_ROUND_CLOSEST(crop_height, height);
 	xbin = 1 << (ffs(xskip) - 1);
 	ybin = 1 << (ffs(yskip) - 1);
 
