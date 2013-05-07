@@ -35,9 +35,11 @@
 struct mxc_camera_pdata {
 	unsigned long flags;
 	unsigned long mclk_default_rate;
+	unsigned long mclk_target_rate;
 	char *mclk_clock_source;
 	int ipu;
 	int csi;
+	bool use_pll;
 };
 
 #endif
