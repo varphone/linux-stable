@@ -925,9 +925,13 @@ static int tw9910_g_input(struct soc_camera_device *icd, unsigned int *i)
 static int tw9910_s_input(struct soc_camera_device *icd, unsigned int i)
 {
 	struct i2c_client *client = to_i2c_client(to_soc_camera_control(icd));
+	struct tw9910_priv *priv = to_tw9910(client);
 
 	if (tw9910_mask_set(client, INFORM, 0X0C, i << 2))
 		return -EINVAL;
+
+	if (priv->info->switch_input)
+		priv->info->switch_input(i);
 
 	return 0;
 }
@@ -989,6 +993,7 @@ static int tw9910_probe(struct i2c_client *client,
 	struct i2c_adapter             *adapter =
 		to_i2c_adapter(client->dev.parent);
 	struct soc_camera_link         *icl;
+	int                             input;
 	int                             ret;
 
 	if (!icd) {
@@ -1025,6 +1030,11 @@ static int tw9910_probe(struct i2c_client *client,
 		icd->ops = NULL;
 		kfree(priv);
 	}
+
+	input = (i2c_smbus_read_byte_data(client, INFORM) & 0x0C) >> 2;
+
+	if (priv->info->switch_input)
+		priv->info->switch_input(input);
 
 	return ret;
 }

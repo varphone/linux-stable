@@ -33,6 +33,7 @@
 #include <linux/spi/flash.h>
 #include <linux/i2c.h>
 #include <linux/i2c/at24.h>
+#include <linux/i2c/pca953x.h>
 #include <linux/leds-pca9532.h>
 #include <linux/ata.h>
 #include <linux/mtd/mtd.h>
@@ -138,7 +139,7 @@
 // #define MX6_PHYFLEX_CAN2_EN		IMX_GPIO_NR(5, 24)
 #define MX6_PHYFLEX_CSI0_RST_TVIN	IMX_GPIO_NR(5, 25)
 #define MX6_PHYFLEX_MAX7310_1_BASE_ADDR	IMX_GPIO_NR(8, 0)
-#define MX6_PHYFLEX_MAX7310_2_BASE_ADDR	IMX_GPIO_NR(8, 8)
+#define MX6_PHYFLEX_PCA9538_BASE_ADDR	IMX_GPIO_NR(8, 8)
 
 // #define MX6_PHYFLEX_IO_EXP_GPIO1(x)	(MX6_PHYFLEX_MAX7310_1_BASE_ADDR + (x))
 // #define MX6_PHYFLEX_IO_EXP_GPIO2(x)	(MX6_PHYFLEX_MAX7310_2_BASE_ADDR + (x))
@@ -364,6 +365,26 @@ static struct edt_ft5x06_platform_data mx6_phyflex_ft5x06_data = {
 	.reset_pin	= -1,   /* static high */
 };
 
+static int pca9538_setup(struct i2c_client *client,
+				 unsigned gpio_base, unsigned ngpio,
+				 void *context)
+{
+	int n;
+
+	for (n = 0; n < ngpio; ++n) {
+		gpio_request(gpio_base + n, "PCA9538 GPIO Expander");
+		gpio_direction_output(gpio_base + n, 1);
+	}
+
+	return 0;
+}
+
+static struct pca953x_platform_data pca9538_platdata = {
+	.gpio_base	= MX6_PHYFLEX_PCA9538_BASE_ADDR,
+	.invert		= 0,
+	.setup		= pca9538_setup,
+};
+
 static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
 	{
 		I2C_BOARD_INFO("max7300", 0x40),
@@ -402,6 +423,9 @@ static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 		I2C_BOARD_INFO("stmpe811", 0x41),
 		.irq = gpio_to_irq(MX6_PHYFLEX_CAP_TCH_INT1),
 		.platform_data = (void *)&stmpe811_data1,
+	}, {
+		I2C_BOARD_INFO("pca9538", 0x70),
+		.platform_data = &pca9538_platdata,
 	}
 };
 
@@ -1050,7 +1074,29 @@ static struct i2c_board_info phyflex_cameras[] = {
 #define SOC_CAM_LINK(bus, bi, i2c_adapter) \
 	.bus_id = bus, .board_info = bi, .i2c_adapter_id = i2c_adapter
 
+int tw9910_switch_input(int input)
+{
+	int i;
+
+	for (i = 0; i < 4; i++) {
+		if (i == input) {
+			gpio_direction_output(MX6_PHYFLEX_PCA9538_BASE_ADDR
+						+ i * 2, 0);
+			gpio_direction_output(MX6_PHYFLEX_PCA9538_BASE_ADDR
+						+ i * 2 + 1, 0);
+		} else {
+			gpio_direction_output(MX6_PHYFLEX_PCA9538_BASE_ADDR
+						+ i * 2, 1);
+			gpio_direction_output(MX6_PHYFLEX_PCA9538_BASE_ADDR
+						+ i * 2 + 1, 1);
+		}
+	}
+
+	return 0;
+}
+
 struct tw9910_video_info tw9910_info = {
+	.switch_input = tw9910_switch_input,
 	.buswidth = SOCAM_DATAWIDTH_8,
 	.mpout = TW9910_MPO_RTCO,
 };

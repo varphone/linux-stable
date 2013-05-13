@@ -30,6 +30,7 @@ enum tw9910_mpout_pin {
 };
 
 struct tw9910_video_info {
+	int (*switch_input)(int input);
 	unsigned long		buswidth;
 	enum tw9910_mpout_pin	mpout;
 };
