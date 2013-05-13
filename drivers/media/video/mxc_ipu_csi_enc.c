@@ -116,6 +116,14 @@ static int csi_enc_setup(struct mxc_camera_dev *cam)
 		return -EINVAL;
 	}
 
+	/* Special case for interlaced sensors (like tw9910) */
+	struct v4l2_subdev *sd = soc_camera_to_subdev(cam->icd);
+	struct v4l2_mbus_framefmt mf;
+	if (!v4l2_subdev_call(sd, video, g_mbus_fmt, &mf)) {
+		if (mf.field == V4L2_FIELD_INTERLACED_BT)
+			params.csi_mem.interlaced = true;
+	}
+
 	pixel_fmt = fourcc_to_ipu_pixfmt(host_pixelfmt);
 
 	ipu_csi_enable_mclk_if(cam->ipu, CSI_MCLK_ENC, cam->csi, true, true);
