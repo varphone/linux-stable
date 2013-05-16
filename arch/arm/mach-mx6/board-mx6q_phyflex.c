@@ -34,6 +34,7 @@
 #include <linux/i2c.h>
 #include <linux/i2c/at24.h>
 #include <linux/i2c/pca953x.h>
+#include <linux/i2c/at24.h>
 #include <linux/leds-pca9532.h>
 #include <linux/ata.h>
 #include <linux/mtd/mtd.h>
@@ -333,6 +334,12 @@ static struct at24_platform_data at24c32 = {
 	.flags		= AT24_FLAG_ADDR16,
 };
 
+static struct at24_platform_data at24c04 = {
+	.byte_len	= SZ_4K / 8,
+	.page_size	= 16,
+	.flags		= 0,
+};
+
 static struct max7301_platform_data max7301_i2c_data = {
 	.base		= -1,
 };
@@ -426,7 +433,10 @@ static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 	}, {
 		I2C_BOARD_INFO("pca9538", 0x70),
 		.platform_data = &pca9538_platdata,
-	}
+	}, {
+		I2C_BOARD_INFO("24c04", 0x52),
+		.platform_data = &at24c04,
+	},
 };
 
 
