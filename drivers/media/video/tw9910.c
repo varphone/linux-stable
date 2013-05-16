@@ -809,9 +809,6 @@ static int tw9910_s_fmt(struct v4l2_subdev *sd,
 	};
 	int ret;
 
-	WARN_ON(mf->field != V4L2_FIELD_ANY &&
-		mf->field != V4L2_FIELD_INTERLACED_BT);
-
 	/*
 	 * check color format
 	 */
@@ -837,13 +834,14 @@ static int tw9910_try_fmt(struct v4l2_subdev *sd,
 
 	switch (mf->field) {
 	case V4L2_FIELD_ANY:
+	case V4L2_FIELD_NONE:
 	case V4L2_FIELD_INTERLACED:
 		mf->field = V4L2_FIELD_INTERLACED_BT;
 		break;
 	case V4L2_FIELD_INTERLACED_BT:
 		break;
 	default:
-		dev_err(&client->dev, "Field type %d invalid.\n", mf->field);
+		return -EINVAL;
 	}
 
 	mf->code = V4L2_MBUS_FMT_UYVY8_2X8;
