@@ -368,49 +368,47 @@ static int mt9p031_set_params(struct mt9p031 *mt9p031)
 			max(crop->height / 8, MT9P031_WINDOW_HEIGHT_MIN),
 			 crop->height);
 
-	mt9p031_write(client, MT9P031_SHUTTER_WIDTH_LOWER, height - 1);
-
 	switch (width) {
 	case (2048):
-		crop_top = crop->top + ((2592 - 2048) / 2);
-		crop_left = crop->left + ((1944 - 1536) / 2);
+		crop_left = crop->left + ((2592 - 2048) / 2);
+		crop_top = crop->top + ((1944 - 1536) / 2);
 		break;
 	case (1920):
-		crop_top = crop->top + ((2592 - 1920) / 2);
-		crop_left = crop->left + ((1944 - 1080) / 2);
+		crop_left = crop->left + ((2592 - 1920) / 2);
+		crop_top = crop->top + ((1944 - 1080) / 2);
 		break;
 	case (1600):
-		crop_top = crop->top + ((2592 - 1600) / 2);
-		crop_left = crop->left + ((1944 - 1200) / 2);
+		crop_left = crop->left + ((2592 - 1600) / 2);
+		crop_top = crop->top + ((1944 - 1200) / 2);
 		break;
 	case (1280):
 		if (height == 1024) {
-			crop_top = crop->top + ((2592 - width) / 2);
-			crop_left = crop->left + ((1944 - height) / 2);
+			crop_left = crop->left + ((2592 - width) / 2);
+			crop_top = crop->top + ((1944 - height) / 2);
 		} else if (height == 720) {
 			crop_width = 2560;
-			crop_top = crop->top + ((2592 - crop_width) / 2);
+			crop_left = crop->left + ((2592 - crop_width) / 2);
 			crop_height = 1440;
-			crop_left = crop->left + ((1944 - crop_height) / 2);
+			crop_top = crop->top + ((1944 - crop_height) / 2);
 		}
 		break;
 	case (1024):
 		crop_width = 2048;
-		crop_top = crop->top + ((2592 - crop_width) / 2);
+		crop_left = crop->left + ((2592 - crop_width) / 2);
 		crop_height = 1536;
-		crop_left = crop->left + ((1944 - crop_height) / 2);
+		crop_top = crop->top + ((1944 - crop_height) / 2);
 		break;
 	case (800):
 		crop_width = 1600;
-		crop_top = crop->top + ((2592 - crop_width) / 2);
+		crop_left = crop->left + ((2592 - crop_width) / 2);
 		crop_height = 1200;
-		crop_left = crop->left + ((1944 - crop_height) / 2);
+		crop_top = crop->top + ((1944 - crop_height) / 2);
 		break;
 	case (640):
 		crop_width = 2560;
-		crop_top = crop->top + ((2592 - crop_width) / 2);
+		crop_left = crop->left + ((2592 - crop_width) / 2);
 		crop_height = 1920;
-		crop_left = crop->left + ((1944 - crop_height) / 2);
+		crop_top = crop->top + ((1944 - crop_height) / 2);
 		break;
 	default:
 		break;
