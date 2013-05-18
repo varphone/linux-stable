@@ -444,8 +444,7 @@ static int mt9p031_set_params(struct mt9p031 *mt9p031)
 	/* 
 	 * Blanking - calculate values according to the MT9P031's datasheet
 	 */
-	hblank = 346 * (ybin + 1) + 64 +
-		((80 >> clamp_t(unsigned int, xbin, 0, 3)) / 2);
+	hblank = 346 * ybin + 64 + (80 >> min_t(unsigned int, xbin, 3));
 
 	shutter_width_upper = mt9p031_read(client, MT9P031_SHUTTER_WIDTH_UPPER);
 	shutter_width_lower = mt9p031_read(client, MT9P031_SHUTTER_WIDTH_LOWER);
