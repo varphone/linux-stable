@@ -57,6 +57,7 @@
 #define MT9P031_PIXEL_CLOCK_CONTROL			0x0a
 #define 	MT9P031_PIXEL_CLOCK_INVERT 		(1u << 15)
 #define MT9P031_FRAME_RESTART				0x0b
+#define		MT9P031_FRAME_RESTART_SET		(1u << 0)
 #define MT9P031_SHUTTER_DELAY				0x0c
 #define MT9P031_RST					0x0d
 #define		MT9P031_RST_ENABLE			1
@@ -467,6 +468,12 @@ static int mt9p031_s_stream(struct v4l2_subdev *sd, int enable)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct mt9p031 *mt9p031 = to_mt9p031(client);
 	int ret;
+
+	ret = mt9p031_write(client,
+			    MT9P031_FRAME_RESTART, MT9P031_FRAME_RESTART_SET);
+	if (ret < 0)
+		return ret;
+
 
 	if (!enable) {
 		ret = mt9p031_set_output_control(mt9p031, MT9P031_OUTPUT_CONTROL_CEN, 0);
