@@ -1015,7 +1015,7 @@ static struct mxc_camera_pdata mxc_ipu_csi_pdata[] = {
 		.flags = MXC_CAMERA_DATAWIDTH_10,
 		.ipu = 0,
 		.csi = 0,
-		.mclk_default_rate = 26400000,
+		.mclk_default_rate = 26000000,
 #ifdef CONFIG_SOC_CAMERA_MT9P031
 		.mclk_target_rate = 96000000,
 		.use_pll = 1,
@@ -1024,7 +1024,7 @@ static struct mxc_camera_pdata mxc_ipu_csi_pdata[] = {
 		.flags = MXC_CAMERA_DATAWIDTH_10,
 		.ipu = 1,
 		.csi = 1,
-		.mclk_default_rate = 26400000,
+		.mclk_default_rate = 26000000,
 	},
 };
 
