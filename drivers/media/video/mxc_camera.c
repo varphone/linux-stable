@@ -1,4 +1,4 @@
-#define DEBUG
+
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/version.h>
@@ -694,12 +694,8 @@ static int test_platform_param(struct mxc_camera_dev *mxc_cam,
 	 * If requested data width is supported by the platform, use it or any
 	 * possible lower value - i.MXC1 is smart enough to schift bits
 	 */
-
 	if (mxc_cam->platform_flags & MXC_CAMERA_DATAWIDTH_15)
 		*flags |= SOCAM_DATAWIDTH_15 | SOCAM_DATAWIDTH_10 |
-			SOCAM_DATAWIDTH_8 | SOCAM_DATAWIDTH_4;
-	else if (mxc_cam->platform_flags & MXC_CAMERA_DATAWIDTH_12) 
-		*flags |= SOCAM_DATAWIDTH_12 | SOCAM_DATAWIDTH_10 |
 			SOCAM_DATAWIDTH_8 | SOCAM_DATAWIDTH_4;
 	else if (mxc_cam->platform_flags & MXC_CAMERA_DATAWIDTH_10)
 		*flags |= SOCAM_DATAWIDTH_10 | SOCAM_DATAWIDTH_8 |
@@ -713,11 +709,6 @@ static int test_platform_param(struct mxc_camera_dev *mxc_cam,
 	case 15:
 		if (!(*flags & SOCAM_DATAWIDTH_15))
 			return -EINVAL;
-		break;
-	case 12:
-		if (!(*flags & SOCAM_DATAWIDTH_12)) {
-			return -EINVAL;
-		}
 		break;
 	case 10:
 		if (!(*flags & SOCAM_DATAWIDTH_10))
@@ -1009,13 +1000,9 @@ static int mxc_camera_set_bus_param(struct soc_camera_device *icd, __u32 pixfmt)
 	 * Make the camera work in widest common mode, we'll take care of
 	 * the rest
 	 */
-
 	if (common_flags & SOCAM_DATAWIDTH_15)
 		common_flags = (common_flags & ~SOCAM_DATAWIDTH_MASK) |
 			SOCAM_DATAWIDTH_15;
-	else if (common_flags & SOCAM_DATAWIDTH_12)
-		common_flags = (common_flags & ~SOCAM_DATAWIDTH_MASK) |
-			SOCAM_DATAWIDTH_12;
 	else if (common_flags & SOCAM_DATAWIDTH_10)
 		common_flags = (common_flags & ~SOCAM_DATAWIDTH_MASK) |
 			SOCAM_DATAWIDTH_10;
@@ -1140,7 +1127,7 @@ static int __devinit mxc_camera_probe(struct platform_device *pdev)
 	/* TODO: add other data widths */
 	if (!(mxc_cam->platform_flags & (MXC_CAMERA_DATAWIDTH_4 |
 			MXC_CAMERA_DATAWIDTH_8 | MXC_CAMERA_DATAWIDTH_10 |
-			MXC_CAMERA_DATAWIDTH_12 | MXC_CAMERA_DATAWIDTH_15))) {
+			MXC_CAMERA_DATAWIDTH_15))) {
 		/*
 		 * Platform hasn't set available data widths. This is bad.
 		 * Warn and use a default.
