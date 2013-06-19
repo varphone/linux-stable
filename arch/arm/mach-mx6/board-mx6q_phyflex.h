@@ -18,11 +18,18 @@
 
 #include <mach/iomux-mx6q.h>
 
-#define PHYFLEX_CLKO_PAD_CTRL	(PAD_CTL_SPEED_MED | PAD_CTL_DSE_60ohm | \
+#define PHYFLEX_CLKO_PAD_CTRL	(PAD_CTL_SPEED_MED | PAD_CTL_DSE_34ohm | \
 		PAD_CTL_SRE_FAST)
 
 #define  PHYFLEX_PAD_GPIO_5__CCM_CLKO		\
 		(_MX6Q_PAD_GPIO_5__CCM_CLKO | MUX_PAD_CTRL(PHYFLEX_CLKO_PAD_CTRL))
+
+#define PHYFLEX_CLK1_PAD_CTRL	(PAD_CTL_SPEED_MED | PAD_CTL_DSE_34ohm | \
+		PAD_CTL_SRE_FAST)
+
+#define  PHYFLEX_PAD_NANDF_CS2__CCM_CLKO2		\
+		(_MX6Q_PAD_NANDF_CS2__CCM_CLKO2 | MUX_PAD_CTRL(PHYFLEX_CLK1_PAD_CTRL))
+
 
 /* Common pads for PhyFlex board */
 static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
@@ -236,7 +243,7 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_EIM_A24__IPU2_CSI1_D_19,
 
     /* Enable CAM1 clocking only if it is needed for camera 1 lvds */
-	MX6Q_PAD_NANDF_CS2__CCM_CLKO2,
+	PHYFLEX_PAD_NANDF_CS2__CCM_CLKO2,
 	
 	/* PCIE_PRSNT */
 	MX6Q_PAD_SD1_DAT3__GPIO_1_21,
