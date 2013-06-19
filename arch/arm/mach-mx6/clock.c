@@ -968,7 +968,12 @@ static int _clk_audio_video_set_rate(struct clk *clk, unsigned long rate)
 	int rev = mx6q_revision();
 	u32 test_div_sel = 2;
 	u32 control3 = 0;
+	bool use_160mhz = false;
 
+	if (clk == &pll4_audio_main_clk && rate == 160000000) {
+		use_160mhz = true;
+	}
+	
 	if ((rev < IMX_CHIP_REVISION_1_1) && !cpu_is_mx6dl())
 		min_clk_rate = AUDIO_VIDEO_MIN_CLK_FREQ;
 	else if (clk == &pll4_audio_main_clk)
@@ -976,7 +981,7 @@ static int _clk_audio_video_set_rate(struct clk *clk, unsigned long rate)
 	else
 		min_clk_rate = AUDIO_VIDEO_MIN_CLK_FREQ / 16;
 
-	if ((rate < min_clk_rate) || (rate > AUDIO_VIDEO_MAX_CLK_FREQ))
+	if (((rate < min_clk_rate) || (rate > AUDIO_VIDEO_MAX_CLK_FREQ)) && !use_160mhz)
 		return -EINVAL;
 
 	if (clk == &pll4_audio_main_clk)
@@ -1018,8 +1023,17 @@ static int _clk_audio_video_set_rate(struct clk *clk, unsigned long rate)
 	reg = __raw_readl(pllbase)
 			& ~ANADIG_PLL_SYS_DIV_SELECT_MASK
 			& ~ANADIG_PLL_AV_TEST_DIV_SEL_MASK;
+	if (use_160mhz) {
+		printk("    Changing DIV from %d to 26 (test_div_sel=%d)\n", div, test_div_sel);
+		div = 26;
+		test_div_sel = 0;
+	}
 	reg |= div |
 		(test_div_sel << ANADIG_PLL_AV_TEST_DIV_SEL_OFFSET);
+	if (use_160mhz) {
+		mfn = 0x0aac0000;       // Setting 160MHz more pricesely 
+		mfd = 0x0fffffff;
+	}
 	__raw_writel(reg, pllbase);
 	__raw_writel(mfn, pllbase + PLL_NUM_DIV_OFFSET);
 	__raw_writel(mfd, pllbase + PLL_DENOM_DIV_OFFSET);
@@ -1048,6 +1062,10 @@ static unsigned long _clk_audio_video_round_rate(struct clk *clk,
 	unsigned long final_rate;
 	int rev = mx6q_revision();
 
+	if (clk == &pll4_audio_main_clk && rate == 160000000) {
+		return rate;
+	}
+		
 	if ((rev < IMX_CHIP_REVISION_1_1) && !cpu_is_mx6dl())
 		min_clk_rate = AUDIO_VIDEO_MIN_CLK_FREQ;
 	else if (clk == &pll4_audio_main_clk)
@@ -5425,7 +5443,7 @@ int __init mx6_clocks_init(unsigned long ckil, unsigned long osc,
 	pcie_clk[0].disable(&pcie_clk[0]);
 
 	/* Initialize Audio and Video PLLs to valid frequency. */
-	clk_set_rate(&pll4_audio_main_clk, 176000000);
+	clk_set_rate(&pll4_audio_main_clk, 160000000);
 	clk_set_rate(&pll5_video_main_clk, 650000000);
 
 	clk_set_parent(&ipu1_di_clk[0], &pll5_video_main_clk);
@@ -5488,14 +5506,16 @@ int __init mx6_clocks_init(unsigned long ckil, unsigned long osc,
 #endif
 
 	/* PCLK camera - J5 */
-	clk_set_parent(&clko2_clk, &osc_clk);
-	clk_set_rate(&clko2_clk, 2400000);
+	clk_set_parent(&esai_clk, &pll4_audio_main_clk);
+	clk_set_rate(&esai_clk, clk_round_rate(&esai_clk, clk_get_rate(&pll4_audio_main_clk)));
+	clk_set_parent(&clko2_clk, &esai_clk);
+	clk_set_rate(&clko2_clk, clk_round_rate(&clko2_clk, clk_get_rate(&esai_clk)));
 
 #if defined(CONFIG_MACH_MX6Q_PHYFLEX) || defined(CONFIG_MACH_MX6Q_PHYCARD)	
+	clk_set_parent(&clko_clk, &pll4_audio_main_clk);
+#else
 	clk_set_parent(&clko_clk, &ahb_clk);
 	clk_set_rate(&clko_clk, 2400000);
-#else
-	clk_set_parent(&clko_clk, &pll4_audio_main_clk);
 #endif
 
 	/*
