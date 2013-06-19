@@ -1028,7 +1028,7 @@ static struct mxc_camera_pdata mxc_ipu_csi_pdata[] = {
 		.flags = MXC_CAMERA_DATAWIDTH_10,
 		.ipu = 1,
 		.csi = 1,
-		.mclk_default_rate = 26000000,
+		.mclk_default_rate = 40000000,
 	},
 };
 
@@ -1069,7 +1069,7 @@ static struct i2c_board_info phyflex_cameras[] = {
 		I2C_BOARD_INFO("mt9p031", 0x48), /* CTRL1 = 0 */
 	},
 	[1] = {
-		I2C_BOARD_INFO("mt9v022", 0x4c), /* CTRL1 = 1 */
+		I2C_BOARD_INFO("mt9v022", 0x48), /* CTRL1 = 0 */
 	},
 	[2] = {
 		I2C_BOARD_INFO("mt9m111", 0x48),
@@ -1078,7 +1078,7 @@ static struct i2c_board_info phyflex_cameras[] = {
 		I2C_BOARD_INFO("mt9m001", 0x5d),
 	},
 	[4] = {
-		I2C_BOARD_INFO("mt9v022", 0x48), /* CTRL1 = 1 */
+		I2C_BOARD_INFO("mt9v022", 0x4c), /* CTRL1 = 1 */
 	},
 	[5] = {
 		I2C_BOARD_INFO("tw9910", 0x45), /* CTRL1 = 1 */
@@ -1124,7 +1124,7 @@ static struct soc_camera_link phyflex_iclinks[] = {
 		SOC_CAM_LINK(1, &phyflex_cameras[5], 2),
 		.priv = &tw9910_info,
 	}, {
-		SOC_CAM_LINK(1, &phyflex_cameras[1], 2)
+		SOC_CAM_LINK(0, &phyflex_cameras[1], 2)
 	}, {
 		SOC_CAM_LINK(1, &phyflex_cameras[3], 2)
 	}, {
