@@ -1019,16 +1019,16 @@ static struct mxc_camera_pdata mxc_ipu_csi_pdata[] = {
 		.flags = MXC_CAMERA_DATAWIDTH_10,
 		.ipu = 0,
 		.csi = 0,
-		.mclk_default_rate = 26000000,
-#ifdef CONFIG_SOC_CAMERA_MT9P031
-		.mclk_target_rate = 96000000,
-		.use_pll = 1,
-#endif /* CONFIG_SOC_CAMERA_MT9P031 */
+		.mclk_default_rate = 26700000,
+		.mclk_target_rate = 96000000,	//only for mt9p031
+		.use_pll = 0,					//only for mt9p031
 	}, {
 		.flags = MXC_CAMERA_DATAWIDTH_10,
 		.ipu = 1,
 		.csi = 1,
-		.mclk_default_rate = 40000000,
+		.mclk_default_rate = 26700000,
+		.mclk_target_rate = 96000000,	//only for mt9p031
+		.use_pll = 0,					//only for mt9p031
 	},
 };
 
@@ -1053,40 +1053,6 @@ static struct platform_device mxc_ipu_csi_devices[] = {
 		},
 	},
 };
-
-/*
- * Cameras configuration:
- * CTRL1 on bus 0 is 0 (there is a jumper at pins 5 and 7 of X3 connector)
- * CTRL1 on bus 1 is 1 (there is a jumper at pins 5 and 3 of X4 connector)
- *
- * VM-009 is allowed for bus 0 (X5 conn.) only
- * VM-006 is allowed for bus 1 (X6 conn.) only
- * VM-007 and VM-010 can be connected to any bus
- */
-
-static struct i2c_board_info phyflex_cameras[] = {
-	[0] = {
-		I2C_BOARD_INFO("mt9p031", 0x48), /* CTRL1 = 0 */
-	},
-	[1] = {
-		I2C_BOARD_INFO("mt9v022", 0x48), /* CTRL1 = 0 */
-	},
-	[2] = {
-		I2C_BOARD_INFO("mt9m111", 0x48),
-	},
-	[3] = {
-		I2C_BOARD_INFO("mt9m001", 0x5d),
-	},
-	[4] = {
-		I2C_BOARD_INFO("mt9v022", 0x4c), /* CTRL1 = 1 */
-	},
-	[5] = {
-		I2C_BOARD_INFO("tw9910", 0x45), /* CTRL1 = 1 */
-	},
-};
-
-#define SOC_CAM_LINK(bus, bi, i2c_adapter) \
-	.bus_id = bus, .board_info = bi, .i2c_adapter_id = i2c_adapter
 
 int tw9910_switch_input(int input)
 {
@@ -1113,42 +1079,6 @@ struct tw9910_video_info tw9910_info = {
 	.switch_input = tw9910_switch_input,
 	.buswidth = SOCAM_DATAWIDTH_8,
 	.mpout = TW9910_MPO_RTCO,
-};
-
-static struct soc_camera_link phyflex_iclinks[] = {
-	{
-		SOC_CAM_LINK(0, &phyflex_cameras[0], 2)
-	}, {
-		SOC_CAM_LINK(0, &phyflex_cameras[2], 2)
-	}, {
-		SOC_CAM_LINK(1, &phyflex_cameras[5], 2),
-		.priv = &tw9910_info,
-	}, {
-		SOC_CAM_LINK(0, &phyflex_cameras[1], 2)
-	}, {
-		SOC_CAM_LINK(1, &phyflex_cameras[3], 2)
-	}, {
-		SOC_CAM_LINK(1, &phyflex_cameras[4], 2)
-	},
-};
-
-#define SOC_CAM_PDRV(dev_id, iclinks) \
-	.name = "soc-camera-pdrv", .id = dev_id, .dev = { .platform_data = &iclinks[dev_id] }
-
-static struct platform_device mxc_ipu_cameras[] = {
-	{
-		SOC_CAM_PDRV(0, phyflex_iclinks),
-	}, {
-		SOC_CAM_PDRV(1, phyflex_iclinks),
-	}, {
-		SOC_CAM_PDRV(2, phyflex_iclinks),
-	}, {
-		SOC_CAM_PDRV(3, phyflex_iclinks),
-	}, {
-		SOC_CAM_PDRV(4, phyflex_iclinks),
-	}, {
-		SOC_CAM_PDRV(5, phyflex_iclinks),
-	},
 };
 
 #else
@@ -1243,7 +1173,20 @@ static void mx6_snvs_poweroff(void)
 static void __init mx6_phyflex_init(void)
 {
 	int i;
+	
+	char* cam_parameter_separator = ",";
 
+    char* csi0_interface_type;
+    char* csi0_cam_type;
+    char* csi0_cam_address;
+
+    char* csi1_interface_type;
+    char* csi1_cam_type;
+    char* csi1_cam_address;
+
+	long csi0_cam_address_hex;
+	long csi1_cam_address_hex;
+	
 	/* imx6q SoC revision and CPU uniq ID setup */
 	mx6_setup_cpuinfo();
 
@@ -1274,14 +1217,202 @@ static void __init mx6_phyflex_init(void)
 	imx6q_add_ldb(&ldb_data);
 
 	imx6q_add_v4l2_output(0);
+	
+	/***************************************************************************
+	Camera section:
+	The bootargs csi0 and csi1 will be interpreted. 
+	The bootarg csi0 and csi1 have the following structur:
+	Interface=<Interface-Type>,<Camera-Type>,<I2C-Address>
+	For example: csi0=phyCAM-P,VM-010,0x48	 
+
+	If only the Interface-Type is specified, the default settings will be loaded.
+	If at csi0 or csi1 the Camera-Type and I2C-Address is specified, only this camera work.
+	****************************************************************************/
+        csi0_interface_type = strsep(&csi0, cam_parameter_separator);
+        csi0_cam_type = strsep(&csi0, cam_parameter_separator);
+        csi0_cam_address = strsep(&csi0, cam_parameter_separator);
+
+	csi1_interface_type = strsep(&csi1, cam_parameter_separator);
+        csi1_cam_type = strsep(&csi1, cam_parameter_separator);
+        csi1_cam_address = strsep(&csi1, cam_parameter_separator);
+
+	if(csi0_cam_type!=NULL){
+		if(strcmp("VM-006",csi0_cam_type)==0){csi0_cam_type="mt9m001";}
+  		if(strcmp("VM-008",csi0_cam_type)==0){csi0_cam_type="tw9910";}
+		if(strcmp("VM-009",csi0_cam_type)==0){csi0_cam_type="mt9m111";}
+		if(strcmp("VM-010",csi0_cam_type)==0){csi0_cam_type="mt9v022";}
+		if(strcmp("VM-011",csi0_cam_type)==0){csi0_cam_type="mt9p031";}
+	}
+        if(csi1_cam_type!=NULL){
+            	if(strcmp("VM-006",csi1_cam_type)==0){csi1_cam_type="mt9m001";}
+		if(strcmp("VM-008",csi1_cam_type)==0){csi1_cam_type="tw9910";}
+        	if(strcmp("VM-009",csi1_cam_type)==0){csi1_cam_type="mt9m111";}
+            	if(strcmp("VM-010",csi1_cam_type)==0){csi1_cam_type="mt9v022";}
+            	if(strcmp("VM-011",csi1_cam_type)==0){csi1_cam_type="mt9p031";}
+        }
 
 #ifdef CONFIG_SOC_CAMERA
-	mxc_iomux_set_gpr_register(1, 19, 2, 3);
-	for (i = 0; i < ARRAY_SIZE(mxc_ipu_cameras); i++)
-		platform_device_register(&mxc_ipu_cameras[i]);
+#define SOC_CAM_LINK(bus, bi, i2c_adapter) \
+.bus_id = bus, .board_info = bi, .i2c_adapter_id = i2c_adapter
+#define SOC_CAM_PDRV(dev_id, iclinks) \
+.name = "soc-camera-pdrv", .id = dev_id, .dev = { .platform_data = &iclinks[dev_id] }
 
-	platform_device_register(&mxc_ipu_csi_devices[0]);
-	platform_device_register(&mxc_ipu_csi_devices[1]);
+	mxc_iomux_set_gpr_register(1, 19, 2, 3);
+	
+	if ((csi0_cam_type == NULL) && (csi1_cam_type == NULL)){	//For default setting.
+		static struct i2c_board_info phyflex_cameras[] = {
+			[0] = {I2C_BOARD_INFO("mt9m001", 0x5d),},	//DRIVER-NAME and I2C-ADDRESS
+            		[1] = {I2C_BOARD_INFO("tw9910", 0x45),},
+            		[2] = {I2C_BOARD_INFO("mt9m111", 0x48),},
+            		[3] = {I2C_BOARD_INFO("mt9v022", 0x48),},
+            		[4] = {I2C_BOARD_INFO("mt9v022", 0x4c),},
+			[5] = {I2C_BOARD_INFO("mt9p031", 0x48),},
+			[6] = {I2C_BOARD_INFO("mt9p031", 0x5d),},
+		};
+		static struct soc_camera_link phyflex_iclinks[] = {
+	        	{SOC_CAM_LINK(0, &phyflex_cameras[0], 2)}, 	//CSI-PORT,phyflex_cameras,I2C-INTERFACE
+			{SOC_CAM_LINK(0, &phyflex_cameras[1], 2)}, 
+			{SOC_CAM_LINK(0, &phyflex_cameras[2], 2)}, 
+			{SOC_CAM_LINK(0, &phyflex_cameras[3], 2)}, 
+			{SOC_CAM_LINK(1, &phyflex_cameras[4], 2)},
+			{SOC_CAM_LINK(0, &phyflex_cameras[5], 2),
+			.flags=SOCAM_SENSOR_INVERT_PCLK},
+                        {SOC_CAM_LINK(1, &phyflex_cameras[6], 2),
+			.flags=SOCAM_SENSOR_INVERT_PCLK},
+		};
+		static struct platform_device mxc_ipu_cameras[] = {
+	        	{SOC_CAM_PDRV(0, phyflex_iclinks),}, 		//DEVICE_ID,phyflex_iclinks
+			{SOC_CAM_PDRV(1, phyflex_iclinks),}, 
+			{SOC_CAM_PDRV(2, phyflex_iclinks),}, 
+			{SOC_CAM_PDRV(3, phyflex_iclinks),}, 
+			{SOC_CAM_PDRV(4, phyflex_iclinks),},
+			{SOC_CAM_PDRV(5, phyflex_iclinks),},
+                        {SOC_CAM_PDRV(6, phyflex_iclinks),},
+		};
+
+		if(strcmp(csi1_interface_type,"phyCAM-P")==0){
+   			mxc_ipu_csi_pdata[0].flags=MXC_CAMERA_DATAWIDTH_10 | MXC_CAMERA_PCP;
+			mxc_ipu_csi_pdata[1].flags=MXC_CAMERA_DATAWIDTH_10 | MXC_CAMERA_PCP;
+		}
+
+                for (i = 0; i < ARRAY_SIZE(mxc_ipu_cameras); i++){
+                        platform_device_register(&mxc_ipu_cameras[i]);};
+
+                platform_device_register(&mxc_ipu_csi_devices[0]);
+                platform_device_register(&mxc_ipu_csi_devices[1]);
+	}
+	else{		//Only Camera-Type and I2C-Address is set in csi0 or csi1
+	static struct i2c_board_info phyflex_cameras[] = {
+                        [0] = {I2C_BOARD_INFO("mt9v022", 0x48),},
+                        [1] = {I2C_BOARD_INFO("mt9v022", 0x4c),},
+                };
+                static struct soc_camera_link phyflex_iclinks[] = {
+                        {SOC_CAM_LINK(0, &phyflex_cameras[0], 2)},
+                        {SOC_CAM_LINK(1, &phyflex_cameras[1], 2)},
+                };
+                static struct platform_device mxc_ipu_cameras[] = {
+                        {SOC_CAM_PDRV(0, phyflex_iclinks),},
+                        {SOC_CAM_PDRV(1, phyflex_iclinks),},
+                };
+		if(csi0_cam_type!=NULL){/* set the max MCLK for the Camera-Type and Interface-Type */
+ 			if(strcmp(csi0_interface_type,"phyCAM-P")==0) {
+        	        	if(strcmp("mt9m001",csi0_cam_type)==0) {
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 40000000;
+					mxc_ipu_csi_pdata[0].flags = MXC_CAMERA_DATAWIDTH_10 | MXC_CAMERA_PCP;
+				}
+	                	if(strcmp("tw9911",csi0_cam_type)==0) {
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 26700000;
+				}
+				if(strcmp("mt9m111",csi0_cam_type)==0) {
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 54000000;
+				}
+                		if(strcmp("mt9v022",csi0_cam_type)==0) {
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 26700000;
+				}
+                		if(strcmp("mt9p031",csi0_cam_type)==0) {
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 53400000;
+					mxc_ipu_csi_pdata[0].use_pll = 0;
+					phyflex_iclinks[0].flags=SOCAM_SENSOR_INVERT_PCLK;
+				} /* The PLL in the mt9p031 generated 96 MHZ */
+        		} else if(strcmp(csi0_interface_type,"phyCAM-S+")==0) {
+        	                if(strcmp("mt9m001",csi0_cam_type)==0) {
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 40000000;
+				}
+	                        if(strcmp("tw9910",csi0_cam_type)==0) {
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 26700000;
+				}
+				if(strcmp("mt9m111",csi0_cam_type)==0) {
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 40000000;
+				}
+                        	if(strcmp("mt9v022",csi0_cam_type)==0) {
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 26700000;
+				}
+                       		if(strcmp("mt9p031",csi0_cam_type)==0) {
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 80000000;
+					phyflex_iclinks[0].flags=SOCAM_SENSOR_INVERT_PCLK;
+				}
+			}
+		}
+
+		if(csi1_cam_type!=NULL) {/* set the max MCLK for the Camera-Type and Interface-Type */
+                	if(strcmp(csi1_interface_type,"phyCAM-P")==0) {
+                        	if(strcmp("mt9m001",csi1_cam_type)==0) {
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 40000000;
+					mxc_ipu_csi_pdata[1].flags=MXC_CAMERA_DATAWIDTH_10 | MXC_CAMERA_PCP;
+				}
+                        	if(strcmp("tw9910",csi1_cam_type)==0) {
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 26700000;
+				}
+				if(strcmp("mt9m111",csi1_cam_type)==0) {
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 54000000;
+				}
+                        	if(strcmp("mt9v022",csi1_cam_type)==0) {
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 26700000;
+				}
+                        	if(strcmp("mt9p031",csi1_cam_type)==0) {
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 53400000;
+					mxc_ipu_csi_pdata[1].use_pll = 0;
+					phyflex_iclinks[1].flags=SOCAM_SENSOR_INVERT_PCLK;
+				} /*The PLL in the mt9p031 generated 96 MHZ */
+                	}
+                	else if(strcmp(csi1_interface_type,"phyCAM-S+")==0) {
+                        	if(strcmp("mt9m001",csi1_cam_type)==0) {
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 40000000;
+				}
+                       	 	if(strcmp("tw9910",csi1_cam_type)==0) {
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 26700000;
+				}
+				if(strcmp("mt9m111",csi1_cam_type)==0) {
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 40000000;
+				}
+                       	 	if(strcmp("mt9v022",csi1_cam_type)==0) {
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 26700000;
+				}
+                       	 	if(strcmp("mt9p031",csi1_cam_type)==0) {
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 80000000;
+					phyflex_iclinks[1].flags=SOCAM_SENSOR_INVERT_PCLK;
+				}
+                	}
+		}
+		if(csi0_cam_type!=NULL){
+	        	csi0_cam_address_hex = simple_strtol(csi0_cam_address,NULL,16);
+                        strcpy(phyflex_cameras[0].type,csi0_cam_type);
+                        phyflex_cameras[0].addr=csi0_cam_address_hex;
+			platform_device_register(&mxc_ipu_cameras[0]);
+		}
+		if(csi1_cam_type!=NULL){
+			csi1_cam_address_hex = simple_strtol(csi1_cam_address,NULL,16);
+                        strcpy(phyflex_cameras[1].type,csi1_cam_type);
+                        phyflex_cameras[1].addr=csi1_cam_address_hex;
+			platform_device_register(&mxc_ipu_cameras[1]);
+		}
+       	 	if(csi0_cam_type!=NULL){
+			platform_device_register(&mxc_ipu_csi_devices[0]);
+		}	
+		if(csi1_cam_type!=NULL){	
+        		platform_device_register(&mxc_ipu_csi_devices[1]);
+		}
+	}
 #else
 	imx6q_add_v4l2_capture(0, &capture_data[0]);
 	imx6q_add_v4l2_capture(1, &capture_data[1]);
@@ -1296,21 +1427,21 @@ static void __init mx6_phyflex_init(void)
 	gpio_request(MX6_PHYFLEX_CAM1_LVDS_PWRDN, "CSI1<->LVDS bridge #PWDN");
 	gpio_request(MX6_PHYFLEX_CAM1_OE, "IPU2/CSI1 camera #OE");
 
-	if (!strcmp("phyCAM-S+", csi0)) {
+	if (!strcmp("phyCAM-S+", csi0_interface_type)) {
 		gpio_direction_output(MX6_PHYFLEX_CAM0_LVDS_PWRDN, 1);
 		gpio_direction_output(MX6_PHYFLEX_CAM0_OE, 1);
-	} else if (!strcmp("none", csi0)) {
+	} else if (!strcmp("none", csi0_interface_type)) {
 		gpio_direction_output(MX6_PHYFLEX_CAM0_LVDS_PWRDN, 0);
 		gpio_direction_output(MX6_PHYFLEX_CAM0_OE, 1);
 	} else {
 		gpio_direction_output(MX6_PHYFLEX_CAM0_LVDS_PWRDN, 0);
 		gpio_direction_output(MX6_PHYFLEX_CAM0_OE, 0);
 	}
-       
-	if (!strcmp("phyCAM-S+", csi1)) {
+	
+	if (!strcmp("phyCAM-S+", csi1_interface_type)) {
 		gpio_direction_output(MX6_PHYFLEX_CAM1_LVDS_PWRDN, 1);
 		gpio_direction_output(MX6_PHYFLEX_CAM1_OE, 1);
-	} else if (!strcmp("none", csi1)) {
+	} else if (!strcmp("none", csi1_interface_type)) {
 		gpio_direction_output(MX6_PHYFLEX_CAM1_LVDS_PWRDN, 0);
 		gpio_direction_output(MX6_PHYFLEX_CAM1_OE, 1);
 	} else {
