@@ -210,9 +210,9 @@ static void mt9p031_video_remove(struct soc_camera_device *icd)
 /*TODO: add new dividers */
 static const struct mt9p031_pll_divs mt9p031_divs[] = {
 	/* ext_freq	target_freq	m	n	p1 */
-	{26000000,	48000000,	37,	10,	2},
+	{26000000,	48000000,	37,	5,	4},
 	{26000000,	96000000,	74,	10,	2},
-	{54000000,	96000000,	32,	9,	2}
+	{26700000,      96000000,       72,     10,     2}
 };
 
 static int mt9p031_pll_get_divs(struct mt9p031 *mt9p031)
