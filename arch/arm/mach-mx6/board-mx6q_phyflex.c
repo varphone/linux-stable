@@ -1271,13 +1271,14 @@ static void __init mx6_phyflex_init(void)
 		};
 		static struct soc_camera_link phyflex_iclinks[] = {
 	        	{SOC_CAM_LINK(0, &phyflex_cameras[0], 2)}, 	//CSI-PORT,phyflex_cameras,I2C-INTERFACE
-			{SOC_CAM_LINK(0, &phyflex_cameras[1], 2)}, 
+			{SOC_CAM_LINK(0, &phyflex_cameras[1], 2),
+			.priv=&tw9910_info}, 
 			{SOC_CAM_LINK(0, &phyflex_cameras[2], 2)}, 
 			{SOC_CAM_LINK(0, &phyflex_cameras[3], 2)}, 
 			{SOC_CAM_LINK(1, &phyflex_cameras[4], 2)},
 			{SOC_CAM_LINK(0, &phyflex_cameras[5], 2),
 			.flags=SOCAM_SENSOR_INVERT_PCLK},
-                        {SOC_CAM_LINK(1, &phyflex_cameras[6], 2),
+                       {SOC_CAM_LINK(1, &phyflex_cameras[6], 2),
 			.flags=SOCAM_SENSOR_INVERT_PCLK},
 		};
 		static struct platform_device mxc_ipu_cameras[] = {
@@ -1314,6 +1315,7 @@ static void __init mx6_phyflex_init(void)
                         {SOC_CAM_PDRV(0, phyflex_iclinks),},
                         {SOC_CAM_PDRV(1, phyflex_iclinks),},
                 };
+
 		if(csi0_cam_type!=NULL){/* set the max MCLK for the Camera-Type and Interface-Type */
  			if(strcmp(csi0_interface_type,"phyCAM-P")==0) {
         	        	if(strcmp("mt9m001",csi0_cam_type)==0) {
@@ -1322,6 +1324,7 @@ static void __init mx6_phyflex_init(void)
 				}
 	                	if(strcmp("tw9911",csi0_cam_type)==0) {
 					mxc_ipu_csi_pdata[0].mclk_default_rate = 26700000;
+					phyflex_iclinks[0].priv=&tw9910_info;
 				}
 				if(strcmp("mt9m111",csi0_cam_type)==0) {
 					mxc_ipu_csi_pdata[0].mclk_default_rate = 54000000;
@@ -1340,6 +1343,7 @@ static void __init mx6_phyflex_init(void)
 				}
 	                        if(strcmp("tw9910",csi0_cam_type)==0) {
 					mxc_ipu_csi_pdata[0].mclk_default_rate = 26700000;
+					phyflex_iclinks[0].priv=&tw9910_info;
 				}
 				if(strcmp("mt9m111",csi0_cam_type)==0) {
 					mxc_ipu_csi_pdata[0].mclk_default_rate = 40000000;
@@ -1362,6 +1366,7 @@ static void __init mx6_phyflex_init(void)
 				}
                         	if(strcmp("tw9910",csi1_cam_type)==0) {
 					mxc_ipu_csi_pdata[1].mclk_default_rate = 26700000;
+					phyflex_iclinks[1].priv=&tw9910_info;
 				}
 				if(strcmp("mt9m111",csi1_cam_type)==0) {
 					mxc_ipu_csi_pdata[1].mclk_default_rate = 54000000;
@@ -1381,6 +1386,7 @@ static void __init mx6_phyflex_init(void)
 				}
                        	 	if(strcmp("tw9910",csi1_cam_type)==0) {
 					mxc_ipu_csi_pdata[1].mclk_default_rate = 26700000;
+					phyflex_iclinks[1].priv=&tw9910_info;
 				}
 				if(strcmp("mt9m111",csi1_cam_type)==0) {
 					mxc_ipu_csi_pdata[1].mclk_default_rate = 40000000;
