@@ -425,8 +425,8 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 
 static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 	{
-//		I2C_BOARD_INFO("max1037", 0x64),
-	} , {
+/*		I2C_BOARD_INFO("max1037", 0x64),
+	} , {*/
 		I2C_BOARD_INFO("stmpe811", 0x41),
 		.irq = gpio_to_irq(MX6_PHYFLEX_CAP_TCH_INT1),
 		.platform_data = (void *)&stmpe811_data1,
