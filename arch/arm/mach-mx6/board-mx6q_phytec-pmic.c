@@ -35,6 +35,7 @@
 #include <linux/mfd/da9063/registers.h>
 #include <mach/irqs.h>
 #include <mach/gpio.h>
+#include <mach/system.h>
 
 #include <linux/io.h>
 #include "crm_regs.h"
@@ -42,6 +43,7 @@
 #include "cpu_op-mx6.h"
 
 extern struct cpu_op *(*get_cpu_op)(int *op);
+extern u32 enable_ldo_mode;
 
 struct da9063_pdata da9063_data;
 
@@ -330,30 +332,39 @@ struct da9063_regulators_pdata da9063_regulators = {
 
 static int da9063_init(struct da9063 *da9063)
 {
+	int ret;
 
-#ifdef CONFIG_MX6_INTER_LDO_BYPASS
-	u32 reg;
+	if (enable_ldo_mode == LDO_MODE_DEFAULT)
+		enable_ldo_mode = LDO_MODE_BYPASSED;
 
-	/* Enable bypass for arm and soc internal LDO's. VDDPU isn't
-	 * controlled by PMIC so leave PU LDO at default 1.3V */
-	reg = __raw_readl(ANADIG_REG_CORE);
-	reg |= BF_ANADIG_REG_CORE_REG0_TRG(0x1f);   // turn off ARM LDO
-	reg |= BF_ANADIG_REG_CORE_REG1_TRG(0x18);   // set 1.3V for PU LDO
-	reg |= BF_ANADIG_REG_CORE_REG2_TRG(0x1f);   // turn off SOC LDO
-	__raw_writel(reg, ANADIG_REG_CORE);
-#else
-	// ANATOP regulators
-	struct regulator *cpu_regulator = regulator_get(NULL, "cpu_vddgp");
-	struct regulator *soc_regulator = regulator_get(NULL, "cpu_vddsoc");
-	struct regulator *pu_regulator = regulator_get(NULL, "cpu_vddvpu");
 
-	// Set to maximum possible voltage values
-	regulator_set_voltage(cpu_regulator, 1300000, 1300000);
-	regulator_set_voltage(soc_regulator, 1300000, 1300000);
-	regulator_set_voltage(pu_regulator, 1300000, 1300000);
-#endif
-	
+	if (enable_ldo_mode == LDO_MODE_BYPASSED) {
+		/* VDDARM_IN 1.3V */
+		ret = da9063_reg_write(da9063,DA9063_REG_VBCORE1_A,0x64);
+		if (ret)
+			goto err;
+
+		/* VDDSOC_IN 1.3V */
+		ret = da9063_reg_write(da9063,DA9063_REG_VBCORE2_A,0x64);
+		if (ret)
+			goto err;
+	} else if (enable_ldo_mode != LDO_MODE_BYPASSED) {
+		/* VDDARM_IN 1.38V */
+                ret = da9063_reg_write(da9063,DA9063_REG_VBCORE1_A,0x6C);
+                if (ret)
+                        goto err;
+
+                /* VDDSOC_IN 1.38V */
+                ret = da9063_reg_write(da9063,DA9063_REG_VBCORE2_A,0x6C);
+                if (ret)
+                        goto err;
+	};
+
 	return 0;
+
+err:
+	printk(KERN_ERR "DA9063 init error!\n");
+	return -1;
 }
 
 struct da9063_pdata da9063_data = {
