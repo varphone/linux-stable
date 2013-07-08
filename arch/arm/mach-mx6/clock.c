@@ -5443,7 +5443,7 @@ int __init mx6_clocks_init(unsigned long ckil, unsigned long osc,
 	pcie_clk[0].disable(&pcie_clk[0]);
 
 	/* Initialize Audio and Video PLLs to valid frequency. */
-	clk_set_rate(&pll4_audio_main_clk, 160000000);
+	clk_set_rate(&pll4_audio_main_clk, 216000000);
 	clk_set_rate(&pll5_video_main_clk, 650000000);
 
 	clk_set_parent(&ipu1_di_clk[0], &pll5_video_main_clk);
@@ -5510,7 +5510,6 @@ int __init mx6_clocks_init(unsigned long ckil, unsigned long osc,
 	clk_set_rate(&esai_clk, clk_round_rate(&esai_clk, clk_get_rate(&pll4_audio_main_clk)));
 	clk_set_parent(&clko2_clk, &esai_clk);
 	clk_set_rate(&clko2_clk, clk_round_rate(&clko2_clk, clk_get_rate(&esai_clk)));
-
 #if defined(CONFIG_MACH_MX6Q_PHYFLEX) || defined(CONFIG_MACH_MX6Q_PHYCARD)	
 	clk_set_parent(&clko_clk, &pll4_audio_main_clk);
 #else

@@ -131,7 +131,7 @@
 #define MX6_PHYCARD_CAP_TCH_INT0	IMX_GPIO_NR(4, 29)
 
 #define MX6_PHYFLEX_CAP_TCH_INT0	IMX_GPIO_NR(5, 8)
-#define MX6_PHYFLEX_CAP_TCH_INT1	IMX_GPIO_NR(2, 23)
+#define MX6_PHYFLEX_CAP_TCH_INT1	IMX_GPIO_NR(5, 7)
 #define MX6_PHYFLEX_KAPA_TOUCH_INT0	IMX_GPIO_NR(7, 12)
  
 #define MX6_PHYFLEX_DISP0_DET_INT	IMX_GPIO_NR(3, 31)
@@ -1019,15 +1019,15 @@ static struct mxc_camera_pdata mxc_ipu_csi_pdata[] = {
 		.flags = MXC_CAMERA_DATAWIDTH_10,
 		.ipu = 0,
 		.csi = 0,
-		.mclk_default_rate = 26700000,
-		.mclk_target_rate = 96000000,	//only for mt9p031
+		.mclk_default_rate = 27000000,
+		.mclk_target_rate = 60000000,	//only for mt9p031
 		.use_pll = 0,					//only for mt9p031
 	}, {
 		.flags = MXC_CAMERA_DATAWIDTH_10,
 		.ipu = 1,
 		.csi = 1,
-		.mclk_default_rate = 26700000,
-		.mclk_target_rate = 96000000,	//only for mt9p031
+		.mclk_default_rate = 27000000,
+		.mclk_target_rate = 60000000,	//only for mt9p031
 		.use_pll = 0,					//only for mt9p031
 	},
 };
@@ -1319,40 +1319,40 @@ static void __init mx6_phyflex_init(void)
 		if(csi0_cam_type!=NULL){/* set the max MCLK for the Camera-Type and Interface-Type */
  			if(strcmp(csi0_interface_type,"phyCAM-P")==0) {
         	        	if(strcmp("mt9m001",csi0_cam_type)==0) {
-					mxc_ipu_csi_pdata[0].mclk_default_rate = 40000000;
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 43200000;
 					mxc_ipu_csi_pdata[0].flags = MXC_CAMERA_DATAWIDTH_10 | MXC_CAMERA_PCP;
 				}
 	                	if(strcmp("tw9911",csi0_cam_type)==0) {
-					mxc_ipu_csi_pdata[0].mclk_default_rate = 26700000;
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 27000000;
 					phyflex_iclinks[0].priv=&tw9910_info;
 				}
 				if(strcmp("mt9m111",csi0_cam_type)==0) {
 					mxc_ipu_csi_pdata[0].mclk_default_rate = 54000000;
 				}
                 		if(strcmp("mt9v022",csi0_cam_type)==0) {
-					mxc_ipu_csi_pdata[0].mclk_default_rate = 26700000;
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 27000000;
 				}
                 		if(strcmp("mt9p031",csi0_cam_type)==0) {
-					mxc_ipu_csi_pdata[0].mclk_default_rate = 53400000;
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 54000000;
 					mxc_ipu_csi_pdata[0].use_pll = 0;
 					phyflex_iclinks[0].flags=SOCAM_SENSOR_INVERT_PCLK;
 				} /* The PLL in the mt9p031 generated 96 MHZ */
         		} else if(strcmp(csi0_interface_type,"phyCAM-S+")==0) {
         	                if(strcmp("mt9m001",csi0_cam_type)==0) {
-					mxc_ipu_csi_pdata[0].mclk_default_rate = 40000000;
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 36000000;
 				}
 	                        if(strcmp("tw9910",csi0_cam_type)==0) {
-					mxc_ipu_csi_pdata[0].mclk_default_rate = 26700000;
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 27000000;
 					phyflex_iclinks[0].priv=&tw9910_info;
 				}
 				if(strcmp("mt9m111",csi0_cam_type)==0) {
-					mxc_ipu_csi_pdata[0].mclk_default_rate = 40000000;
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 36000000;
 				}
                         	if(strcmp("mt9v022",csi0_cam_type)==0) {
-					mxc_ipu_csi_pdata[0].mclk_default_rate = 26700000;
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 27000000;
 				}
                        		if(strcmp("mt9p031",csi0_cam_type)==0) {
-					mxc_ipu_csi_pdata[0].mclk_default_rate = 80000000;
+					mxc_ipu_csi_pdata[0].mclk_default_rate = 54000000;
 					phyflex_iclinks[0].flags=SOCAM_SENSOR_INVERT_PCLK;
 				}
 			}
@@ -1361,41 +1361,41 @@ static void __init mx6_phyflex_init(void)
 		if(csi1_cam_type!=NULL) {/* set the max MCLK for the Camera-Type and Interface-Type */
                 	if(strcmp(csi1_interface_type,"phyCAM-P")==0) {
                         	if(strcmp("mt9m001",csi1_cam_type)==0) {
-					mxc_ipu_csi_pdata[1].mclk_default_rate = 40000000;
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 43200000;
 					mxc_ipu_csi_pdata[1].flags=MXC_CAMERA_DATAWIDTH_10 | MXC_CAMERA_PCP;
 				}
                         	if(strcmp("tw9910",csi1_cam_type)==0) {
-					mxc_ipu_csi_pdata[1].mclk_default_rate = 26700000;
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 27000000;
 					phyflex_iclinks[1].priv=&tw9910_info;
 				}
 				if(strcmp("mt9m111",csi1_cam_type)==0) {
 					mxc_ipu_csi_pdata[1].mclk_default_rate = 54000000;
 				}
                         	if(strcmp("mt9v022",csi1_cam_type)==0) {
-					mxc_ipu_csi_pdata[1].mclk_default_rate = 26700000;
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 27000000;
 				}
                         	if(strcmp("mt9p031",csi1_cam_type)==0) {
-					mxc_ipu_csi_pdata[1].mclk_default_rate = 53400000;
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 54000000;
 					mxc_ipu_csi_pdata[1].use_pll = 0;
 					phyflex_iclinks[1].flags=SOCAM_SENSOR_INVERT_PCLK;
 				} /*The PLL in the mt9p031 generated 96 MHZ */
                 	}
                 	else if(strcmp(csi1_interface_type,"phyCAM-S+")==0) {
                         	if(strcmp("mt9m001",csi1_cam_type)==0) {
-					mxc_ipu_csi_pdata[1].mclk_default_rate = 40000000;
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 36000000;
 				}
                        	 	if(strcmp("tw9910",csi1_cam_type)==0) {
-					mxc_ipu_csi_pdata[1].mclk_default_rate = 26700000;
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 27000000;
 					phyflex_iclinks[1].priv=&tw9910_info;
 				}
 				if(strcmp("mt9m111",csi1_cam_type)==0) {
-					mxc_ipu_csi_pdata[1].mclk_default_rate = 40000000;
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 36000000;
 				}
                        	 	if(strcmp("mt9v022",csi1_cam_type)==0) {
-					mxc_ipu_csi_pdata[1].mclk_default_rate = 26700000;
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 27000000;
 				}
                        	 	if(strcmp("mt9p031",csi1_cam_type)==0) {
-					mxc_ipu_csi_pdata[1].mclk_default_rate = 80000000;
+					mxc_ipu_csi_pdata[1].mclk_default_rate = 54000000;
 					phyflex_iclinks[1].flags=SOCAM_SENSOR_INVERT_PCLK;
 				}
                 	}
