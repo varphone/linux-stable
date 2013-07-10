@@ -226,6 +226,7 @@ static int pu_enable(struct anatop_regulator *sreg)
 		clk_enable(gpu2d_axi_clk);
 		clk_enable(openvg_axi_clk);
 	}
+	udelay(150);
 	/* enable power up request */
 	reg = __raw_readl(gpc_base + GPC_PGC_GPU_PGCR_OFFSET);
 	__raw_writel(reg | 0x1, gpc_base + GPC_PGC_GPU_PGCR_OFFSET);
