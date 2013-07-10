@@ -1546,17 +1546,6 @@ static void __init mx6_phyflex_init(void)
 	platform_device_register(&w1_device);
 }
 
-// NOTE: this function is called by cpufreq. Dvfs doesn't calls this
-// function so it must be called specifically, but when it's done from
-// board initialization than order of regulators initialization is
-// wrong. It results in cpu_regulator variable which leads to crush at
-// time of dvfs enabling.
-// TODO: find correct way of calling this function. Maybe in next
-// kernel releases it will be explicitly called from dvfs.
-#if !defined(CONFIG_CPU_FREQ_IMX)
-device_initcall(mx6_cpu_regulator_init);
-#endif
-
 extern void __iomem *twd_base;
 static void __init mx6_timer_init(void)
 {
