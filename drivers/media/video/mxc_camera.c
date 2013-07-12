@@ -220,6 +220,8 @@ static int mxc_videobuf_setup(struct vb2_queue *vq,
 
 	if (sizes[0] * *count > MAX_VIDEO_MEM * 1024 * 1024)
 		*count = MAX_VIDEO_MEM * 1024 * 1024 / sizes[0];
+	else
+		*count = 1;
 
 	return 0;
 }
