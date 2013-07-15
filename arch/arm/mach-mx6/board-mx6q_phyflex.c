@@ -1322,7 +1322,7 @@ static void __init mx6_phyflex_init(void)
 					mxc_ipu_csi_pdata[0].mclk_default_rate = 43200000;
 					mxc_ipu_csi_pdata[0].flags = MXC_CAMERA_DATAWIDTH_10 | MXC_CAMERA_PCP;
 				}
-	                	if(strcmp("tw9911",csi0_cam_type)==0) {
+	                	if(strcmp("tw9910",csi0_cam_type)==0) {
 					mxc_ipu_csi_pdata[0].mclk_default_rate = 27000000;
 					phyflex_iclinks[0].priv=&tw9910_info;
 				}
