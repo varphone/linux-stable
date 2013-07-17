@@ -34,6 +34,12 @@
 /* Common pads for PhyFlex board */
 static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 
+	/* GPIOs for revision control */
+	MX6Q_PAD_SD4_DAT4__GPIO_2_12,
+	MX6Q_PAD_SD4_DAT5__GPIO_2_13,
+	MX6Q_PAD_SD4_DAT6__GPIO_2_14,
+	MX6Q_PAD_SD4_DAT7__GPIO_2_15,
+
 	/* User LEDs */
 	MX6Q_PAD_ENET_TXD0__GPIO_1_30,	// Led Green
 	MX6Q_PAD_EIM_EB3__GPIO_2_31,	// Led Red

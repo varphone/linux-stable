@@ -17,8 +17,10 @@
  */
 
 #include <linux/clk.h>
+#include <linux/module.h>
 
 #include <mach/common.h>
+#include <mach/gpio.h>
 #include <mach/hardware.h>
 #include <mach/iomux-mx6q.h>
 
@@ -29,9 +31,28 @@
 
 /* Setup imx6 revision and uniq ID */
 #define HW_OCOTP_DEVIDn(n)        (0x00000410 + (n) * 0x10)
+
+unsigned int module_rev;
+EXPORT_SYMBOL(module_rev);
+
+static void get_module_revison(void)
+{
+	unsigned int val = 0;
+
+	val = gpio_get_value(IMX_GPIO_NR(2, 12));
+	val |= (gpio_get_value(IMX_GPIO_NR(2, 13)) << 1);
+	val |= (gpio_get_value(IMX_GPIO_NR(2, 14)) << 2);
+	val |= (gpio_get_value(IMX_GPIO_NR(2, 15)) << 3);
+
+	module_rev = 16 - val;
+
+}
+
 void __init mx6_setup_cpuinfo(void)
 {
 	system_rev = mx6q_revision();
 	system_serial_high = readl(MX6_IO_ADDRESS(OCOTP_BASE_ADDR) + HW_OCOTP_DEVIDn(0));
 	system_serial_low  = readl(MX6_IO_ADDRESS(OCOTP_BASE_ADDR) + HW_OCOTP_DEVIDn(1));
+
+	get_module_revison();
 }
