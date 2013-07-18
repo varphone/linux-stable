@@ -170,7 +170,7 @@ extern char *soc_reg_id;
 extern char *pu_reg_id;
 
 
-static const struct anatop_thermal_platform_data
+static struct anatop_thermal_platform_data
 	mx6_phyflex_anatop_thermal_data __initconst = {
 	.name = "anatop_thermal",
 };
@@ -252,7 +252,7 @@ static int mx6_phyflex_spi_cs[] = {
 	MX6_PHYFLEX_ECSPI3_CS3,
 };
 
-static const struct spi_imx_master mx6_phyflex_spi_data __initconst = {
+static struct spi_imx_master mx6_phyflex_spi_data __initconst = {
 	.chipselect     = mx6_phyflex_spi_cs,
 	.num_chipselect = ARRAY_SIZE(mx6_phyflex_spi_cs),
 };
@@ -790,7 +790,7 @@ static struct platform_pwm_backlight_data mx6_phyflex_pwm_backlight_data1 = {
 };
 
 
-static const struct flexcan_platform_data mx6_phyflex_flexcan0_pdata __initconst = {
+static struct flexcan_platform_data mx6_phyflex_flexcan0_pdata __initconst = {
 	/* PhyFlex board don't switch transivers */
 	.transceiver_switch = NULL,
 };
@@ -805,7 +805,7 @@ static void phyflex_suspend_exit(void)
 	/* resmue resore */
 }
 
-static const struct pm_platform_data mx6_phyflex_pm_data __initconst = {
+static struct pm_platform_data mx6_phyflex_pm_data __initconst = {
 	.name		= "imx_pm",
 	.suspend_enter	= phyflex_suspend_enter,
 	.suspend_exit	= phyflex_suspend_exit,
@@ -991,7 +991,7 @@ static void __init mx6_phyflex_fixup(struct machine_desc *desc, struct tag *tags
 }
 
 
-static const struct imx_pcie_platform_data mx6_phyflex_pcie_data  __initconst = {
+static struct imx_pcie_platform_data mx6_phyflex_pcie_data  __initconst = {
 	.pcie_rst       = IMX_GPIO_NR(2, 23),
 	.pcie_pwr_en	= -EINVAL,
 	.pcie_wake_up   = IMX_GPIO_NR(1, 7),
