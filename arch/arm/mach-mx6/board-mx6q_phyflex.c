@@ -169,6 +169,7 @@ extern char *gp_reg_id;
 extern char *soc_reg_id;
 extern char *pu_reg_id;
 
+extern int module_rev;
 
 static struct anatop_thermal_platform_data
 	mx6_phyflex_anatop_thermal_data __initconst = {
@@ -1191,6 +1192,15 @@ static void __init mx6_phyflex_init(void)
 	mx6_setup_cpuinfo();
 
 	mxc_iomux_v3_setup_multiple_pads(mx6q_phytec_common_pads, ARRAY_SIZE(mx6q_phytec_common_pads));
+	
+	if (module_rev == PHYFLEX_MODULE_REV_1) {
+		mxc_iomux_v3_setup_multiple_pads(mx6q_phytec_rev1_pads,
+						ARRAY_SIZE(mx6q_phytec_rev1_pads));
+	} else {
+		mxc_iomux_v3_setup_multiple_pads(mx6q_phytec_rev2_pads,
+						ARRAY_SIZE(mx6q_phytec_rev2_pads));
+		mx6_phyflex_pcie_data.pcie_rst = IMX_GPIO_NR(4, 17);
+	}
 
 	pm_power_off = mx6_snvs_poweroff;
 

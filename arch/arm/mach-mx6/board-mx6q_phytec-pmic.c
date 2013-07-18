@@ -41,9 +41,11 @@
 #include "crm_regs.h"
 #include "regs-anadig.h"
 #include "cpu_op-mx6.h"
+#include "board-mx6q_phytec-common.h"
 
 extern struct cpu_op *(*get_cpu_op)(int *op);
 extern u32 enable_ldo_mode;
+extern int module_rev;
 
 struct da9063_pdata da9063_data;
 
@@ -376,14 +378,18 @@ struct da9063_pdata da9063_data = {
 	.init = da9063_init,
 };
 
-#define DA9063_IRQ_PIN	IMX_GPIO_NR(4, 17)
+#define DA9063_IRQ_PIN_REV1	IMX_GPIO_NR(4, 17)
+#define DA9063_IRQ_PIN_REV2	IMX_GPIO_NR(2, 9)
 struct i2c_board_info da9063_i2c = {
 	I2C_BOARD_INFO("da9063", 0x58),
-	.irq = gpio_to_irq(DA9063_IRQ_PIN),
+	.irq = gpio_to_irq(DA9063_IRQ_PIN_REV1),
 	.platform_data = &da9063_data,
 };
 
 int __init mx6_phyflex_init_da9063(void)
 {
+	if (module_rev == PHYFLEX_MODULE_REV_2)
+		da9063_i2c.irq = gpio_to_irq(DA9063_IRQ_PIN_REV2);
+
 	return i2c_register_board_info(0, &da9063_i2c, 1);
 }

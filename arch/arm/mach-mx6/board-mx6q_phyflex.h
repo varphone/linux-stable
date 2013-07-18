@@ -251,14 +251,8 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
     /* Enable CAM1 clocking only if it is needed for camera 1 lvds */
 	PHYFLEX_PAD_NANDF_CS2__CCM_CLKO2,
 	
-	/* PCIE_PRSNT */
-	MX6Q_PAD_SD1_DAT3__GPIO_1_21,
-
 	/* PCIE_WAKE */
 	MX6Q_PAD_GPIO_7__GPIO_1_7,
-
-	/* PMIC interrupt */
-	MX6Q_PAD_DI0_PIN15__GPIO_4_17,
 
 	/* Default high speed pin settings for sd-cards */
 	MX6Q_PAD_SD3_CLK__USDHC3_CLK_200MHZ,
@@ -278,4 +272,22 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_SD2_DAT1__USDHC2_DAT1_200MHZ,
 	MX6Q_PAD_SD2_DAT2__USDHC2_DAT2_200MHZ,
 	MX6Q_PAD_SD2_DAT3__USDHC2_DAT3_200MHZ,
+};
+
+/* This iomux array is for phyFLEX-i.MX6 modules Rev. 1 */
+static iomux_v3_cfg_t mx6q_phytec_rev1_pads[] = {
+        /* PMIC interrupt */
+        MX6Q_PAD_DI0_PIN15__GPIO_4_17,
+        /* PCIE_PRSNT */
+        MX6Q_PAD_SD1_DAT3__GPIO_1_21,
+};
+
+/* This iomux array is for phyFLEX-i.MX6 modules Rev. 2 */
+static iomux_v3_cfg_t mx6q_phytec_rev2_pads[] = {
+	/* PMIC interrupt */
+	MX6Q_PAD_SD4_DAT1__GPIO_2_9,
+
+	/* PCIE_PRSNT */
+	MX6Q_PAD_DI0_PIN15__GPIO_4_17,
+	
 };
