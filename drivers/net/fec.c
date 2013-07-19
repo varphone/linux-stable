@@ -198,6 +198,7 @@ struct fec_enet_private {
 	struct net_device *netdev;
 
 	struct clk *clk;
+	struct clk *ipg_clk;
 
 	/* The saved address of a sent-in-place packet/buffer, for skfree(). */
 	unsigned char *tx_bounce[TX_RING_SIZE];
@@ -1147,8 +1148,8 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 	/*
 	 * Set MII speed to 2.5 MHz (= clk_get_rate() / 2 * phy_speed)
 	 */
-	fep->phy_speed = DIV_ROUND_UP(clk_get_rate(fep->clk),
-					(FEC_ENET_MII_CLK << 2)) << 1;
+	fep->phy_speed = DIV_ROUND_UP(clk_get_rate(fep->ipg_clk),
+					(FEC_ENET_MII_CLK * 2)) << 1;
 
 	/* set hold time to 2 internal clock cycle */
 	if (cpu_is_mx6q() || cpu_is_mx6dl())
@@ -1917,6 +1918,13 @@ fec_probe(struct platform_device *pdev)
 	}
 	clk_enable(fep->clk);
 
+	fep->ipg_clk = clk_get(NULL, "ipg_clk");
+	if (IS_ERR(fep->ipg_clk)) {
+		ret = PTR_ERR(fep->ipg_clk);
+		goto failed_clk;
+	}
+	clk_enable(fep->ipg_clk);
+
 	ret = fec_enet_init(ndev);
 	if (ret)
 		goto failed_init;
@@ -1956,7 +1964,9 @@ failed_register:
 	kfree(fep->ptp_priv);
 failed_mii_init:
 failed_init:
+	clk_disable(fep->ipg_clk);
 	clk_disable(fep->clk);
+	clk_put(fep->ipg_clk);
 	clk_put(fep->clk);
 failed_clk:
 #ifdef CONFIG_MX6_ENET_IRQ_TO_GPIO
