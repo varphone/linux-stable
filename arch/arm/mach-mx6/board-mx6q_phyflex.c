@@ -190,38 +190,10 @@ static int mx6_phyflex_fec_phy_init(struct phy_device *phydev)
 
 	printk("FEC ID: 0x%X, 0x%X\n", phy_read(phydev, 0x02), phy_read(phydev, 0x03));
 
-	phy_write(phydev, 0x0b, 0x104);
 
 	/* enable all interrupts */
 	phy_write(phydev, 0x1b, 0xff00);
-#if 0
-	unsigned short val, i;
-	for (i = 0; i < 16; ++i) {
-		val = phy_read(phydev, i);
-		printk("%s() PHY register %d: 0x%04x\n", __FUNCTION__, i, val);
-	}
 
-	/* To enable AR8031 ouput a 125MHz clk from CLK_25M */
-	phy_write(phydev, 0xd, 0x7);
-	phy_write(phydev, 0xe, 0x8016);
-	phy_write(phydev, 0xd, 0x4007);
-	val = phy_read(phydev, 0xe);
-
-	val &= 0xffe3;
-	val |= 0x18;
-	phy_write(phydev, 0xe, val);
-
-	/* introduce tx clock delay */
-	phy_write(phydev, 0x1d, 0x5);
-	val = phy_read(phydev, 0x1e);
-	val |= 0x0100;
-	phy_write(phydev, 0x1e, val);
-
-	/*check phy power*/
-	val = phy_read(phydev, 0x0);
-	if (val & BMCR_PDOWN)
-		phy_write(phydev, 0x0, (val & ~BMCR_PDOWN));
-#endif
 	return 0;
 }
 
