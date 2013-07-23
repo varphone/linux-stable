@@ -1535,14 +1535,14 @@ static void __init mx6_phyflex_init(void)
 	imx6q_add_mxc_pwm_backlight(0, &mx6_phyflex_pwm_backlight_data0);
 	imx6q_add_mxc_pwm_backlight(1, &mx6_phyflex_pwm_backlight_data1);
 
-	/* PCI Express initialization */
-	imx6q_add_pcie(&mx6_phyflex_pcie_data);
-
 	imx6q_add_perfmon(0);
 	imx6q_add_perfmon(1);
 	imx6q_add_perfmon(2);
 //	imx6q_add_mlb150(&mx6_phyflex_mlb150_data);
 
+	/* PCI Express initialization */
+	imx6q_add_pcie(&mx6_phyflex_pcie_data);
+	imx6q_add_busfreq();
 
 	/* 1-wire devices registration */
 	platform_device_register(&w1_device);
