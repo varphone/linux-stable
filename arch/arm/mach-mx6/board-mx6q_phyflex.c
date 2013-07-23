@@ -546,11 +546,22 @@ static int mx6_phyflex_sata_init(struct device *dev, void __iomem *addr)
 	tmpdata = clk_get_rate(clk) / 1000;
 	clk_put(clk);
 
+#ifdef CONFIG_SATA_AHCI_PLATFORM
 	ret = sata_init(addr, tmpdata);
 	if (ret == 0)
 		return ret;
+#else
+	usleep_range(1000, 2000);
+	/* AHCI PHY enter into PDDQ mode if the AHCI module is not enabled */
+	tmpdata = readl(addr + PORT_PHY_CTL);
+	writel(tmpdata | PORT_PHY_CTL_PDDQ_LOC, addr + PORT_PHY_CTL);
+	pr_info("No AHCI save PWR: PDDQ %s\n", ((readl(addr + PORT_PHY_CTL)
+					>> 20) & 1) ? "enabled" : "disabled");
+#endif
 
 release_sata_clk:
+	/* disable SATA_PHY PLL */
+	writel((readl(IOMUXC_GPR13) & ~0x2), IOMUXC_GPR13);
 	clk_disable(sata_clk);
 put_sata_clk:
 	clk_put(sata_clk);
@@ -560,6 +571,7 @@ put_sata_clk:
 	return ret;
 }
 
+#ifdef CONFIG_SATA_AHCI_PLATFORM
 static void mx6_phyflex_sata_exit(struct device *dev)
 {
 	clk_disable(sata_clk);
@@ -573,6 +585,7 @@ static struct ahci_platform_data mx6_phyflex_sata_data = {
 	.init	= mx6_phyflex_sata_init,
 	.exit	= mx6_phyflex_sata_exit,
 };
+#endif
 
 static struct imx_asrc_platform_data imx_asrc_data = {
 	.channel_bits	= 4,
@@ -1487,7 +1500,14 @@ static void __init mx6_phyflex_init(void)
 	mx6_phyflex_init_usb();
 	mx6_phyflex_init_audio();
 
-	imx6q_add_ahci(0, &mx6_phyflex_sata_data);
+	if (cpu_is_mx6q()) {
+#ifdef CONFIG_SATA_AHCI_PLATFORM
+		imx6q_add_ahci(0, &mx6_phyflex_sata_data);
+#else
+		mx6_phyflex_sata_init(NULL,
+			(void __iomem *)ioremap(MX6Q_SATA_BASE_ADDR, SZ_4K));
+#endif
+	}
 
 	imx_asrc_data.asrc_core_clk = clk_get(NULL, "asrc_clk");
 	imx_asrc_data.asrc_audio_clk = clk_get(NULL, "asrc_serial_clk");
