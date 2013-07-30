@@ -450,6 +450,7 @@ static int mxc_camera_add_device(struct soc_camera_device *icd)
 	mxc_camera_activate(mxc_cam, icd);
 
 	mxc_cam->icd = icd;
+	mxc_cam->csi_buf_num = 0;
 
 	dev_info(icd->dev.parent, "MXC Camera driver attached to camera %d\n",
 		 icd->devnum);

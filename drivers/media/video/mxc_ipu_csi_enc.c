@@ -172,6 +172,8 @@ static int csi_enc_eba_update(struct ipu_soc *ipu, int csi, dma_addr_t eba,
 	err = ipu_update_channel_buffer(ipu, get_csi_mem_dma_channel(csi), IPU_OUTPUT_BUFFER,
 					*buffer_num, eba);
 	if (err != 0) {
+		int err;
+		
 		ipu_clear_buffer_ready(ipu, get_csi_mem_dma_channel(csi), IPU_OUTPUT_BUFFER,
 				       *buffer_num);
 
@@ -186,7 +188,8 @@ static int csi_enc_eba_update(struct ipu_soc *ipu, int csi, dma_addr_t eba,
 
 	ipu_select_buffer(ipu, get_csi_mem_dma_channel(csi), IPU_OUTPUT_BUFFER, *buffer_num);
 
-	*buffer_num = (*buffer_num == 0) ? 1 : 0;
+	if(!err)
+		*buffer_num = (*buffer_num == 0) ? 1 : 0;
 
 	return 0;
 }
