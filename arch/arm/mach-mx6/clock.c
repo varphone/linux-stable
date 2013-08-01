@@ -4866,7 +4866,7 @@ static struct clk pcie_clk[] = {
 	.disable = _clk_pcie_disable,
 	.enable_reg = MXC_CCM_CCGR4,
 	.enable_shift = MXC_CCM_CCGRx_CG0_OFFSET,
-	.secondary = &pcie_clk[1],
+	.secondary = &pcie_clk[2],
 	.flags = AHB_HIGH_SET_POINT | CPU_FREQ_TRIG_UPDATE,
 	},
 	{
