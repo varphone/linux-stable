@@ -690,6 +690,7 @@ static void change_field(int *in, int start, int end, int val)
 static void imx_pcie_enable_controller(struct device *dev)
 {
 	struct clk *pcie_clk;
+	struct clk *sata_clk;
 	struct imx_pcie_platform_data *pdata = dev->platform_data;
 
 	/* Enable PCIE power */
@@ -699,6 +700,15 @@ static void imx_pcie_enable_controller(struct device *dev)
 	gpio_direction_output(pdata->pcie_pwr_en, 1);
 
 	imx_pcie_clrset(IOMUXC_GPR1_TEST_POWERDOWN, 0 << 18, IOMUXC_GPR1);
+
+	sata_clk = clk_get(NULL, "imx_sata_clk");
+	if (IS_ERR(sata_clk))
+		pr_err("no sata clock.\n");
+
+	if (clk_enable(sata_clk)) {
+		pr_err("can't enable sata clock.\n");
+                clk_put(sata_clk);
+	}
 
 	/* enable the clks */
 	pcie_clk = clk_get(NULL, "pcie_clk");
