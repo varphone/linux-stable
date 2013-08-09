@@ -92,6 +92,7 @@
 #include "crm_regs.h"
 #include "cpu_op-mx6.h"
 #include "board-mx6q_phyflex.h"
+#include "board-mx6dl_phyflex.h"
 
 #include "board-mx6q_phytec-common.h"
 #include "board-mx6q_phytec-sd.h"
@@ -1173,17 +1174,32 @@ static void __init mx6_phyflex_init(void)
 	long csi0_cam_address_hex;
 	long csi1_cam_address_hex;
 	
+	if (cpu_is_mx6q()) {
+		 mxc_iomux_v3_setup_multiple_pads(mx6q_phytec_common_pads,
+						ARRAY_SIZE(mx6q_phytec_common_pads));
+	} else if (cpu_is_mx6dl()) {
+		mxc_iomux_v3_setup_multiple_pads(mx6dl_phyflex_pads,
+						ARRAY_SIZE(mx6dl_phyflex_pads));
+	}
+
 	/* imx6q SoC revision and CPU uniq ID setup */
 	mx6_setup_cpuinfo();
 
-	mxc_iomux_v3_setup_multiple_pads(mx6q_phytec_common_pads, ARRAY_SIZE(mx6q_phytec_common_pads));
-	
+
 	if (module_rev == PHYFLEX_MODULE_REV_1) {
-		mxc_iomux_v3_setup_multiple_pads(mx6q_phytec_rev1_pads,
+		if (cpu_is_mx6q()) {
+			mxc_iomux_v3_setup_multiple_pads(mx6q_phytec_rev1_pads,
 						ARRAY_SIZE(mx6q_phytec_rev1_pads));
+		} else if (cpu_is_mx6dl()) {
+//			mxc_iomux_v3_setup_multiple_pads();
+		}
 	} else {
-		mxc_iomux_v3_setup_multiple_pads(mx6q_phytec_rev2_pads,
+		if (cpu_is_mx6q()) {
+			mxc_iomux_v3_setup_multiple_pads(mx6q_phytec_rev2_pads,
 						ARRAY_SIZE(mx6q_phytec_rev2_pads));
+		} else if (cpu_is_mx6dl()) {
+//			mxc_iomux_v3_setup_multiple_pads();
+		}
 		mx6_phyflex_pcie_data.pcie_rst = IMX_GPIO_NR(4, 17);
 	}
 
@@ -1205,14 +1221,23 @@ static void __init mx6_phyflex_init(void)
 
 	/* Video devices initialization */
 	imx6q_add_ipuv3(0, &ipu_data[0]);
-	imx6q_add_ipuv3(1, &ipu_data[1]);
-	for (i = 0; i < ARRAY_SIZE(phyflex_fb_data); i++)
-		imx6q_add_ipuv3fb(i, &phyflex_fb_data[i]);
+	if(cpu_is_mx6q()) {
+		imx6q_add_ipuv3(1, &ipu_data[1]);
+		for (i = 0; i < ARRAY_SIZE(phyflex_fb_data); i++)
+			imx6q_add_ipuv3fb(i, &phyflex_fb_data[i]);
+	} else {
+		ldb_data.ipu_id = 0;
+                ldb_data.disp_id = 0;
+		for (i = 0; i < ARRAY_SIZE(phyflex_fb_data) / 2; i++)
+			imx6q_add_ipuv3fb(i, &phyflex_fb_data[i]);
+	}
+
 
 	imx6q_add_ldb(&ldb_data);
 
 	imx6q_add_v4l2_output(0);
-	
+
+if(cpu_is_mx6q()) {	
 	/***************************************************************************
 	Camera section:
 	The bootargs csi0 and csi1 will be interpreted. 
@@ -1453,7 +1478,7 @@ static void __init mx6_phyflex_init(void)
 
 	imx_add_viv_gpu(&imx6_gpu_data, &imx6_gpu_pdata);
 	imx6q_add_vpu();
-
+}
 	/* Initialize SoC RTC */
 	imx6q_add_imx_snvs_rtc();
 

@@ -2,6 +2,7 @@
 #define __BOARD_MX6Q_PHYTEC_SD_H__
 
 #include <mach/iomux-mx6q.h>
+#include <mach/iomux-mx6dl.h>
 
 #define MX6Q_USDHC_PAD_SETTING(id, speed)       \
 mx6q_sd##id##_##speed##mhz[] = {                \
@@ -25,6 +26,16 @@ mx6q_sd##id##_##speed##mhz[] = {                \
 	MX6Q_PAD_SD##id##_DAT1__USDHC##id##_DAT1_##speed##MHZ,  \
 	MX6Q_PAD_SD##id##_DAT2__USDHC##id##_DAT2_##speed##MHZ,  \
 	MX6Q_PAD_SD##id##_DAT3__USDHC##id##_DAT3_##speed##MHZ,  \
+}
+
+#define MX6DL_USDHC_PAD_SETTING_SHORT(id, speed) \
+mx6dl_sd##id##_##speed##mhz[] = {                \
+        MX6DL_PAD_SD##id##_CLK__USDHC##id##_CLK_##speed##MHZ,    \
+        MX6DL_PAD_SD##id##_CMD__USDHC##id##_CMD_##speed##MHZ,    \
+        MX6DL_PAD_SD##id##_DAT0__USDHC##id##_DAT0_##speed##MHZ,  \
+        MX6DL_PAD_SD##id##_DAT1__USDHC##id##_DAT1_##speed##MHZ,  \
+        MX6DL_PAD_SD##id##_DAT2__USDHC##id##_DAT2_##speed##MHZ,  \
+        MX6DL_PAD_SD##id##_DAT3__USDHC##id##_DAT3_##speed##MHZ,  \
 }
 
 extern void __init board_esdhc_init(char id, int cd_gpio, int wp_gpio);

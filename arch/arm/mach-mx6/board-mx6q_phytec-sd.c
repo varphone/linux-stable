@@ -35,6 +35,10 @@ static iomux_v3_cfg_t MX6Q_USDHC_PAD_SETTING_SHORT(2, 50);
 static iomux_v3_cfg_t MX6Q_USDHC_PAD_SETTING_SHORT(2, 100);
 static iomux_v3_cfg_t MX6Q_USDHC_PAD_SETTING_SHORT(2, 200);
 
+static iomux_v3_cfg_t MX6DL_USDHC_PAD_SETTING_SHORT(3, 50);
+static iomux_v3_cfg_t MX6DL_USDHC_PAD_SETTING_SHORT(3, 100);
+static iomux_v3_cfg_t MX6DL_USDHC_PAD_SETTING_SHORT(3, 200);
+
 enum sd_pad_mode {
 	SD_PAD_MODE_LOW_SPEED,
 	SD_PAD_MODE_MED_SPEED,
@@ -101,6 +105,11 @@ static int plt_sd3_pad_change(unsigned int index, int clock)
 	u32 sd3_pads_100mhz_cnt;
 	u32 sd3_pads_50mhz_cnt;
 
+	if (index != 2) {
+		printk(KERN_ERR"no such SD host controller index %d\n", index);
+		return -EINVAL;
+	}
+
 	if (cpu_is_mx6q()) {
 		sd3_pads_200mhz = mx6q_sd3_200mhz;
 		sd3_pads_100mhz = mx6q_sd3_100mhz;
@@ -109,6 +118,14 @@ static int plt_sd3_pad_change(unsigned int index, int clock)
 		sd3_pads_200mhz_cnt = ARRAY_SIZE(mx6q_sd3_200mhz);
 		sd3_pads_100mhz_cnt = ARRAY_SIZE(mx6q_sd3_100mhz);
 		sd3_pads_50mhz_cnt = ARRAY_SIZE(mx6q_sd3_50mhz);
+	} else if (cpu_is_mx6dl()) {
+		sd3_pads_200mhz = mx6dl_sd3_200mhz;
+		sd3_pads_100mhz = mx6dl_sd3_100mhz;
+		sd3_pads_50mhz = mx6dl_sd3_50mhz;
+
+		sd3_pads_200mhz_cnt = ARRAY_SIZE(mx6dl_sd3_200mhz);
+		sd3_pads_100mhz_cnt = ARRAY_SIZE(mx6dl_sd3_100mhz);
+		sd3_pads_50mhz_cnt = ARRAY_SIZE(mx6dl_sd3_50mhz);
 	}
 
 	if (clock > 100000000) {
