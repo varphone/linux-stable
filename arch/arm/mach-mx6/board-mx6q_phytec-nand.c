@@ -21,6 +21,7 @@
 #include <mach/common.h>
 #include <mach/hardware.h>
 #include <mach/iomux-mx6q.h>
+#include <mach/iomux-mx6dl.h>
 
 #include "devices-imx6q.h"
 #include "crm_regs.h"
@@ -79,16 +80,46 @@ static iomux_v3_cfg_t mx6q_gpmi_nand_rev2[] __initdata = {
 	MX6Q_PAD_SD4_DAT0__RAWNAND_DQS,
 };
 
+static iomux_v3_cfg_t mx6dl_gpmi_nand_rev2[] __initdata = {
+	MX6DL_PAD_NANDF_CLE__RAWNAND_CLE,
+	MX6DL_PAD_NANDF_ALE__RAWNAND_ALE,
+	MX6DL_PAD_NANDF_CS0__RAWNAND_CE0N,
+	MX6DL_PAD_NANDF_CS1__RAWNAND_CE1N,
+	MX6DL_PAD_NANDF_CS3__RAWNAND_CE3N,
+	MX6DL_PAD_NANDF_RB0__RAWNAND_READY0,
+	MX6DL_PAD_SD4_DAT0__RAWNAND_DQS,
+	MX6DL_PAD_NANDF_D0__RAWNAND_D0,
+	MX6DL_PAD_NANDF_D1__RAWNAND_D1,
+	MX6DL_PAD_NANDF_D2__RAWNAND_D2,
+	MX6DL_PAD_NANDF_D3__RAWNAND_D3,
+	MX6DL_PAD_NANDF_D4__RAWNAND_D4,
+	MX6DL_PAD_NANDF_D5__RAWNAND_D5,
+	MX6DL_PAD_NANDF_D6__RAWNAND_D6,
+	MX6DL_PAD_NANDF_D7__RAWNAND_D7,
+	MX6DL_PAD_SD4_CLK__RAWNAND_WRN,
+	MX6DL_PAD_NANDF_WP_B__RAWNAND_RESETN,
+};
+
 static int __init gpmi_nand_platform_init(void)
 {
 	int ret;
 
 	if (module_rev == PHYFLEX_MODULE_REV_1) {
-		ret = mxc_iomux_v3_setup_multiple_pads(mx6q_gpmi_nand,
+		if (cpu_is_mx6q()) {
+			ret = mxc_iomux_v3_setup_multiple_pads(mx6q_gpmi_nand,
 							ARRAY_SIZE(mx6q_gpmi_nand));
+		} else if (cpu_is_mx6dl()) {
+			ret =  mxc_iomux_v3_setup_multiple_pads(mx6dl_gpmi_nand_rev2,
+                                                        ARRAY_SIZE(mx6dl_gpmi_nand_rev2));
+		}
 	} else {
-		ret = mxc_iomux_v3_setup_multiple_pads(mx6q_gpmi_nand_rev2,
+		if (cpu_is_mx6q()) {
+			ret = mxc_iomux_v3_setup_multiple_pads(mx6q_gpmi_nand_rev2,
 							ARRAY_SIZE(mx6q_gpmi_nand_rev2));
+		} else if (cpu_is_mx6dl()) {
+			ret =  mxc_iomux_v3_setup_multiple_pads(mx6dl_gpmi_nand_rev2,
+							ARRAY_SIZE(mx6dl_gpmi_nand_rev2));
+		}
 	}
 
 	return ret;
