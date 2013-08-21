@@ -289,5 +289,7 @@ static iomux_v3_cfg_t mx6q_phytec_rev2_pads[] = {
 
 	/* PCIE_PRSNT */
 	MX6Q_PAD_DI0_PIN15__GPIO_4_17,
+	/* CMIC Wake */
+	MX6Q_PAD_SD4_DAT3__GPIO_2_11,
 	
 };
