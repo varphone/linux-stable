@@ -495,7 +495,7 @@ static void __init mx6_phyflex_init_usb(void)
 #endif
 }
 
-static struct viv_gpu_platform_data imx6_gpu_pdata __initdata = {
+static struct viv_gpu_platform_data imx6q_gpu_pdata __initdata = {
 	.reserved_mem_size = SZ_128M,
 };
 
@@ -1481,7 +1481,7 @@ if(cpu_is_mx6q()) {
 	}
 
 
-	imx_add_viv_gpu(&imx6_gpu_data, &imx6_gpu_pdata);
+	imx_add_viv_gpu(&imx6_gpu_data, &imx6q_gpu_pdata);
 	imx6q_add_vpu();
 }
 	/* Initialize SoC RTC */
@@ -1599,20 +1599,22 @@ static struct sys_timer mxc_timer = {
 
 static void __init mx6_phyflex_reserve(void)
 {
+#if defined(CONFIG_MXC_GPU_VIV) || defined(CONFIG_MXC_GPU_VIV_MODULE)
 	phys_addr_t phys;
 
-	if (imx6_gpu_pdata.reserved_mem_size) {
+	if (imx6q_gpu_pdata.reserved_mem_size) {
 #ifdef DDR_2GB
-		phys = memblock_alloc_base(
-			imx6_gpu_pdata.reserved_mem_size, SZ_4K, SZ_2G);
+		phys = memblock_alloc_base(imx6q_gpu_pdata.reserved_mem_size,
+					   SZ_4K, SZ_2G);
 #else
-		phys = memblock_alloc_base(
-			imx6_gpu_pdata.reserved_mem_size, SZ_4K, SZ_1G);
+		phys = memblock_alloc_base(imx6q_gpu_pdata.reserved_mem_size,
+					   SZ_4K, SZ_1G);
 #endif
-		memblock_free(phys, imx6_gpu_pdata.reserved_mem_size);
-		memblock_remove(phys, imx6_gpu_pdata.reserved_mem_size);
-		imx6_gpu_pdata.reserved_mem_base = phys;
+		memblock_remove(phys, imx6q_gpu_pdata.reserved_mem_size);
+		imx6q_gpu_pdata.reserved_mem_base = phys;
 	}
+#endif
+
 }
 
 MACHINE_START(MX6Q_PHYFLEX, "Phytec i.MX 6Quad phyFLEX Board")
