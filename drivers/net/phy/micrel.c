@@ -189,7 +189,7 @@ static struct phy_driver ksz9021_driver = {
 
 static struct phy_driver ksz9031_driver = {
 	.phy_id		= PHY_ID_KSZ9031,
-	.phy_id_mask	= 0x00ffffff,
+	.phy_id_mask	= 0x00fffff0,
 	.name		= "Micrel KSZ9031 Gigabit PHY",
 	.features	= (PHY_GBIT_FEATURES | SUPPORTED_Pause
 				| SUPPORTED_Asym_Pause),
@@ -265,7 +265,7 @@ MODULE_LICENSE("GPL");
 
 static struct mdio_device_id __maybe_unused micrel_tbl[] = {
 	{ PHY_ID_KSZ9021, 0x00ffffff },
-	{ PHY_ID_KSZ9031, 0x00ffffff },
+	{ PHY_ID_KSZ9031, 0x00fffff0 },
 	{ PHY_ID_KS8001, 0x00ffffff },
 	{ PHY_ID_KS8737, 0x00ffffff },
 	{ PHY_ID_KS8041, 0x00ffffff },
