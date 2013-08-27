@@ -413,7 +413,7 @@ static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 		I2C_BOARD_INFO("pca9538", 0x70),
 		.platform_data = &pca9538_platdata,
 	}, {
-		I2C_BOARD_INFO("24c04", 0x52),
+		I2C_BOARD_INFO("24c04", 0x50),
 		.platform_data = &at24c04,
 	},
 };
