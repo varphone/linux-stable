@@ -159,6 +159,9 @@ module_param(csi0, charp, S_IRUGO);
 static char* csi1 = "phyCAM-P";
 module_param(csi1, charp, S_IRUGO);
 
+static char* prim_hdmi = "no";
+core_param(prim_hdmi, prim_hdmi, charp , S_IRUGO);
+
 void __init early_console_setup(unsigned long base, struct clk *clk);
 static struct clk *sata_clk;
 
@@ -1228,8 +1231,15 @@ static void __init mx6_phyflex_init(void)
 	imx6q_add_ipuv3(0, &ipu_data[0]);
 	if(cpu_is_mx6q()) {
 		imx6q_add_ipuv3(1, &ipu_data[1]);
-		for (i = 0; i < ARRAY_SIZE(phyflex_fb_data); i++)
-			imx6q_add_ipuv3fb(i, &phyflex_fb_data[i]);
+		if(strcmp("no",prim_hdmi) == 0) {
+			for (i = 0; i < ARRAY_SIZE(phyflex_fb_data); i++)
+				imx6q_add_ipuv3fb(i, &phyflex_fb_data[i]);
+		} else {
+			for (i = ARRAY_SIZE(phyflex_fb_data)-1; i >= 0 ;i--) {
+                                imx6q_add_ipuv3fb(ARRAY_SIZE(phyflex_fb_data) - 1- i,
+								&phyflex_fb_data[i]);
+			}
+		}
 	} else {
 		ldb_data.ipu_id = 0;
                 ldb_data.disp_id = 0;
