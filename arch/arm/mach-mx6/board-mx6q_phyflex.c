@@ -206,23 +206,8 @@ static int mx6_phyflex_fec_phy_init(struct phy_device *phydev)
 	return 0;
 }
 
-#define PHY_POWERDOWN 	(1 << 11)
-static int mx6_phyflex_fec_power_hibernate(struct phy_device *phydev)
-{
-	unsigned short val;
-
-	/*set ksz9021rn reg 0x0 bit 11 to hibernate power*/
-	val = phy_read(phydev, 0x0);
-
-	val |= PHY_POWERDOWN;
-	phy_write(phydev, 0x0, val);
-
-	return 0;
-}
-
 static struct fec_platform_data fec_data __initdata = {
 	.init			= mx6_phyflex_fec_phy_init,
-	.power_hibernate	= mx6_phyflex_fec_power_hibernate,
 	.phy			= PHY_INTERFACE_MODE_RGMII,
 };
 #endif /* ENABLE_PHY */
