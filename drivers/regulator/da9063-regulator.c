@@ -1007,6 +1007,27 @@ static int __devexit da9063_regulator_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static void da9063_shutdown(struct platform_device *pdev)
+{
+	struct da9063 *da9063 = dev_get_drvdata(pdev->dev.parent);
+	int ret;
+
+        /* VDDARM_IN 1.38V */
+	ret = da9063_reg_write(da9063,DA9063_REG_VBCORE1_A,0x6C);
+	if (ret)
+		goto err;
+
+	/* VDDSOC_IN 1.38V */
+	ret = da9063_reg_write(da9063,DA9063_REG_VBCORE2_A,0x6C);
+	if (ret)
+		goto err;
+
+	return;
+err:
+	printk(KERN_ERR "%s Could not reset voltages!!!!\n", __func__);
+
+}
+
 static struct platform_driver da9063_regulator_driver = {
 	.driver = {
 		.name = DA9063_DRVNAME_REGULATORS,
@@ -1014,6 +1035,7 @@ static struct platform_driver da9063_regulator_driver = {
 	},
 	.probe = da9063_regulator_probe,
 	.remove = __devexit_p(da9063_regulator_remove),
+	.shutdown = da9063_shutdown,
 };
 
 static int __init da9063_regulator_init(void)
