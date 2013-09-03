@@ -1611,15 +1611,21 @@ static void __init mx6_phyflex_reserve(void)
 {
 #if defined(CONFIG_MXC_GPU_VIV) || defined(CONFIG_MXC_GPU_VIV_MODULE)
 	phys_addr_t phys;
+	phys_addr_t size;
 
 	if (imx6q_gpu_pdata.reserved_mem_size) {
-#ifdef DDR_2GB
-		phys = memblock_alloc_base(imx6q_gpu_pdata.reserved_mem_size,
-					   SZ_4K, SZ_2G);
+#if defined(CONFIG_PHYFLEX_4G)
+		size = size = SZ_1G;
+#elif defined(CONFIG_PHYFLEX_2G)
+		size = SZ_2G;
+#elif defined(CONFIG_PHYFLEX_512M)
+		size = SZ_512M;
 #else
-		phys = memblock_alloc_base(imx6q_gpu_pdata.reserved_mem_size,
-					   SZ_4K, SZ_1G);
+		size = SZ_1G;
 #endif
+
+		phys = memblock_alloc_base(imx6q_gpu_pdata.reserved_mem_size,
+                                           SZ_4K, size);
 		memblock_remove(phys, imx6q_gpu_pdata.reserved_mem_size);
 		imx6q_gpu_pdata.reserved_mem_base = phys;
 	}

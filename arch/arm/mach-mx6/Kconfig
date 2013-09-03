@@ -415,4 +415,29 @@ config PHYFLEX_SOC_1362_0
 	help
 	  Old version of phyFLEX modules without integrated PMIC
 
+choice
+	prompt "phyFLEX-i.MX6 RAM Size"
+	default PHYFLEX_1G
+
+config PHYFLEX_512M
+        bool "512MB RAM"
+        help
+          phyFLEX-i.MX6 with 512MB RAM
+
+config PHYFLEX_1G
+	bool "1GB RAM"
+	help
+	  phyFLEX-i.MX6 with 1GB RAM
+
+config PHYFLEX_2G
+	bool "2GB RAM"
+	help
+	  phyFLEX-i.MX6 with 2GB RAM
+
+config PHYFLEX_4G
+	bool "4GB RAM"
+	help
+	  phyFLEX-i.MX6 with 4GB RAM
+
+endchoice
 endif
