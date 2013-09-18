@@ -1001,15 +1001,15 @@ static struct mxc_camera_pdata mxc_ipu_csi_pdata[] = {
 		.ipu = 0,
 		.csi = 0,
 		.mclk_default_rate = 27000000,
-		.mclk_target_rate = 60000000,	//only for mt9p031
-		.use_pll = 0,					//only for mt9p031
+		.mclk_target_rate = 60000000,	/* only for mt9p031 */
+		.use_pll = 0,			/* only for mt9p031 */
 	}, {
 		.flags = MXC_CAMERA_DATAWIDTH_10,
-		.ipu = 1,
+		.ipu = 1, /* changes to 0 in runtame for mx6dl and mx6sl */
 		.csi = 1,
 		.mclk_default_rate = 27000000,
-		.mclk_target_rate = 60000000,	//only for mt9p031
-		.use_pll = 0,					//only for mt9p031
+		.mclk_target_rate = 60000000,	/* only for mt9p031 */
+		.use_pll = 0,					/* only for mt9p031 */
 	},
 };
 
@@ -1078,7 +1078,7 @@ static struct fsl_mxc_capture_platform_data capture_data[] = {
 	},
 	[1] = {
 		.csi = 1,
-		.ipu = 1,
+		.ipu = 1, /*changes to 0 in runtame for mx6dl and mx6sl */
 		.mclk_source = 0,
 		.is_mipi = 0,
 	},
@@ -1167,6 +1167,15 @@ static void __init mx6_phyflex_init(void)
 
 	long csi0_cam_address_hex;
 	long csi1_cam_address_hex;
+
+	/* i.MX6 DL and SL processors contain only one IPU - correct
+	 * default configuration in structures that use 1st IPU */
+	if (cpu_is_mx6dl() || cpu_is_mx6sl()) {
+		mxc_ipu_csi_pdata[1].ipu = 0;
+#ifndef CONFIG_SOC_CAMERA
+		&capture_data[1].ipu = 0;
+#endif
+	}
 	
 	if (cpu_is_mx6q()) {
 		 mxc_iomux_v3_setup_multiple_pads(mx6q_phytec_common_pads,
@@ -1238,7 +1247,7 @@ static void __init mx6_phyflex_init(void)
 
 	imx6q_add_v4l2_output(0);
 
-if(cpu_is_mx6q()) {	
+if(cpu_is_mx6q() || cpu_is_mx6dl()) {	
 	/***************************************************************************
 	Camera section:
 	The bootargs csi0 and csi1 will be interpreted. 
