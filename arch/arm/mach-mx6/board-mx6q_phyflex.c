@@ -1287,8 +1287,14 @@ if(cpu_is_mx6q() || cpu_is_mx6dl()) {
 #define SOC_CAM_PDRV(dev_id, iclinks) \
 .name = "soc-camera-pdrv", .id = dev_id, .dev = { .platform_data = &iclinks[dev_id] }
 
-	mxc_iomux_set_gpr_register(1, 19, 2, 3);
-	
+		/* Enable both CSI in IOMUX mode instead of MIPI */
+		if (cpu_is_mx6q())
+			mxc_iomux_set_gpr_register(1, 19, 2, 3);
+		else {
+			mxc_iomux_set_gpr_register(13, 0, 3, 4);
+			mxc_iomux_set_gpr_register(13, 3, 3, 4);
+		}
+
 	if ((csi0_cam_type == NULL) && (csi1_cam_type == NULL)){	//For default setting.
 		static struct i2c_board_info phyflex_cameras[] = {
 			[0] = {I2C_BOARD_INFO("mt9m001", 0x5d),},	//DRIVER-NAME and I2C-ADDRESS
