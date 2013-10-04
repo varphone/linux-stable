@@ -194,11 +194,12 @@ static int mx6_phyflex_fec_phy_init(struct phy_device *phydev)
 
 	printk("FEC ID: 0x%X, 0x%X\n", phy_read(phydev, 0x02), phy_read(phydev, 0x03));
 
-
-	phy_write(phydev, 0x0d, 2);
-	phy_write(phydev, 0x0e, 8);
-	phy_write(phydev, 0x0d, (1 << 14) | 2);
-	phy_write(phydev, 0x0e, 0x039F);
+	if (module_rev == PHYFLEX_MODULE_REV_2) {
+		phy_write(phydev, 0x0d, 2);
+		phy_write(phydev, 0x0e, 8);
+		phy_write(phydev, 0x0d, (1 << 14) | 2);
+		phy_write(phydev, 0x0e, 0x039F);
+	}
 
 	/* enable all interrupts */
 	phy_write(phydev, 0x1b, 0xff00);
