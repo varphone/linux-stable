@@ -1767,6 +1767,8 @@ static void wl1271_op_remove_interface(struct ieee80211_hw *hw,
 
 	mutex_unlock(&wl->mutex);
 	cancel_work_sync(&wl->recovery_work);
+	if (wl->set_power)
+		wl->set_power(0);
 }
 
 void wl1271_configure_filters(struct wl1271 *wl, unsigned int filters)
@@ -3781,9 +3783,39 @@ static ssize_t wl1271_sysfs_show_hw_pg_ver(struct device *dev,
 static DEVICE_ATTR(hw_pg_ver, S_IRUGO | S_IWUSR,
 		   wl1271_sysfs_show_hw_pg_ver, NULL);
 
+
+static int parse_mac(unsigned char *mac, unsigned char const *str_mac)
+{
+	int i = 0;
+	char *end;
+	int ret = -EINVAL;
+
+	for (;;) {
+		mac[i++] = simple_strtoul(str_mac, &end, 16);
+		if (i == 6) {
+			if (!*end || (*end == ' '))
+				ret = 0;
+			break;
+		}
+		str_mac = end + 1;
+		if ((*end != '-') && (*end != ':'))
+			break;
+	}
+	return ret;
+}
+
+static char *mac;
+module_param(mac, charp, S_IRUGO);
+MODULE_PARM_DESC(mac, "mac address override");
+
 int wl1271_register_hw(struct wl1271 *wl)
 {
 	int ret;
+	u8	override_mac[ETH_ALEN];
+	memset(override_mac, 0, ETH_ALEN);
+	if (mac)
+		if (parse_mac(override_mac, mac))
+			memset(override_mac, 0, ETH_ALEN);
 
 	if (wl->mac80211_registered)
 		return 0;
@@ -3803,6 +3835,9 @@ int wl1271_register_hw(struct wl1271 *wl)
 		wl->mac_addr[4] = nvs_ptr[4];
 		wl->mac_addr[5] = nvs_ptr[3];
 	}
+
+	if (is_valid_ether_addr(override_mac))
+		memcpy(wl->mac_addr, override_mac, sizeof(wl->mac_addr));
 
 	SET_IEEE80211_PERM_ADDR(wl->hw, wl->mac_addr);
 
