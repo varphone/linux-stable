@@ -1037,6 +1037,15 @@ int of_property_read_string_helper(struct device_node *np, const char *propname,
 }
 EXPORT_SYMBOL_GPL(of_property_read_string_helper);
 
+void of_print_phandle_args(const char *msg, const struct of_phandle_args *args)
+{
+	int i;
+	printk("%s %s", msg, of_node_full_name(args->np));
+	for (i = 0; i < args->args_count; i++)
+		printk(i ? ",%08x" : ":%08x", args->args[i]);
+	printk("\n");
+}
+
 /**
  * of_parse_phandle - Resolve a phandle property to a device_node pointer
  * @np: Pointer to device node holding phandle property
