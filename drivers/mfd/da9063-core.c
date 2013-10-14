@@ -1,7 +1,6 @@
-
 /* da9063-core.c - Core MFD device driver for DA9063
- * Copyright (C) 2012  Dialog Semiconductor Ltd.
- * 
+ * Copyright (C) 2013  Dialog Semiconductor Ltd.
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
  * License as published by the Free Software Foundation; either
@@ -101,6 +100,53 @@ static struct mfd_cell da9063_devs[] = {
 	},
 };
 
+static int da9063_init_page(struct da9063 *da9063)
+{
+	u8 val = DA9063_REG_PAGE0;
+	int ret = 0;
+
+	mutex_lock(&da9063->io_mutex);
+	ret = da9063_write_device(da9063, DA9063_REG_PAGE_CON, 1, &val);
+	mutex_unlock(&da9063->io_mutex);
+
+	return ret;
+}
+
+int da9063_page_reg_read(struct da9063 *da9063, u16 reg)
+{
+	u8 pmic_page = DA9063_I2C_PAGE(reg);
+	u8 pmic_reg = DA9063_I2C_REG(reg);
+	u8 val;
+	int ret, ret2;
+
+	mutex_lock(&da9063->io_mutex);
+
+	if (pmic_page != DA9063_REG_PAGE0) {
+		ret = da9063_write_device(da9063, DA9063_REG_PAGE_CON, 1,
+					  &pmic_page);
+		if (ret)
+			goto out;
+	}
+
+	ret = da9063_read_device(da9063, pmic_reg, 1, &val);
+
+	if (pmic_page != DA9063_REG_PAGE0) {
+		pmic_page = DA9063_REG_PAGE0;
+		ret2 = da9063_write_device(da9063, DA9063_REG_PAGE_CON, 1,
+					  &pmic_page);
+		if (ret2 && ret == 0)
+			ret = ret2;
+	}
+
+out:
+	mutex_unlock(&da9063->io_mutex);
+
+	if (ret)
+		return ret;
+
+	return val;
+}
+
 int da9063_reg_read(struct da9063 *da9063, u16 reg)
 {
 	u8 val;
@@ -181,6 +227,63 @@ int da9063_reg_clear_bits(struct da9063 *da9063, u16 reg, u8 mask)
 	return da9063_reg_update(da9063, reg, mask, 0);
 }
 
+int da9063_get_trim_data(struct da9063 *da9063)
+{
+	signed int t_offset;
+	signed int model;
+	signed int revision;
+
+	/* model */
+	model = da9063_page_reg_read(da9063, DA9063_REG_CHIP_ID);
+	if (model < 0) {
+		dev_err(da9063->dev, "Cannot read chip model id.\n");
+		return -EIO;
+	}
+	else {
+		if( (unsigned int)model != DA9063_ID ) {
+			dev_info(da9063->dev,
+				 "Unknown device detected (expected DA9063)\n");
+			return -EINVAL;
+		}
+
+		da9063->model = (unsigned int)model;
+	}
+
+	/* revision */
+	revision = da9063_page_reg_read(da9063, DA9063_REG_CHIP_VARIANT);
+	if (revision < 0) {
+		dev_err(da9063->dev, "Cannot read chip revision id.\n");
+		return -EIO;
+	}
+	else {
+		if( (unsigned int)revision != DA9063_AD_REVISION &&
+		    (unsigned int)revision < DA9063_BB_REVISION ) {
+		dev_info(da9063->dev,
+				 "Unknown device revision detected\n");
+			return -EINVAL;
+		}
+
+		da9063->revision = (unsigned int)revision;
+	}
+
+	dev_info(da9063->dev,
+		 "Device detected (model-ID: 0x%02X rev-ID: 0x%02X)\n", da9063->model, da9063->revision);
+
+	/* temperature offset */
+	t_offset = da9063_page_reg_read(da9063, DA9063_REG_T_OFFSET);
+	if (t_offset < 0) {
+		dev_err(da9063->dev, "Cannot read chip temperature offset.\n");
+		return -EIO;
+	}
+	else {
+		da9063->t_offset = (unsigned int)t_offset;
+		dev_info(da9063->dev,
+			 "Trim measurements (t_offset: 0x%02X)\n", da9063->t_offset);
+	}
+
+	return 0;
+}
+
 int da9063_device_init(struct da9063 *da9063, unsigned int irq)
 {
 	struct da9063_pdata *pdata = da9063->dev->platform_data;
@@ -202,6 +305,22 @@ int da9063_device_init(struct da9063 *da9063, unsigned int irq)
 				"Platform initialization failed.\n");
 			return ret;
 		}
+	}
+
+	if (da9063_init_page(da9063)) {
+		dev_err(da9063->dev, "Cannot initialise page selector.\n");
+		return -EIO;
+	}
+
+	ret = da9063_get_trim_data(da9063);
+	if (ret < 0) {
+		dev_err(da9063->dev, "Cannot initialise trim data.\n");
+		return ret;
+	}
+
+	if (da9063_init_page(da9063)) {
+		dev_err(da9063->dev, "Cannot initialise page selector.\n");
+		return -EIO;
 	}
 
 	ret = da9063_irq_init(da9063);

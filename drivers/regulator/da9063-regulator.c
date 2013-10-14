@@ -1,7 +1,6 @@
-
 /* da9063-regulator.c - Regulator device driver for DA9063
- * Copyright (C) 2012  Dialog Semiconductor Ltd.
- * 
+ * Copyright (C) 2013  Dialog Semiconductor Ltd.
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
  * License as published by the Free Software Foundation; either
@@ -136,7 +135,7 @@ struct da9063_regulator_info {
 	.mode = FIELD(DA9063_REG_##regl_name##_CFG, DA9063_BUCK_MODE_MASK, \
 		      DA9063_BUCK_MODE_SHIFT, 0)
 
-/* Defines asignment of regulators info table to chip model */
+/* Defines assignment of regulators info table to chip model */
 struct da9063_dev_model {
 	const struct da9063_regulator_info	*regulator_info;
 	unsigned				n_regulators;
@@ -267,143 +266,230 @@ static const int da9063_bmem_bio_merged_limits[] = {
 	4600000, 4800000, 5000000, 5200000, 5400000, 5600000, 5800000, 6000000
 };
 
-/* Info of regulators for DA9063 */
-static const struct da9063_regulator_info da9063_regulator_info[] = {
-	{
-		DA9063_BUCK(DA9063, BCORE1, 300, 10, 1570,
-			    da9063_buck_a_limits),
-		DA9063_BUCK_COMMON_FIELDS(BCORE1),
-		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VBCORE1_SEL),
-		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_C, DA9063_BCORE1_ILIM_MASK,
-				DA9063_BCORE1_ILIM_SHIFT, 0),
-	},
-	{
-		DA9063_BUCK(DA9063, BCORE2, 300, 10, 1570,
-			    da9063_buck_a_limits),
-		DA9063_BUCK_COMMON_FIELDS(BCORE2),
-		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VBCORE2_SEL),
+#define da9063_regulator_info_bcore1 { \
+		DA9063_BUCK(DA9063, BCORE1, 300, 10, 1570, \
+			    da9063_buck_a_limits), \
+		DA9063_BUCK_COMMON_FIELDS(BCORE1), \
+		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VBCORE1_SEL), \
+		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_C, DA9063_BCORE1_ILIM_MASK, \
+				DA9063_BCORE1_ILIM_SHIFT, 0), \
+	}
 
-		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_C,
-				DA9063_BCORE2_ILIM_MASK,
-				DA9063_BCORE2_ILIM_SHIFT,
-				0),
-	},
-	{
-		DA9063_BUCK(DA9063, BPRO, 530, 10, 1800,
-			    da9063_buck_a_limits),
-		DA9063_BUCK_COMMON_FIELDS(BPRO),
-		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VBPRO_SEL),
-		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_B, DA9063_BPRO_ILIM_MASK,
-				DA9063_BPRO_ILIM_SHIFT, 0),
-	},
-	{
-		DA9063_BUCK(DA9063, BMEM, 800, 20, 3340,
-			    da9063_buck_b_limits),
-		DA9063_BUCK_COMMON_FIELDS(BMEM),
-		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VBMEM_SEL),
-		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_A, DA9063_BMEM_ILIM_MASK,
-				DA9063_BMEM_ILIM_SHIFT, 0),
-	},
-	{
-		DA9063_BUCK(DA9063, BIO, 800, 20, 3340,
-			    da9063_buck_b_limits),
-		DA9063_BUCK_COMMON_FIELDS(BIO),
-		.suspend = BFIELD(DA9063_REG_DVC_2, DA9063_VBIO_SEL),
-		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_A, DA9063_BIO_ILIM_MASK,
-				DA9063_BIO_ILIM_SHIFT, 0),
-	},
-	{
-		DA9063_BUCK(DA9063, BPERI, 800, 20, 3340,
-			    da9063_buck_b_limits),
-		DA9063_BUCK_COMMON_FIELDS(BPERI),
-		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VBPERI_SEL),
-		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_B, DA9063_BPERI_ILIM_MASK,
-				DA9063_BPERI_ILIM_SHIFT, 0),
-	},
-	{
-		DA9063_BUCK(DA9063, BCORES_MERGED, 300, 10, 1570,
-			    da9063_bcores_merged_limits),
-		/* BCORES_MERGED uses the same register fields as BCORE1 */
-		DA9063_BUCK_COMMON_FIELDS(BCORE1),
-		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VBCORE1_SEL),
-		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_C, DA9063_BCORE1_ILIM_MASK,
-				DA9063_BCORE1_ILIM_SHIFT, 0),
-	},
-	{
-		DA9063_BUCK(DA9063, BMEM_BIO_MERGED, 800, 20, 3340,
-			    da9063_bmem_bio_merged_limits),
-		/* BMEM_BIO_MERGED uses the same register fields as BMEM */
-		DA9063_BUCK_COMMON_FIELDS(BMEM),
-		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VBMEM_SEL),
-		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_A, DA9063_BMEM_ILIM_MASK,
-				DA9063_BMEM_ILIM_SHIFT, 0),
-	},
-	{
-		DA9063_LDO(DA9063, LDO1, 600, 20, 1860),
-		DA9063_LDO_COMMON_FIELDS(LDO1),
-		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VLDO1_SEL),
-	},
-	{
-		DA9063_LDO(DA9063, LDO2, 600, 20, 1860),
-		DA9063_LDO_COMMON_FIELDS(LDO2),
-		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VLDO2_SEL),
-	},
-	{
-		DA9063_LDO(DA9063, LDO3, 900, 20, 3440),
-		DA9063_LDO_COMMON_FIELDS(LDO3),
-		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VLDO3_SEL),
-		.oc_event = BFIELD(DA9063_REG_STATUS_D, DA9063_LDO3_LIM),
-	},
-	{
-		DA9063_LDO(DA9063, LDO4, 900, 20, 3440),
-		DA9063_LDO_COMMON_FIELDS(LDO4),
-		.suspend = BFIELD(DA9063_REG_DVC_2, DA9063_VLDO4_SEL),
-		.oc_event = BFIELD(DA9063_REG_STATUS_D, DA9063_LDO4_LIM),
-	},
-	{
-		DA9063_LDO(DA9063, LDO5, 900, 50, 3600),
-		DA9063_LDO_COMMON_FIELDS(LDO5),
-		.suspend = BFIELD(DA9063_REG_LDO5_CONT, DA9063_VLDO5_SEL),
-	},
-	{
-		DA9063_LDO(DA9063, LDO6, 900, 50, 3600),
-		DA9063_LDO_COMMON_FIELDS(LDO6),
-		.suspend = BFIELD(DA9063_REG_LDO6_CONT, DA9063_VLDO6_SEL),
-	},
-	{
-		DA9063_LDO(DA9063, LDO7, 900, 50, 3600),
-		DA9063_LDO_COMMON_FIELDS(LDO7),
-		.suspend = BFIELD(DA9063_REG_LDO7_CONT, DA9063_VLDO7_SEL),
-		.oc_event = BFIELD(DA9063_REG_STATUS_D, DA9063_LDO7_LIM),
-	},
-	{
-		DA9063_LDO(DA9063, LDO8, 900, 50, 3600),
-		DA9063_LDO_COMMON_FIELDS(LDO8),
-		.suspend = BFIELD(DA9063_REG_LDO8_CONT, DA9063_VLDO8_SEL),
-		.oc_event = BFIELD(DA9063_REG_STATUS_D, DA9063_LDO8_LIM),
-	},
-	{
-		DA9063_LDO(DA9063, LDO9, 950, 50, 3600),
-		DA9063_LDO_COMMON_FIELDS(LDO9),
-		.suspend = BFIELD(DA9063_REG_LDO9_CONT, DA9063_VLDO9_SEL),
-	},
-	{
-		DA9063_LDO(DA9063, LDO10, 900, 50, 3600),
-		DA9063_LDO_COMMON_FIELDS(LDO10),
-		.suspend = BFIELD(DA9063_REG_LDO10_CONT, DA9063_VLDO10_SEL),
-	},
-	{
-		DA9063_LDO(DA9063, LDO11, 900, 50, 3600),
-		DA9063_LDO_COMMON_FIELDS(LDO11),
-		.suspend = BFIELD(DA9063_REG_LDO11_CONT, DA9063_VLDO11_SEL),
-		.oc_event = BFIELD(DA9063_REG_STATUS_D, DA9063_LDO11_LIM),
-	},
-	{
-		DA9063_SWITCH(DA9063, 32K_OUT),
-		.enable = BFIELD(DA9063_REG_EN_32K, DA9063_OUT_32K_EN),
-	},
+#define da9063_regulator_info_bcore2 { \
+		DA9063_BUCK(DA9063, BCORE2, 300, 10, 1570, \
+			    da9063_buck_a_limits), \
+		DA9063_BUCK_COMMON_FIELDS(BCORE2), \
+		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VBCORE2_SEL), \
+		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_C, \
+				DA9063_BCORE2_ILIM_MASK, \
+				DA9063_BCORE2_ILIM_SHIFT, \
+				0), \
+	}
+
+#define da9063_regulator_info_bpro { \
+		DA9063_BUCK(DA9063, BPRO, 530, 10, 1800, \
+			    da9063_buck_a_limits), \
+		DA9063_BUCK_COMMON_FIELDS(BPRO), \
+		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VBPRO_SEL), \
+		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_B, DA9063_BPRO_ILIM_MASK, \
+				DA9063_BPRO_ILIM_SHIFT, 0), \
+	}
+
+#define da9063_regulator_info_bmem_a { \
+		DA9063_BUCK(DA9063, BMEM, 800, 20, 3340, \
+			    da9063_buck_a_limits), \
+		DA9063_BUCK_COMMON_FIELDS(BMEM), \
+		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VBMEM_SEL), \
+		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_A, DA9063_BMEM_ILIM_MASK, \
+				DA9063_BMEM_ILIM_SHIFT, 0), \
+	}
+
+#define da9063_regulator_info_bmem_b { \
+		DA9063_BUCK(DA9063, BMEM, 800, 20, 3340, \
+			    da9063_buck_b_limits), \
+		DA9063_BUCK_COMMON_FIELDS(BMEM), \
+		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VBMEM_SEL), \
+		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_A, DA9063_BMEM_ILIM_MASK, \
+				DA9063_BMEM_ILIM_SHIFT, 0), \
+	}
+
+#define da9063_regulator_info_bio_a { \
+		DA9063_BUCK(DA9063, BIO, 800, 20, 3340, \
+			    da9063_buck_a_limits), \
+		DA9063_BUCK_COMMON_FIELDS(BIO), \
+		.suspend = BFIELD(DA9063_REG_DVC_2, DA9063_VBIO_SEL), \
+		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_A, DA9063_BIO_ILIM_MASK, \
+				DA9063_BIO_ILIM_SHIFT, 0), \
+	}
+
+#define da9063_regulator_info_bio_b { \
+		DA9063_BUCK(DA9063, BIO, 800, 20, 3340, \
+			    da9063_buck_b_limits), \
+		DA9063_BUCK_COMMON_FIELDS(BIO), \
+		.suspend = BFIELD(DA9063_REG_DVC_2, DA9063_VBIO_SEL), \
+		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_A, DA9063_BIO_ILIM_MASK, \
+				DA9063_BIO_ILIM_SHIFT, 0), \
+	}
+
+#define da9063_regulator_info_bperi_a { \
+		DA9063_BUCK(DA9063, BPERI, 800, 20, 3340, \
+			    da9063_buck_a_limits), \
+		DA9063_BUCK_COMMON_FIELDS(BPERI), \
+		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VBPERI_SEL), \
+		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_B, DA9063_BPERI_ILIM_MASK, \
+				DA9063_BPERI_ILIM_SHIFT, 0), \
+	}
+
+#define da9063_regulator_info_bperi_b { \
+		DA9063_BUCK(DA9063, BPERI, 800, 20, 3340, \
+			    da9063_buck_b_limits), \
+		DA9063_BUCK_COMMON_FIELDS(BPERI), \
+		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VBPERI_SEL), \
+		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_B, DA9063_BPERI_ILIM_MASK, \
+				DA9063_BPERI_ILIM_SHIFT, 0), \
+	}
+
+#define da9063_regulator_info_bcores_merged { \
+		DA9063_BUCK(DA9063, BCORES_MERGED, 300, 10, 1570, \
+			    da9063_bcores_merged_limits), \
+		DA9063_BUCK_COMMON_FIELDS(BCORE1), \
+		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VBCORE1_SEL), \
+		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_C, DA9063_BCORE1_ILIM_MASK, \
+				DA9063_BCORE1_ILIM_SHIFT, 0), \
+	}
+
+#define da9063_regulator_info_bmem_bio_merged { \
+		DA9063_BUCK(DA9063, BMEM_BIO_MERGED, 800, 20, 3340, \
+			    da9063_bmem_bio_merged_limits), \
+		DA9063_BUCK_COMMON_FIELDS(BMEM), \
+		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VBMEM_SEL), \
+		.ilimit = FIELD(DA9063_REG_BUCK_ILIM_A, DA9063_BMEM_ILIM_MASK, \
+				DA9063_BMEM_ILIM_SHIFT, 0), \
+	}
+
+#define da9063_regulator_info_ldo1 { \
+		DA9063_LDO(DA9063, LDO1, 600, 20, 1860), \
+		DA9063_LDO_COMMON_FIELDS(LDO1), \
+		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VLDO1_SEL), \
+	}
+
+#define da9063_regulator_info_ldo2 { \
+		DA9063_LDO(DA9063, LDO2, 600, 20, 1860), \
+		DA9063_LDO_COMMON_FIELDS(LDO2), \
+		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VLDO2_SEL), \
+	}
+
+#define da9063_regulator_info_ldo3 { \
+		DA9063_LDO(DA9063, LDO3, 900, 20, 3440), \
+		DA9063_LDO_COMMON_FIELDS(LDO3), \
+		.suspend = BFIELD(DA9063_REG_DVC_1, DA9063_VLDO3_SEL), \
+		.oc_event = BFIELD(DA9063_REG_STATUS_D, DA9063_LDO3_LIM), \
+	}
+
+#define da9063_regulator_info_ldo4 { \
+		DA9063_LDO(DA9063, LDO4, 900, 20, 3440), \
+		DA9063_LDO_COMMON_FIELDS(LDO4), \
+		.suspend = BFIELD(DA9063_REG_DVC_2, DA9063_VLDO4_SEL), \
+		.oc_event = BFIELD(DA9063_REG_STATUS_D, DA9063_LDO4_LIM), \
+	}
+
+#define da9063_regulator_info_ldo5 { \
+		DA9063_LDO(DA9063, LDO5, 900, 50, 3600), \
+		DA9063_LDO_COMMON_FIELDS(LDO5), \
+		.suspend = BFIELD(DA9063_REG_LDO5_CONT, DA9063_VLDO5_SEL), \
+	}
+
+#define da9063_regulator_info_ldo6 { \
+		DA9063_LDO(DA9063, LDO6, 900, 50, 3600), \
+		DA9063_LDO_COMMON_FIELDS(LDO6), \
+		.suspend = BFIELD(DA9063_REG_LDO6_CONT, DA9063_VLDO6_SEL), \
+	}
+
+#define da9063_regulator_info_ldo7 { \
+		DA9063_LDO(DA9063, LDO7, 900, 50, 3600), \
+		DA9063_LDO_COMMON_FIELDS(LDO7), \
+		.suspend = BFIELD(DA9063_REG_LDO7_CONT, DA9063_VLDO7_SEL), \
+		.oc_event = BFIELD(DA9063_REG_STATUS_D, DA9063_LDO7_LIM), \
+	}
+
+#define da9063_regulator_info_ldo8 { \
+		DA9063_LDO(DA9063, LDO8, 900, 50, 3600), \
+		DA9063_LDO_COMMON_FIELDS(LDO8), \
+		.suspend = BFIELD(DA9063_REG_LDO8_CONT, DA9063_VLDO8_SEL), \
+		.oc_event = BFIELD(DA9063_REG_STATUS_D, DA9063_LDO8_LIM), \
+	}
+
+#define da9063_regulator_info_ldo9 { \
+		DA9063_LDO(DA9063, LDO9, 950, 50, 3600), \
+		DA9063_LDO_COMMON_FIELDS(LDO9), \
+		.suspend = BFIELD(DA9063_REG_LDO9_CONT, DA9063_VLDO9_SEL), \
+	}
+
+#define da9063_regulator_info_ldo10 { \
+		DA9063_LDO(DA9063, LDO10, 900, 50, 3600), \
+		DA9063_LDO_COMMON_FIELDS(LDO10), \
+		.suspend = BFIELD(DA9063_REG_LDO10_CONT, DA9063_VLDO10_SEL), \
+	}
+
+#define da9063_regulator_info_ldo11 { \
+		DA9063_LDO(DA9063, LDO11, 900, 50, 3600), \
+		DA9063_LDO_COMMON_FIELDS(LDO11), \
+		.suspend = BFIELD(DA9063_REG_LDO11_CONT, DA9063_VLDO11_SEL), \
+		.oc_event = BFIELD(DA9063_REG_STATUS_D, DA9063_LDO11_LIM), \
+	}
+
+#define da9063_regulator_info_32k_out { \
+		DA9063_SWITCH(DA9063, 32K_OUT), \
+		.enable = BFIELD(DA9063_REG_EN_32K, DA9063_OUT_32K_EN), \
+	}
+
+/* Info of regulators for DA9063-AD */
+static const struct da9063_regulator_info da9063_regulator_info_a[] = {
+	da9063_regulator_info_bcore1,
+	da9063_regulator_info_bcore2,
+	da9063_regulator_info_bpro,
+	da9063_regulator_info_bmem_a,
+	da9063_regulator_info_bio_a,
+	da9063_regulator_info_bperi_a,
+	da9063_regulator_info_bcores_merged,
+	da9063_regulator_info_bmem_bio_merged,
+	da9063_regulator_info_ldo1,
+	da9063_regulator_info_ldo2,
+	da9063_regulator_info_ldo3,
+	da9063_regulator_info_ldo4,
+	da9063_regulator_info_ldo5,
+	da9063_regulator_info_ldo6,
+	da9063_regulator_info_ldo7,
+	da9063_regulator_info_ldo8,
+	da9063_regulator_info_ldo9,
+	da9063_regulator_info_ldo10,
+	da9063_regulator_info_ldo11,
+	da9063_regulator_info_32k_out,
 };
 
+/* Info of regulators for DA9063-BB */
+static const struct da9063_regulator_info da9063_regulator_info_b[] = {
+	da9063_regulator_info_bcore1,
+	da9063_regulator_info_bcore2,
+	da9063_regulator_info_bpro,
+	da9063_regulator_info_bmem_b,
+	da9063_regulator_info_bio_b,
+	da9063_regulator_info_bperi_b,
+	da9063_regulator_info_bcores_merged,
+	da9063_regulator_info_bmem_bio_merged,
+	da9063_regulator_info_ldo1,
+	da9063_regulator_info_ldo2,
+	da9063_regulator_info_ldo3,
+	da9063_regulator_info_ldo4,
+	da9063_regulator_info_ldo5,
+	da9063_regulator_info_ldo6,
+	da9063_regulator_info_ldo7,
+	da9063_regulator_info_ldo8,
+	da9063_regulator_info_ldo9,
+	da9063_regulator_info_ldo10,
+	da9063_regulator_info_ldo11,
+	da9063_regulator_info_32k_out,
+};
 /*
  * Regulator internal functions
  */
@@ -584,8 +670,7 @@ static int da9063_set_voltage(struct regulator_dev *rdev,
 	unsigned sel = da9063_min_val_to_sel(min_uV, regl->info->min_uV,
 					     regl->info->step_uV);
 
-	// ToDo: Fix voltage correction range, now enlarge to 1 step to be shure, that we in corretc range
-	if (da9063_sel_to_vol(regl, sel) > (max_uV + regl->info->step_uV))
+	if (da9063_sel_to_vol(regl, sel) > max_uV)
 		return -EINVAL;
 
 	val = (sel + fvol->offset) << fvol->shift & fvol->mask;
@@ -812,17 +897,29 @@ irqreturn_t da9063_ldo_lim_event(int irq, void *data)
 /*
  * Probing and Initialisation functions
  */
-static __devinit const struct da9063_regulator_info * da9063_get_regl_info(int id)
+static __devinit const struct da9063_regulator_info * da9063_get_regl_info(int id, struct da9063 * chip)
 {
 	int m;
 
-	for (m = ARRAY_SIZE(da9063_regulator_info) - 1;
-	     da9063_regulator_info[m].id != id; m--) {
-		if (m <= 0)
-			return NULL;
-	}
+	switch( chip->revision ) {
+	case DA9063_AD_REVISION:
+		for (m = ARRAY_SIZE(da9063_regulator_info_a) - 1;
+		     da9063_regulator_info_a[m].id != id; m--) {
+			if (m <= 0)
+				return NULL;
+		}
+		return &da9063_regulator_info_a[m];
+		break;
 
-	return &da9063_regulator_info[m];
+	case DA9063_BB_REVISION:
+	default:
+		for (m = ARRAY_SIZE(da9063_regulator_info_b) - 1;
+		     da9063_regulator_info_b[m].id != id; m--) {
+			if (m <= 0)
+				return NULL;
+		}
+		return &da9063_regulator_info_b[m];
+	}
 }
 
 static __devinit int da9063_regulator_probe(struct platform_device *pdev)
@@ -913,7 +1010,7 @@ static __devinit int da9063_regulator_probe(struct platform_device *pdev)
 		/* Initialise regulator structure */
 		regl = &regulators->regulator[n];
 		regl->hw = da9063;
-		regl->info = da9063_get_regl_info(rdata->id);
+		regl->info = da9063_get_regl_info(rdata->id, da9063);
 		if (!regl->info) {
 			dev_err(&pdev->dev,
 				"Invalid regulator ID in platform data\n");
@@ -1007,27 +1104,6 @@ static int __devexit da9063_regulator_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static void da9063_shutdown(struct platform_device *pdev)
-{
-	struct da9063 *da9063 = dev_get_drvdata(pdev->dev.parent);
-	int ret;
-
-        /* VDDARM_IN 1.38V */
-	ret = da9063_reg_write(da9063,DA9063_REG_VBCORE1_A,0x6C);
-	if (ret)
-		goto err;
-
-	/* VDDSOC_IN 1.38V */
-	ret = da9063_reg_write(da9063,DA9063_REG_VBCORE2_A,0x6C);
-	if (ret)
-		goto err;
-
-	return;
-err:
-	printk(KERN_ERR "%s Could not reset voltages!!!!\n", __func__);
-
-}
-
 static struct platform_driver da9063_regulator_driver = {
 	.driver = {
 		.name = DA9063_DRVNAME_REGULATORS,
@@ -1035,7 +1111,6 @@ static struct platform_driver da9063_regulator_driver = {
 	},
 	.probe = da9063_regulator_probe,
 	.remove = __devexit_p(da9063_regulator_remove),
-	.shutdown = da9063_shutdown,
 };
 
 static int __init da9063_regulator_init(void)

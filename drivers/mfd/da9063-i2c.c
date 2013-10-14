@@ -1,7 +1,6 @@
-
 /* da9063-i2c.c - I2C device access for DA9063
- * Copyright (C) 2012  Dialog Semiconductor Ltd.
- * 
+ * Copyright (C) 2013  Dialog Semiconductor Ltd.
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
  * License as published by the Free Software Foundation; either
@@ -59,13 +58,19 @@ int da9063_read_device(struct da9063 *da9063, u8 reg,
 int da9063_write_device(struct da9063 *da9063, u8 reg,
 	int bytes, const u8 *src)
 {
-	u8 buf[bytes + 1];
 	int ret;
+	u8 * buf = kzalloc( (bytes+1), GFP_KERNEL );
+
+	if( NULL == buf )
+		return -ENOMEM;
 
 	buf[0] = reg;
 	memcpy(&buf[1], src, bytes);
 
 	ret = i2c_master_send(da9063->i2c, buf, bytes + 1);
+
+	kfree( buf );
+
 	if (ret != bytes + 1)
 		return -EIO;
 
@@ -84,7 +89,6 @@ static int da9063_i2c_probe(struct i2c_client *i2c,
 	i2c_set_clientdata(i2c, da9063);
 	da9063->dev = &i2c->dev;
 	da9063->i2c = i2c;
-	device_set_wakeup_capable(da9063->dev, 1);
 
 	return da9063_device_init(da9063, i2c->irq);
 }
@@ -104,28 +108,6 @@ static const struct i2c_device_id da9063_i2c_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, da9063_i2c_id);
 
-static bool da9063_i2c_wakeup;
-
-static int da9063_i2c_suspend(struct i2c_client *i2c, pm_message_t state)
-{
-	if (device_may_wakeup(&i2c->dev)) {
-		enable_irq_wake(i2c->irq);
-		da9063_i2c_wakeup = 1;
-	}
-
-	return 0;
-}
-
-static int da9063_i2c_resume(struct i2c_client *i2c)
-{
-	if (i2c && da9063_i2c_wakeup) {
-		disable_irq_wake(i2c->irq);
-		da9063_i2c_wakeup = 0;
-	}
-
-	return 0;
-}
-
 static struct i2c_driver da9063_i2c_driver = {
 	.driver = {
 		.name = "da9063",
@@ -134,9 +116,6 @@ static struct i2c_driver da9063_i2c_driver = {
 	.probe    = da9063_i2c_probe,
 	.remove   = da9063_i2c_remove,
 	.id_table = da9063_i2c_id,
-
-	.suspend  = da9063_i2c_suspend,
-	.resume   = da9063_i2c_resume,
 };
 
 static int __init da9063_i2c_init(void)

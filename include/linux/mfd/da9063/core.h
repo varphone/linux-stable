@@ -1,7 +1,6 @@
-
 /* core.h - Definitions for DA9063 MFD driver
- * Copyright (C) 2012  Dialog Semiconductor Ltd.
- * 
+ * Copyright (C) 2013  Dialog Semiconductor Ltd.
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
  * License as published by the Free Software Foundation; either
@@ -26,6 +25,10 @@
 
 /* Dialog ID */
 #define DA9063_ID	0x61
+
+/* Revision support */
+#define DA9063_AD_REVISION	0x30
+#define DA9063_BB_REVISION	0x50
 
 /* DA9063 modules */
 #define DA9063_DRVNAME_CORE		"da9063-core"
@@ -75,8 +78,9 @@ enum da9063_irqs {
 struct da9063 {
 	/* Device */
 	struct device		*dev;
-	unsigned short		model;
-	unsigned short		revision;
+	unsigned int		model;
+	unsigned int		revision;
+	unsigned int		t_offset;
 
 	/* Control interface */
 	struct mutex		io_mutex;

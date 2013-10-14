@@ -1,7 +1,6 @@
-
 /* pdata.h - Platform configuration options for DA9063
- * Copyright (C) 2012  Dialog Semiconductor Ltd.
- * 
+ * Copyright (C) 2013  Dialog Semiconductor Ltd.
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
  * License as published by the Free Software Foundation; either
@@ -80,7 +79,7 @@ struct da9063;
 struct da9063_pdata {
 	int				(*init)(struct da9063 *da9063);
 	int				irq_base;
-	/* driver behaviour and stup */
+	/* driver behaviour and setup */
 	bool 				bcores_merged;
 	bool				bmem_bio_merged;
 	bool				key_power;
