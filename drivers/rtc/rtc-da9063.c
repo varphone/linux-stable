@@ -1,7 +1,6 @@
-
 /* rtc-da9063.c - Real time clock device driver for DA9063
- * Copyright (C) 2012  Dialog Semiconductor Ltd.
- * 
+ * Copyright (C) 2013  Dialog Semiconductor Ltd.
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
  * License as published by the Free Software Foundation; either
@@ -29,13 +28,10 @@
 #include <linux/mfd/da9063/registers.h>
 #include <linux/mfd/da9063/core.h>
 
-#define YEARS_TO_DA9063(year)		((year) - 100)
-#define MONTHS_TO_DA9063(month)		((month) + 1)
-#define YEARS_FROM_DA9063(year)		((year) + 100)
-#define MONTHS_FROM_DA9063(month)	((month) - 1)
+#define CLOCK_DATA_LEN    (DA9063_REG_COUNT_Y    - DA9063_REG_COUNT_S     + 1)
+#define ALARM_AD_DATA_LEN (DA9063_AD_REG_ALARM_Y - DA9063_AD_REG_ALARM_MI + 1)
+#define ALARM_DATA_LEN    (DA9063_REG_ALARM_Y    - DA9063_REG_ALARM_S     + 1)
 
-#define CLOCK_DATA_LEN	(DA9063_REG_COUNT_Y - DA9063_REG_COUNT_S + 1)
-#define ALARM_DATA_LEN	(DA9063_REG_ALARM_Y - DA9063_REG_ALARM_MI + 1)
 enum {
 	DATA_SEC = 0,
 	DATA_MIN,
@@ -49,87 +45,96 @@ struct da9063_rtc {
 	struct rtc_device	*rtc_dev;
 	struct da9063		*hw;
 	int			irq_alarm;
-	int			irq_tick;
-
-	/* Config flag */
-	int			tick_wake;
-
-	/* Used to expand alarm precision from minutes up to seconds
-	   using hardware ticks */
-	unsigned int		alarmSecs;
-	unsigned int		alarmTicks;
+	unsigned int		chip_revision;
 };
 
 static void da9063_data_to_tm(u8 *data, struct rtc_time *tm)
 {
-	tm->tm_sec = data[DATA_SEC] & DA9063_COUNT_SEC_MASK;
-	tm->tm_min = data[DATA_MIN] & DA9063_COUNT_MIN_MASK;
-	tm->tm_hour = data[DATA_HOUR] & DA9063_COUNT_HOUR_MASK;
-	tm->tm_mday = data[DATA_DAY] & DA9063_COUNT_DAY_MASK;
-	tm->tm_mon = MONTHS_FROM_DA9063(data[DATA_MONTH] &
-					 DA9063_COUNT_MONTH_MASK);
-	tm->tm_year = YEARS_FROM_DA9063(data[DATA_YEAR] &
-					 DA9063_COUNT_YEAR_MASK);
+	tm->tm_sec  = (data[DATA_SEC]   & DA9063_COUNT_SEC_MASK  );
+	tm->tm_min  = (data[DATA_MIN]   & DA9063_COUNT_MIN_MASK  );
+	tm->tm_hour = (data[DATA_HOUR]  & DA9063_COUNT_HOUR_MASK );
+	tm->tm_mday = (data[DATA_DAY]   & DA9063_COUNT_DAY_MASK  );
+	/* conversion is from da9063 to real is month-1 and year-100 */
+	tm->tm_mon  = (data[DATA_MONTH] & DA9063_COUNT_MONTH_MASK) - 1;
+	tm->tm_year = (data[DATA_YEAR]  & DA9063_COUNT_YEAR_MASK ) + 100;
 }
 
 static void da9063_tm_to_data(struct rtc_time *tm, u8 *data)
 {
-	data[DATA_SEC] &= ~DA9063_COUNT_SEC_MASK;
-	data[DATA_SEC] |= tm->tm_sec & DA9063_COUNT_SEC_MASK;
-	data[DATA_MIN] &= ~DA9063_COUNT_MIN_MASK;
-	data[DATA_MIN] |= tm->tm_min & DA9063_COUNT_MIN_MASK;
-	data[DATA_HOUR] &= ~DA9063_COUNT_HOUR_MASK;
-	data[DATA_HOUR] |= tm->tm_hour & DA9063_COUNT_HOUR_MASK;
-	data[DATA_DAY] &= ~DA9063_COUNT_DAY_MASK;
-	data[DATA_DAY] |= tm->tm_mday & DA9063_COUNT_DAY_MASK;
+	data[DATA_SEC]   &= ~DA9063_COUNT_SEC_MASK;
+	data[DATA_SEC]   |= tm->tm_sec & DA9063_COUNT_SEC_MASK;
+
+	data[DATA_MIN]   &= ~DA9063_COUNT_MIN_MASK;
+	data[DATA_MIN]   |= tm->tm_min & DA9063_COUNT_MIN_MASK;
+
+	data[DATA_HOUR]  &= ~DA9063_COUNT_HOUR_MASK;
+	data[DATA_HOUR]  |= tm->tm_hour & DA9063_COUNT_HOUR_MASK;
+
+	data[DATA_DAY]   &= ~DA9063_COUNT_DAY_MASK;
+	data[DATA_DAY]   |= tm->tm_mday & DA9063_COUNT_DAY_MASK;
+
+	/* conversion is from real to da9063 is month+1  */
 	data[DATA_MONTH] &= ~DA9063_COUNT_MONTH_MASK;
-	data[DATA_MONTH] |= MONTHS_TO_DA9063(tm->tm_mon) &
-			    DA9063_COUNT_MONTH_MASK;
-	data[DATA_YEAR] &= ~DA9063_COUNT_YEAR_MASK;
-	data[DATA_YEAR] |= YEARS_TO_DA9063(tm->tm_year) &
-			   DA9063_COUNT_YEAR_MASK;
+	data[DATA_MONTH] |= (tm->tm_mon+1) & DA9063_COUNT_MONTH_MASK;
+
+	/* conversion is from real to da9063 is year-100 */
+	data[DATA_YEAR]  &= ~DA9063_COUNT_YEAR_MASK;
+	data[DATA_YEAR]  |= (tm->tm_year-100) & DA9063_COUNT_YEAR_MASK;
 }
 
-#define DA9063_ALARM_DELAY	INT_MAX
-static int da9063_rtc_test_delay(struct rtc_time *alarm, struct rtc_time *cur)
+static int da9063_rtc_stop_alarm(struct device *dev)
 {
-	unsigned long a_time, c_time;
+	struct da9063_rtc *rtc = dev_get_drvdata(dev);
+	int ret = 0;
 
-	rtc_tm_to_time(alarm, &a_time);
-	rtc_tm_to_time(cur, &c_time);
+	switch( rtc->chip_revision ) {
+	case DA9063_AD_REVISION:
+		ret = da9063_reg_clear_bits(rtc->hw, DA9063_AD_REG_ALARM_Y, DA9063_ALARM_ON);
+		break;
+	case DA9063_BB_REVISION:
+	default:
+		ret = da9063_reg_clear_bits(rtc->hw, DA9063_REG_ALARM_Y, DA9063_ALARM_ON);
+	}
 
-	/* Alarm time has already passed */
-	if (a_time < c_time)
-		return -1;
+	return ret;
+}
 
-	/* If alarm is set for current minute, return ticks to count down.
-	   If alarm is set for following minutes, return DA9063_ALARM_DELAY
-	   to set alarm first.
-	   But when it is less than 2 seconds for the former to become true,
-	   return ticks, because alarm needs some time to synchronise. */
-	if (a_time - c_time < alarm->tm_sec + 2)
-		return a_time - c_time;
-	else
-		return DA9063_ALARM_DELAY;
+static int da9063_rtc_start_alarm(struct device *dev)
+{
+	struct da9063_rtc *rtc = dev_get_drvdata(dev);
+	int ret = 0;
+
+	switch( rtc->chip_revision ) {
+	case DA9063_AD_REVISION:
+		ret = da9063_reg_set_bits(rtc->hw, DA9063_AD_REG_ALARM_Y, DA9063_ALARM_ON);
+		break;
+	case DA9063_BB_REVISION:
+	default:
+		ret = da9063_reg_set_bits(rtc->hw, DA9063_REG_ALARM_Y, DA9063_ALARM_ON);
+	}
+
+	return ret;
 }
 
 static int da9063_rtc_read_time(struct device *dev, struct rtc_time *tm)
 {
 	struct da9063_rtc *rtc = dev_get_drvdata(dev);
-	u8 data[CLOCK_DATA_LEN];
+	u8 data[CLOCK_DATA_LEN] = { [0 ... (CLOCK_DATA_LEN - 1)] = 0 };
 	int ret;
 
 	ret = da9063_block_read(rtc->hw,
 				DA9063_REG_COUNT_S, CLOCK_DATA_LEN, data);
-	if (ret < 0)
+	if (ret < 0) {
+		dev_err(dev, "Failed to read RTC time data: %d\n", ret);
 		return ret;
+	}
 
-	/* Check, if RTC logic is initialised */
-	if (!(data[DATA_SEC] & DA9063_RTC_READ))
-		return -EBUSY;
+	if (!(data[DATA_SEC] & DA9063_RTC_READ)) {
+		dev_dbg(dev, "RTC not yet ready to be read by the host\n");
+		return -EINVAL;
+	}
 
 	da9063_data_to_tm(data, tm);
-
 	return rtc_valid_tm(tm);
 }
 
@@ -143,6 +148,10 @@ static int da9063_rtc_set_time(struct device *dev, struct rtc_time *tm)
 
 	ret = da9063_block_write(rtc->hw,
 				 DA9063_REG_COUNT_S, CLOCK_DATA_LEN, data);
+	if (ret < 0) {
+		dev_err(dev, "Failed to set RTC time data: %d\n", ret);
+		return ret;
+	}
 
 	return ret;
 }
@@ -150,29 +159,35 @@ static int da9063_rtc_set_time(struct device *dev, struct rtc_time *tm)
 static int da9063_rtc_read_alarm(struct device *dev, struct rtc_wkalrm *alrm)
 {
 	struct da9063_rtc *rtc = dev_get_drvdata(dev);
-	u8 data[CLOCK_DATA_LEN];
+	u8 data[CLOCK_DATA_LEN] = { [0 ... (CLOCK_DATA_LEN - 1)] = 0 };
 	int ret;
 
-	ret = da9063_block_read(rtc->hw, DA9063_REG_ALARM_MI, ALARM_DATA_LEN,
-				&data[DATA_MIN]);
+	switch( rtc->chip_revision ) {
+	case DA9063_AD_REVISION:
+		ret = da9063_block_read(rtc->hw, DA9063_AD_REG_ALARM_MI,
+				ALARM_AD_DATA_LEN, &data[DATA_MIN]);
+		break;
+	case DA9063_BB_REVISION:
+	default:
+		ret = da9063_block_read(rtc->hw, DA9063_REG_ALARM_S,
+				ALARM_DATA_LEN, &data[DATA_SEC]);
+	}
+
 	if (ret < 0)
 		return ret;
 
 	da9063_data_to_tm(data, &alrm->time);
-	alrm->time.tm_sec = rtc->alarmSecs;
 	alrm->enabled = !!(data[DATA_YEAR] & DA9063_ALARM_ON);
 
-	/* If there is no ticks left to count down and RTC event is
-	   not processed yet, indicate pending */
-	if (rtc->alarmTicks == 0) {
-		ret = da9063_reg_read(rtc->hw, DA9063_REG_EVENT_A);
-		if (ret < 0)
-			return ret;
-		if (ret & (DA9063_E_ALARM | DA9063_E_TICK))
-			alrm->pending = 1;
-	} else {
+	/* If RTC event is not processed yet, indicate pending */
+	ret = da9063_reg_read(rtc->hw, DA9063_REG_EVENT_A);
+	if (ret < 0)
+		return ret;
+
+	if (ret & (DA9063_E_ALARM))
+		alrm->pending = 1;
+	else
 		alrm->pending = 0;
-	}
 
 	return 0;
 }
@@ -181,67 +196,45 @@ static int da9063_rtc_set_alarm(struct device *dev, struct rtc_wkalrm *alrm)
 {
 	struct da9063_rtc *rtc = dev_get_drvdata(dev);
 	u8 data[CLOCK_DATA_LEN] = { [0 ... (CLOCK_DATA_LEN - 1)] = 0 };
-	struct rtc_time cur_tm;
-	int cmp_val;
 	int ret;
 
-	data[DATA_MIN] = DA9063_ALARM_STATUS_ALARM;
-	data[DATA_MONTH] = DA9063_TICK_TYPE_SEC;
-	if (rtc->tick_wake)
-		data[DATA_MONTH] |= DA9063_TICK_WAKE;
+	da9063_tm_to_data(&alrm->time, data);
 
-	ret = da9063_rtc_read_time(dev, &cur_tm);
-	if (ret < 0)
+	ret = da9063_rtc_stop_alarm(dev);
+	if (ret < 0) {
+		dev_err(dev, "Failed to stop alarm: %d\n", ret);
 		return ret;
+	}
+
+	switch( rtc->chip_revision ) {
+	case DA9063_AD_REVISION:
+		ret= da9063_block_write(rtc->hw, DA9063_AD_REG_ALARM_MI,
+				ALARM_AD_DATA_LEN, &data[DATA_MIN]);
+		break;
+	case DA9063_BB_REVISION:
+	default:
+		ret= da9063_block_write(rtc->hw, DA9063_REG_ALARM_S,
+				ALARM_DATA_LEN, &data[DATA_SEC]);
+	}
 
 	if (alrm->enabled) {
-		cmp_val = da9063_rtc_test_delay(&alrm->time, &cur_tm);
-		if (cmp_val == DA9063_ALARM_DELAY) {
-			/* Set alarm for longer delay */
-			data[DATA_YEAR] |= DA9063_ALARM_ON;
-		} else if (cmp_val > 0) {
-			/* Count ticks for shorter delay */
-			rtc->alarmTicks = cmp_val - 1;
-			data[DATA_YEAR] |= DA9063_TICK_ON;
-		} else if (cmp_val == 0) {
-			/* Just about time - report event */
-			rtc_update_irq(rtc->rtc_dev, 1, RTC_IRQF | RTC_AF);
+		ret = da9063_rtc_start_alarm(dev);
+		if (ret < 0) {
+			dev_err(dev, "Failed to start alarm: %d\n", ret);
+			return ret;
 		}
 	}
 
-	da9063_tm_to_data(&alrm->time, data);
-	rtc->alarmSecs = alrm->time.tm_sec;
-
-	return da9063_block_write(rtc->hw, DA9063_REG_ALARM_MI, ALARM_DATA_LEN,
-				 &data[DATA_MIN]);
+	return ret;
 }
 
 static int da9063_rtc_alarm_irq_enable(struct device *dev, unsigned int enabled)
 {
-	struct da9063_rtc *rtc = dev_get_drvdata(dev);
-	struct rtc_wkalrm alrm;
-	int ret;
 
-	ret = da9063_reg_read(rtc->hw, DATA_YEAR);
-	if (ret < 0)
-		return ret;
-
-	if (enabled) {
-		/* Enable alarm, if it is not enabled already */
-		if (!(ret & (DA9063_ALARM_ON | DA9063_TICK_ON))) {
-			ret = da9063_rtc_read_alarm(dev, &alrm);
-			if (ret < 0)
-				return ret;
-
-			alrm.enabled = 1;
-			ret = da9063_rtc_set_alarm(dev, &alrm);
-		}
-	} else {
-		ret = da9063_reg_clear_bits(rtc->hw, DA9063_REG_ALARM_Y,
-					    DA9063_ALARM_ON);
-	}
-
-	return ret;
+	if (enabled)
+		return da9063_rtc_start_alarm(dev);
+	else
+		return da9063_rtc_stop_alarm(dev);
 }
 
 /* On alarm interrupt, start to count ticks to enable seconds precision
@@ -250,30 +243,18 @@ static irqreturn_t da9063_alarm_event(int irq, void *data)
 {
 	struct da9063_rtc *rtc = data;
 
-	if (rtc->alarmSecs) {
-		rtc->alarmTicks = rtc->alarmSecs - 1;
-		da9063_reg_update(rtc->hw, DA9063_REG_ALARM_Y,
-				  DA9063_ALARM_ON | DA9063_TICK_ON,
-				  DA9063_TICK_ON);
-	} else {
+	switch( rtc->chip_revision ) {
+	case DA9063_AD_REVISION:
+		da9063_reg_clear_bits(rtc->hw, DA9063_AD_REG_ALARM_Y,
+				      DA9063_ALARM_ON);
+		break;
+	case DA9063_BB_REVISION:
+	default:
 		da9063_reg_clear_bits(rtc->hw, DA9063_REG_ALARM_Y,
 				      DA9063_ALARM_ON);
-		rtc_update_irq(rtc->rtc_dev, 1, RTC_IRQF | RTC_AF);
 	}
 
-	return IRQ_HANDLED;
-}
-
-/* On tick interrupt, count down seconds left to timeout */
-static irqreturn_t da9063_tick_event(int irq, void *data)
-{
-	struct da9063_rtc *rtc = data;
-
-	if (rtc->alarmTicks-- == 0) {
-		da9063_reg_clear_bits(rtc->hw,
-				      DA9063_REG_ALARM_Y, DA9063_TICK_ON);
-		rtc_update_irq(rtc->rtc_dev, 1, RTC_IRQF | RTC_UF);
-	}
+	rtc_update_irq(rtc->rtc_dev, 1, RTC_IRQF | RTC_AF);
 
 	return IRQ_HANDLED;
 }
@@ -291,7 +272,6 @@ static __devinit int da9063_rtc_probe(struct platform_device *pdev)
 	struct da9063 *da9063 = dev_get_drvdata(pdev->dev.parent);
 	struct da9063_rtc *rtc;
 	int ret;
-	int alarm_mo;
 
 	/* Enable RTC hardware */
 	ret = da9063_reg_set_bits(da9063, DA9063_REG_CONTROL_E, DA9063_RTC_EN);
@@ -306,16 +286,39 @@ static __devinit int da9063_rtc_probe(struct platform_device *pdev)
 		return ret;
 	}
 
-	ret = da9063_reg_read(da9063, DA9063_REG_ALARM_MO);
+	/* Set alarm reason (alarm only, no tick) */
+	switch( da9063->revision ) {
+	case DA9063_AD_REVISION:
+		ret = da9063_reg_clear_bits(da9063, DA9063_AD_REG_ALARM_MI,
+					    DA9063_ALARM_STATUS_TICK | DA9063_ALARM_STATUS_ALARM );
+		ret = da9063_reg_set_bits(da9063, DA9063_AD_REG_ALARM_MI,
+					    DA9063_ALARM_STATUS_ALARM );
+		break;
+	case DA9063_BB_REVISION:
+	default:
+		ret = da9063_reg_clear_bits(da9063, DA9063_REG_ALARM_S,
+					    DA9063_ALARM_STATUS_TICK | DA9063_ALARM_STATUS_ALARM );
+		ret = da9063_reg_set_bits(da9063, DA9063_REG_ALARM_S,
+					    DA9063_ALARM_STATUS_ALARM );
+	}
+
 	if (ret < 0) {
-		dev_err(&pdev->dev, "Failed to read RTC register.\n");
+		dev_err(&pdev->dev, "Failed to access RTC alarm register.\n");
 		return ret;
 	}
-	alarm_mo = ret;
 
 	/* Make sure that ticks are disabled. */
-	ret = da9063_reg_clear_bits(da9063, DA9063_REG_ALARM_Y,
-				    DA9063_TICK_ON);
+	switch( da9063->revision ) {
+	case DA9063_AD_REVISION:
+		ret = da9063_reg_clear_bits(da9063, DA9063_AD_REG_ALARM_Y,
+					    DA9063_TICK_ON);
+		break;
+	case DA9063_BB_REVISION:
+	default:
+		ret = da9063_reg_clear_bits(da9063, DA9063_REG_ALARM_Y,
+					    DA9063_TICK_ON);
+	}
+
 	if (ret < 0) {
 		dev_err(&pdev->dev, "Failed to access RTC alarm register.\n");
 		return ret;
@@ -328,6 +331,7 @@ static __devinit int da9063_rtc_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, rtc);
 
+	rtc->chip_revision = da9063->revision;
 	rtc->hw = da9063;
 	rtc->rtc_dev = rtc_device_register(DA9063_DRVNAME_RTC, &pdev->dev,
 					   &da9063_rtc_ops, THIS_MODULE);
@@ -336,9 +340,6 @@ static __devinit int da9063_rtc_probe(struct platform_device *pdev)
 			PTR_ERR(rtc->rtc_dev));
 		return PTR_ERR(rtc->rtc_dev);
 	}
-
-	if (alarm_mo & DA9063_TICK_WAKE)
-		rtc->tick_wake = 1;
 
 	/* Register interrupts. Complain on errors but let device
 	   to be registered at least for date/time. */
@@ -351,14 +352,6 @@ static __devinit int da9063_rtc_probe(struct platform_device *pdev)
 		return 0;
 	}
 
-	rtc->irq_tick = platform_get_irq_byname(pdev, "TICK");
-	ret = request_threaded_irq(rtc->irq_tick, NULL, da9063_tick_event,
-			IRQF_TRIGGER_LOW | IRQF_ONESHOT, "TICK", rtc);
-	if (ret) {
-		dev_err(&pdev->dev, "Failed to request TICK IRQ.\n");
-		rtc->irq_tick = -ENXIO;
-	}
-
 	return 0;
 }
 
@@ -368,9 +361,6 @@ static int __devexit da9063_rtc_remove(struct platform_device *pdev)
 
 	if (rtc->irq_alarm >= 0)
 		free_irq(rtc->irq_alarm, rtc);
-
-	if (rtc->irq_tick >= 0)
-		free_irq(rtc->irq_tick, rtc);
 
 	rtc_device_unregister(rtc->rtc_dev);
 	return 0;

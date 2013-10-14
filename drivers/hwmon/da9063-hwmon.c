@@ -1,7 +1,6 @@
-
 /* da9063-hwmon.c - Hardware monitor support for DA9063
- * Copyright (C) 2012  Dialog Semiconductor Ltd.
- * 
+ * Copyright (C) 2013  Dialog Semiconductor Ltd.
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
  * License as published by the Free Software Foundation; either
@@ -180,7 +179,7 @@ static ssize_t da9063_adc_read(struct device *dev,
 
 	if (channel == DA9063_TJUNC)
 		val += hwmon->tjunc_offset;
-	
+
 	val = da9063_adc_convert(channel, val);
 
 	return sprintf(buf, "%d\n", val);
@@ -313,7 +312,7 @@ static int __devinit da9063_hwmon_probe(struct platform_device *pdev)
 		sysfs_remove_group(&pdev->dev.kobj, &da9063_attr_group);
 		return PTR_ERR(hwmon->class_dev);
 	}
- 
+
 	return 0;
 }
 
