@@ -555,6 +555,8 @@ static int ci_hdrc_probe(struct platform_device *pdev)
 	spin_lock_init(&ci->lock);
 	ci->dev = dev;
 	ci->platdata = dev->platform_data;
+	ci->imx28_write_fix = !!(ci->platdata->flags &
+		CI_HDRC_IMX28_WRITE_FIX);
 
 	ret = hw_device_init(ci, base);
 	if (ret < 0) {
