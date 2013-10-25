@@ -1261,9 +1261,16 @@ int gpmi_is_ready(struct gpmi_nand_data *this, unsigned chip)
 	if (GPMI_IS_MX23(this)) {
 		mask = MX23_BM_GPMI_DEBUG_READY0 << chip;
 		reg = readl(r->gpmi_regs + HW_GPMI_DEBUG);
-	} else if (GPMI_IS_MX28(this) || GPMI_IS_MX6Q(this)) {
+	} else if (GPMI_IS_MX28(this)) {
 		/* MX28 shares the same R/B register as MX6Q. */
 		mask = MX28_BF_GPMI_STAT_READY_BUSY(1 << chip);
+		reg = readl(r->gpmi_regs + HW_GPMI_STAT);
+	} else if (GPMI_IS_MX6Q(this)) {
+		/* MX6Q shares the same R/B register as MX28 except that there
+		 * is only one actual R/B pin. This means that if there is
+		 * several nand chips connected than they all must be using
+		 * 0th R/B pin */
+		mask = MX28_BF_GPMI_STAT_READY_BUSY(1);
 		reg = readl(r->gpmi_regs + HW_GPMI_STAT);
 	} else
 		pr_err("unknow arch.\n");
