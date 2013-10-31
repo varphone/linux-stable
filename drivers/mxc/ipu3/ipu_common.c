@@ -2585,6 +2585,7 @@ int ipu_request_irq(struct ipu_soc *ipu, uint32_t irq,
 {
 	uint32_t reg;
 	unsigned long lock_flags;
+	int ret = 0;
 
 	BUG_ON(irq >= IPU_IRQ_COUNT);
 
@@ -2595,8 +2596,8 @@ int ipu_request_irq(struct ipu_soc *ipu, uint32_t irq,
 	if (ipu->irq_list[irq].handler != NULL) {
 		dev_err(ipu->dev,
 			"handler already installed on irq %d\n", irq);
-		spin_unlock_irqrestore(&ipu->int_reg_spin_lock, lock_flags);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto err;
 	}
 
 	ipu->irq_list[irq].handler = handler;
@@ -2611,11 +2612,13 @@ int ipu_request_irq(struct ipu_soc *ipu, uint32_t irq,
 	reg |= IPUIRQ_2_MASK(irq);
 	ipu_cm_write(ipu, reg, IPUIRQ_2_CTRLREG(irq));
 
+
+err:
 	spin_unlock_irqrestore(&ipu->int_reg_spin_lock, lock_flags);
 
 	_ipu_put(ipu);
 
-	return 0;
+	return ret;
 }
 EXPORT_SYMBOL(ipu_request_irq);
 
