@@ -147,6 +147,37 @@ out:
 	return val;
 }
 
+int da9063_page_reg_write(struct da9063 *da9063, u16 reg, u8 val)
+{
+	u8 pmic_page = DA9063_I2C_PAGE(reg);
+	u8 pmic_reg = DA9063_I2C_REG(reg);
+	int ret, ret2;
+
+	mutex_lock(&da9063->io_mutex);
+
+	if (pmic_page != DA9063_REG_PAGE0) {
+		ret = da9063_write_device(da9063, DA9063_REG_PAGE_CON, 1,
+					   &pmic_page);
+
+		if (ret)
+			goto out;
+	}
+
+	ret = da9063_write_device(da9063, pmic_reg, 1, &val);
+
+	if (pmic_page != DA9063_REG_PAGE0) {
+		pmic_page = DA9063_REG_PAGE0;
+		ret2 = da9063_write_device(da9063, DA9063_REG_PAGE_CON, 1,
+					   &pmic_page);
+		if (ret2 && ret == 0)
+			ret = ret2;
+	}
+out:
+	mutex_unlock(&da9063->io_mutex);
+
+	return ret;
+}
+
 int da9063_reg_read(struct da9063 *da9063, u16 reg)
 {
 	u8 val;
@@ -288,6 +319,7 @@ int da9063_device_init(struct da9063 *da9063, unsigned int irq)
 {
 	struct da9063_pdata *pdata = da9063->dev->platform_data;
 	int ret = 0;
+	int val;
 
 	mutex_init(&da9063->io_mutex);
 
@@ -333,6 +365,11 @@ int da9063_device_init(struct da9063 *da9063, unsigned int irq)
 			      ARRAY_SIZE(da9063_devs), NULL, da9063->irq_base);
 	if (ret)
 		dev_err(da9063->dev, "Cannot add MFD cells\n");
+
+	val = da9063_page_reg_read(da9063, DA9063_REG_CONFIG_J);
+	da9063_page_reg_write(da9063, DA9063_REG_CONFIG_J, val & ~0x40);
+	if (ret)
+		dev_err(da9063->dev, "Cannot set register correct\n");
 
 	dev_info(da9063->dev, "Device detected DA9063\n" );
 
