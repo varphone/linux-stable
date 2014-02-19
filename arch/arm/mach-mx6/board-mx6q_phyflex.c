@@ -180,9 +180,13 @@ static struct anatop_thermal_platform_data
 	.name = "anatop_thermal",
 };
 
+static struct imxuart_platform_data uart2_data __initconst = {
+	.flags	= IMXUART_HAVE_RTSCTS
+};
+
 static inline void mx6_phyflex_init_uart(void)
 {
-	imx6q_add_imx_uart(2, NULL);
+	imx6q_add_imx_uart(2, &uart2_data);
 	imx6q_add_imx_uart(3, NULL);
 }
 
