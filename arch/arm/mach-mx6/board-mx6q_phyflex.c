@@ -1620,7 +1620,7 @@ static void __init mx6_phyflex_reserve(void)
 
 	if (imx6q_gpu_pdata.reserved_mem_size) {
 #if defined(CONFIG_PHYFLEX_4G)
-		size = size = SZ_1G;
+		size = 0xEFFFFFF8;
 #elif defined(CONFIG_PHYFLEX_2G)
 		size = SZ_2G;
 #elif defined(CONFIG_PHYFLEX_512M)
