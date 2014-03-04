@@ -57,6 +57,7 @@
 #include <linux/spi/max7301.h> 
 #include <linux/can/platform/mcp251x.h> 
 #include <sound/tlv320aic3x.h>
+#include <media/tw9910.h>
 
 #include <linux/i2c-gpio.h>
 #include <linux/w1-gpio.h>
@@ -74,6 +75,7 @@
 #include <mach/mipi_dsi.h>
 #include <mach/mipi_csi2.h>
 #include <mach/audmux.h>
+#include <mach/mxc_camera.h>
 
 #include <asm/irq.h>
 #include <asm/setup.h>
@@ -93,6 +95,9 @@
 #include "board-mx6q_phytec-common.h"
 #include "board-mx6q_phytec-sd.h"
 #include "board-mx6q_phytec-nand.h"
+
+#define MX6_PHYCARD_CAM0_LVDS_PWRDN    IMX_GPIO_NR(5, 27)
+#define MX6_PHYCARD_CAM0_OE            IMX_GPIO_NR(5, 20)
 
 #define MX6_PHYFLEX_SD3_CD		IMX_GPIO_NR(5, 22)
 #define MX6_PHYFLEX_SD3_WP		IMX_GPIO_NR(5, 23)
@@ -114,7 +119,7 @@
 #define MX6_PHYFLEX_CSI0_RST		IMX_GPIO_NR(4, 5)
 #define MX6_PHYFLEX_CSI0_RST_TVIN	IMX_GPIO_NR(5, 25)
 #define MX6_PHYFLEX_MAX7310_1_BASE_ADDR	IMX_GPIO_NR(8, 0)
-#define MX6_PHYFLEX_MAX7310_2_BASE_ADDR	IMX_GPIO_NR(8, 8)
+#define MX6_PHYCARD_PCA9538_BASE_ADDR	IMX_GPIO_NR(8, 8)
 
 #define MX6_PHYCARD_PEB1_INT		IMX_GPIO_NR(1, 6)
 #define MX6_PHYCARD_SSI_RESET		IMX_GPIO_NR(7, 12)
@@ -122,6 +127,10 @@
 
 #define ENABLE_PHY
 #define DDR_2GB    // for board versions with 2GB instead of 1GB
+
+
+static char *csi0;
+module_param(csi0, charp, S_IRUGO);
 
 /* Kernel cmdline param to select TS */
 //static bool second_ts = false;
@@ -246,6 +255,26 @@ static struct aic3x_pdata tlv320_phycard_pdata = {
 	.gpio_reset = MX6_PHYCARD_SSI_RESET,
 };
 
+static int pca9538_setup(struct i2c_client *client,
+				 unsigned gpio_base, unsigned ngpio,
+				 void *context)
+{
+	int n;
+
+	for (n = 0; n < ngpio; ++n) {
+		gpio_request(gpio_base + n, "PCA9538 GPIO Expander");
+		gpio_direction_output(gpio_base + n, 1);
+	}
+
+	return 0;
+}
+
+static struct pca953x_platform_data pca9538_platdata = {
+	.gpio_base	= MX6_PHYCARD_PCA9538_BASE_ADDR,
+	.invert		= 0,
+	.setup		= pca9538_setup,
+};
+
 static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 	{
 		I2C_BOARD_INFO("max7300", 0x40),
@@ -260,6 +289,9 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 	}, {
 		I2C_BOARD_INFO("pca9530", 0x60),
 		.platform_data = &lvds_backlight,
+	}, {
+		I2C_BOARD_INFO("pca9538", 0x70),
+		.platform_data = &pca9538_platdata,
 	},
 };
 
@@ -941,17 +973,21 @@ static struct platform_device w1_device = {
 	.dev.platform_data	= &w1_gpio_pdata,
 };
 
-
-
-
 static struct fsl_mxc_capture_platform_data capture_data[] = {
-	{
+	[0] = {
 		.csi = 0,
 		.ipu = 0,
 		.mclk_source = 0,
 		.is_mipi = 0,
-	}, 
+	},
+	[1] = {
+		.csi = 1,
+		.ipu = 1,
+		.mclk_source = 0,
+		.is_mipi = 0,
+	},
 };
+
 /* Camera CSI 0 */
 static struct i2c_board_info mt9_i2c = {
 	I2C_BOARD_INFO("mt9m111", 0x48),
@@ -1001,6 +1037,182 @@ static struct platform_device leds_gpio = {
 	},
 };
 
+static struct mxc_camera_pdata mxc_ipu_csi_pdata[] = {
+	{
+		.flags = MXC_CAMERA_DATAWIDTH_10,
+		.ipu = 0,
+		.csi = 0,
+		.mclk_default_rate = 27000000,
+		.mclk_target_rate = 60000000,   /* only for mt9p031 */
+		.use_pll = 0,                   /* only for mt9p031 */
+	},
+};
+
+static u64 mxc_cam_dmamask = DMA_BIT_MASK(32);
+
+static struct platform_device mxc_ipu_csi_devices[] = {
+	{
+		.name   = "mxc-camera",
+		.id     = 0,
+		.dev    = {
+			.platform_data = &mxc_ipu_csi_pdata[0],
+			.dma_mask = &mxc_cam_dmamask,
+			.coherent_dma_mask = DMA_BIT_MASK(32),
+		},
+	},
+};
+
+int tw9910_switch_input(int input)
+{
+	int i;
+
+	for (i = 0; i < 4; i++) {
+		if (i == input) {
+			gpio_direction_output(MX6_PHYCARD_PCA9538_BASE_ADDR
+						+ i * 2, 0);
+			gpio_direction_output(MX6_PHYCARD_PCA9538_BASE_ADDR
+						+ i * 2 + 1, 0);
+		} else {
+			gpio_direction_output(MX6_PHYCARD_PCA9538_BASE_ADDR
+						+ i * 2, 1);
+			gpio_direction_output(MX6_PHYCARD_PCA9538_BASE_ADDR
+						+ i * 2 + 1, 1);
+		}
+	}
+
+	return 0;
+}
+
+struct tw9910_video_info tw9910_info = {
+	.switch_input = tw9910_switch_input,
+	.buswidth = SOCAM_DATAWIDTH_8,
+	.mpout = TW9910_MPO_RTCO,
+};
+
+static void __init mx6_cameras_init(void)
+{
+	char *cam_parameter_separator = ",";
+	char *csi0_cam_type = NULL;
+	char *csi0_cam_address = NULL;
+	long csi0_cam_address_hex;
+	int i;
+
+	if (!cpu_is_mx6q() && !cpu_is_mx6dl())
+		return;
+
+	/***************************************************
+	Camera section:
+	The bootarg csi0 will be interpreted. It has the following structure:
+	Interface=<Camera-Type>,<I2C-Address>
+	For example: csi0=VM-010,0x48
+
+	If only the Interface-Type is specified, the default settings will
+	be loaded.  If at csi0 the Camera-Type and I2C-Address are
+	specified, only this camera work.
+	***************************************************/
+
+	csi0_cam_type = strsep(&csi0, cam_parameter_separator);
+	csi0_cam_address = strsep(&csi0, cam_parameter_separator);
+
+	if (csi0_cam_type != NULL) {
+		if (!strcmp("VM-006", csi0_cam_type))
+			csi0_cam_type = "mt9m001";
+		if (!strcmp("VM-008", csi0_cam_type))
+			csi0_cam_type = "tw9910";
+		if (!strcmp("VM-009", csi0_cam_type))
+			csi0_cam_type = "mt9m111";
+		if (!strcmp("VM-010", csi0_cam_type))
+			csi0_cam_type = "mt9v022";
+		if (!strcmp("VM-011", csi0_cam_type))
+			csi0_cam_type = "mt9p031";
+	}
+
+#define SOC_CAM_LINK(bus, bi, i2c_adapter) \
+.bus_id = bus, .board_info = bi, .i2c_adapter_id = i2c_adapter
+#define SOC_CAM_PDRV(dev_id, iclinks) \
+.name = "soc-camera-pdrv", .id = dev_id,	\
+.dev = { .platform_data = &iclinks[dev_id] }
+
+	if (!csi0_cam_type) {
+		/* Default autodetecting configuration */
+		static struct i2c_board_info phycard_cameras[] = {
+			{I2C_BOARD_INFO("mt9m001", 0x5d)},
+			{I2C_BOARD_INFO("tw9910", 0x45)},
+			{I2C_BOARD_INFO("mt9m111", 0x48)},
+			{I2C_BOARD_INFO("mt9v022", 0x48)},
+			{I2C_BOARD_INFO("mt9p031", 0x48)}
+		};
+		static struct soc_camera_link phycard_iclinks[] = {
+			{SOC_CAM_LINK(0, &phycard_cameras[0], 1)},
+			{SOC_CAM_LINK(0, &phycard_cameras[1], 1),
+			 .priv = &tw9910_info},
+			{SOC_CAM_LINK(0, &phycard_cameras[2], 1)},
+			{SOC_CAM_LINK(0, &phycard_cameras[3], 1)},
+			{SOC_CAM_LINK(0, &phycard_cameras[4], 1),
+			 .flags = SOCAM_SENSOR_INVERT_PCLK}
+		};
+		static struct platform_device mxc_ipu_cameras[] = {
+			{SOC_CAM_PDRV(0, phycard_iclinks)},
+			{SOC_CAM_PDRV(1, phycard_iclinks)},
+			{SOC_CAM_PDRV(2, phycard_iclinks)},
+			{SOC_CAM_PDRV(3, phycard_iclinks)},
+			{SOC_CAM_PDRV(4, phycard_iclinks)}
+		};
+
+		for (i = 0; i < ARRAY_SIZE(mxc_ipu_cameras); i++)
+			platform_device_register(&mxc_ipu_cameras[i]);
+	} else {
+		static struct i2c_board_info phycard_cameras[] = {
+			[0] = {I2C_BOARD_INFO("mt9v022", 0x48)}
+		};
+		static struct soc_camera_link phycard_iclinks[] = {
+			{SOC_CAM_LINK(0, &phycard_cameras[0], 1)}
+		};
+		static struct platform_device mxc_ipu_cameras[] = {
+			{SOC_CAM_PDRV(0, phycard_iclinks)}
+		};
+
+		csi0_cam_address_hex = 0x48;
+		if (!strcmp("mt9m001", csi0_cam_type)) {
+			mxc_ipu_csi_pdata[0].mclk_default_rate = 36000000;
+			csi0_cam_address_hex = 0x5d;
+		} else if (!strcmp("tw9910", csi0_cam_type)) {
+			mxc_ipu_csi_pdata[0].mclk_default_rate = 27000000;
+			phycard_iclinks[0].priv = &tw9910_info;
+			csi0_cam_address_hex = 0x45;
+		} else if (!strcmp("mt9m111", csi0_cam_type)) {
+			mxc_ipu_csi_pdata[0].mclk_default_rate = 36000000;
+		} else if (!strcmp("mt9v022", csi0_cam_type)) {
+			mxc_ipu_csi_pdata[0].mclk_default_rate = 27000000;
+		} else if (!strcmp("mt9p031", csi0_cam_type)) {
+			mxc_ipu_csi_pdata[0].mclk_default_rate = 54000000;
+			phycard_iclinks[0].flags = SOCAM_SENSOR_INVERT_PCLK;
+		}
+
+		if (csi0_cam_address) {
+			int ret;
+			long i2c_addr;
+
+			ret = kstrtol(csi0_cam_address, 16, &i2c_addr);
+			if (!ret)
+				phycard_cameras[0].addr = i2c_addr;
+		} else
+			phycard_cameras[0].addr = csi0_cam_address_hex;
+
+		strcpy(phycard_cameras[0].type, csi0_cam_type);
+
+		platform_device_register(&mxc_ipu_cameras[0]);
+	}
+
+	platform_device_register(&mxc_ipu_csi_devices[0]);
+
+	gpio_request(MX6_PHYCARD_CAM0_LVDS_PWRDN, "CSI0<->LVDS bridge #PWDN");
+	gpio_request(MX6_PHYCARD_CAM0_OE, "IPU1/CSI0 camera #OE");
+	gpio_direction_output(MX6_PHYCARD_CAM0_LVDS_PWRDN, 1);
+	gpio_direction_output(MX6_PHYCARD_CAM0_OE, 1);
+}
+
+
 /*!
  * Board specific initialization.
  */
@@ -1014,7 +1226,11 @@ static void __init mx6_phyflex_init(void)
 	/* TODO: common_pads for both PhyFlex and PhyCard.
 	 *All differents pads must initialised separated
 	 */
-	mxc_iomux_v3_setup_multiple_pads(mx6q_phytec_common_pads, ARRAY_SIZE(mx6q_phytec_common_pads));
+	mxc_iomux_v3_setup_multiple_pads(mx6q_phytec_common_pads,
+		ARRAY_SIZE(mx6q_phytec_common_pads));
+
+	/* Enable both CSI in IOMUX mode instead of MIPI */
+	mxc_iomux_set_gpr_register(1, 19, 2, 3);
 
 	/* Init GPIO Led's */
 	platform_device_register(&leds_gpio);
@@ -1031,6 +1247,7 @@ static void __init mx6_phyflex_init(void)
 	imx6q_add_imx_snvs_rtc();
 	imx6q_add_imx_i2c(0, &mx6_phyflex_i2c0_data);
 	imx6q_add_imx_i2c(1, &mx6_phyflex_i2c1_data);
+	imx6q_add_imx_i2c(2, &mx6_phyflex_i2c2_data);
 	i2c_register_board_info(0, mxc_i2c0_board_info, ARRAY_SIZE(mxc_i2c0_board_info));
 	i2c_register_board_info(1, mxc_i2c1_board_info, ARRAY_SIZE(mxc_i2c1_board_info));
 
@@ -1060,6 +1277,7 @@ static void __init mx6_phyflex_init(void)
 		mx6_ac97_init_audio();
 	}
 
+	mx6_cameras_init();
 	platform_device_register(&phyflex_vmmc_reg_devices);
 	mx6_cpu_regulator_init();
 
