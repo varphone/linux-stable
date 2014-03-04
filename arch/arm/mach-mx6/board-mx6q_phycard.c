@@ -335,7 +335,9 @@ static void __init mx6_phyflex_init_usb(void)
 	*/
 	imx6_phyflex_usbotg_vbus(true);
 
+#ifdef CONFIG_USB_FSL_ARC_OTG
 	mx6_usb_dr_init();
+#endif /* CONFIG_USB_FSL_ARC_OTG */
 
 	// gpio_direction_output(IMX_GPIO_NR(1, 0), 0); // Config PWR USB pin
 	// gpio_set_value(IMX_GPIO_NR(1, 0), 0);	// Set USB power On
