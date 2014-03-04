@@ -125,9 +125,6 @@
 #define MX6_PHYCARD_SSI_RESET		IMX_GPIO_NR(7, 12)
 #define	MX6_PHYCARD_AC97_INT		IMX_GPIO_NR(5, 14)
 
-#define ENABLE_PHY
-#define DDR_2GB    // for board versions with 2GB instead of 1GB
-
 
 static char *csi0;
 module_param(csi0, charp, S_IRUGO);
@@ -156,7 +153,6 @@ static inline void mx6_phyflex_init_uart(void)
 	imx6q_add_imx_uart(3, NULL);
 }
 
-#ifdef ENABLE_PHY
 static int mx6_phycard_fec_phy_init(struct phy_device *phydev)
 {
 	printk("FEC Manufacturer ID: 0x%X, chip ID: 0x%X\n", phy_read(phydev, 0x02), phy_read(phydev, 0x03));
@@ -173,7 +169,6 @@ static struct fec_platform_data fec_data __initdata = {
 	.power_hibernate	= mx6_phycard_fec_power_hibernate,
 	.phy			= PHY_INTERFACE_MODE_MII,
 };
-#endif /* ENABLE_PHY */
 
 static int mx6_phyflex_spi_cs[] = {
 	MX6_PHYFLEX_ECSPI3_CS0,
@@ -879,11 +874,7 @@ static void __init mx6_phyflex_fixup(struct machine_desc *desc, struct tag *tags
 	// Specify manually addressing for first memory bank
 	mi->nr_banks=1;
 	mi->bank[0].start = 0x10000000;
-#ifdef DDR_2GB
-	mi->bank[0].size = SZ_2G;
-#else
 	mi->bank[0].size = SZ_1G;
-#endif
 	mi->bank[0].highmem = 0;
 }
 
@@ -1254,9 +1245,7 @@ static void __init mx6_phyflex_init(void)
 	/* SPI */
 	imx6q_add_ecspi(2, &mx6_phyflex_spi_data);
 
-#ifdef ENABLE_PHY
 	imx6_init_fec(fec_data);
-#endif /* ENABLE_PHY */
 
 	imx6q_add_anatop_thermal_imx(1, &mx6_phyflex_anatop_thermal_data);
 
