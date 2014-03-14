@@ -50,21 +50,21 @@
 #define MX6_PHYCARD_CAM0_LVDS_PWRDN    IMX_GPIO_NR(5, 27)
 #define MX6_PHYCARD_CAM0_OE            IMX_GPIO_NR(5, 20)
 
-#define MX6_PHYFLEX_SD3_CD		IMX_GPIO_NR(5, 22)
+#define MX6_PHYCARD_SD3_CD		IMX_GPIO_NR(5, 22)
 
 /* GPIO PIN, sort by PORT/BIT */
-#define MX6_PHYFLEX_ECSPI3_CS0		IMX_GPIO_NR(4, 24)
-#define MX6_PHYFLEX_ECSPI3_CS1		IMX_GPIO_NR(4, 25)
+#define MX6_PHYCARD_ECSPI3_CS0		IMX_GPIO_NR(4, 24)
+#define MX6_PHYCARD_ECSPI3_CS1		IMX_GPIO_NR(4, 25)
 
-#define MX6_PHYFLEX_USB_OTG_PWR		IMX_GPIO_NR(4, 15)
+#define MX6_PHYCARD_USB_OTG_PWR		IMX_GPIO_NR(4, 15)
 
-#define MX6_PHYFLEX_USB_HOST1_OC	IMX_GPIO_NR(1, 3)
+#define MX6_PHYCARD_USB_HOST1_OC	IMX_GPIO_NR(1, 3)
 
 #define MX6_PHYCARD_CAP_TCH_INT0	IMX_GPIO_NR(4, 29)
 
-#define MX6_PHYFLEX_CSI0_RST		IMX_GPIO_NR(4, 5)
-#define MX6_PHYFLEX_CSI0_RST_TVIN	IMX_GPIO_NR(5, 25)
-#define MX6_PHYFLEX_MAX7310_1_BASE_ADDR	IMX_GPIO_NR(8, 0)
+#define MX6_PHYCARD_CSI0_RST		IMX_GPIO_NR(4, 5)
+#define MX6_PHYCARD_CSI0_RST_TVIN	IMX_GPIO_NR(5, 25)
+#define MX6_PHYCARD_MAX7310_1_BASE_ADDR	IMX_GPIO_NR(8, 0)
 #define MX6_PHYCARD_PCA9538_BASE_ADDR	IMX_GPIO_NR(8, 8)
 
 #define MX6_PHYCARD_PEB1_INT		IMX_GPIO_NR(1, 6)
@@ -83,11 +83,11 @@ extern void mx6_cpu_regulator_init(void);
 
 
 static const struct anatop_thermal_platform_data
-	mx6_phyflex_anatop_thermal_data __initconst = {
+	mx6_phycard_anatop_thermal_data __initconst = {
 	.name = "anatop_thermal",
 };
 
-static inline void mx6_phyflex_init_uart(void)
+static inline void mx6_phycard_init_uart(void)
 {
 	imx6q_add_imx_uart(2, NULL);
 	imx6q_add_imx_uart(3, NULL);
@@ -110,21 +110,21 @@ static struct fec_platform_data fec_data __initdata = {
 	.phy			= PHY_INTERFACE_MODE_MII,
 };
 
-static int mx6_phyflex_spi_cs[] = {
-	MX6_PHYFLEX_ECSPI3_CS0,
-	MX6_PHYFLEX_ECSPI3_CS1,
+static int mx6_phycard_spi_cs[] = {
+	MX6_PHYCARD_ECSPI3_CS0,
+	MX6_PHYCARD_ECSPI3_CS1,
 };
 
-static const struct spi_imx_master mx6_phyflex_spi_data __initconst = {
-	.chipselect     = mx6_phyflex_spi_cs,
-	.num_chipselect = ARRAY_SIZE(mx6_phyflex_spi_cs),
+static const struct spi_imx_master mx6_phycard_spi_data __initconst = {
+	.chipselect     = mx6_phycard_spi_cs,
+	.num_chipselect = ARRAY_SIZE(mx6_phycard_spi_cs),
 };
 
-static struct imxi2c_platform_data mx6_phyflex_i2c0_data = {
+static struct imxi2c_platform_data mx6_phycard_i2c0_data = {
 	.bitrate = 100000,
 };
 
-static struct imxi2c_platform_data mx6_phyflex_i2c1_data = {
+static struct imxi2c_platform_data mx6_phycard_i2c1_data = {
 	.bitrate = 100000,
 };
 
@@ -227,15 +227,15 @@ static struct i2c_board_info mxc_i2c1_board_info_hda[] __initdata = {
 	},
 };
 
-static void imx6_phyflex_usbotg_vbus(bool on)
+static void imx6_phycard_usbotg_vbus(bool on)
 {
 	if (on)
-		gpio_set_value(MX6_PHYFLEX_USB_OTG_PWR, 1);
+		gpio_set_value(MX6_PHYCARD_USB_OTG_PWR, 1);
 	else
-		gpio_set_value(MX6_PHYFLEX_USB_OTG_PWR, 0);
+		gpio_set_value(MX6_PHYCARD_USB_OTG_PWR, 0);
 }
 
-static void __init mx6_phyflex_init_usb(void)
+static void __init mx6_phycard_init_usb(void)
 {
 	int ret = 0;
 
@@ -245,12 +245,12 @@ static void __init mx6_phyflex_init_usb(void)
 	 * or it will affect signal quality at dp.
 	 */
 
-	ret = gpio_request(MX6_PHYFLEX_USB_OTG_PWR, "usb-pwr");
+	ret = gpio_request(MX6_PHYCARD_USB_OTG_PWR, "usb-pwr");
 	if (ret) {
-		pr_err("failed to get GPIO MX6_PHYFLEX_USB_OTG_PWR:%d\n", ret);
+		pr_err("failed to get GPIO MX6_PHYCARD_USB_OTG_PWR:%d\n", ret);
 		return;
 	}
-	gpio_direction_output(MX6_PHYFLEX_USB_OTG_PWR, 0);
+	gpio_direction_output(MX6_PHYCARD_USB_OTG_PWR, 0);
 
 	mxc_iomux_set_gpr_register(1, 13, 1, 1);
 
@@ -262,7 +262,7 @@ static void __init mx6_phyflex_init_usb(void)
 	/* TODO: remove next line when usb pwr are fixed.
 	* Turn on VBUS power for USB.
 	*/
-	imx6_phyflex_usbotg_vbus(true);
+	imx6_phycard_usbotg_vbus(true);
 
 #ifdef CONFIG_USB_FSL_ARC_OTG
 	mx6_usb_dr_init();
@@ -273,7 +273,7 @@ static struct viv_gpu_platform_data imx6_gpu_pdata __initdata = {
 	.reserved_mem_size = SZ_128M,
 };
 
-static struct ipuv3_fb_platform_data phyflex_fb_data[] = {
+static struct ipuv3_fb_platform_data phycard_fb_data[] = {
     {
         .disp_dev		= "ldb",
         .interface_pix_fmt	= IPU_PIX_FMT_RGB666,
@@ -305,170 +305,170 @@ static const struct flexcan_platform_data mx6_phyflex_flexcan0_pdata __initconst
 	.transceiver_switch = NULL,
 };
 
-static void phyflex_suspend_enter(void)
+static void phycard_suspend_enter(void)
 {
 	/* suspend preparation */
 }
 
-static void phyflex_suspend_exit(void)
+static void phycard_suspend_exit(void)
 {
 	/* resmue resore */
 }
 
-static const struct pm_platform_data mx6_phyflex_pm_data __initconst = {
+static const struct pm_platform_data mx6_phycard_pm_data __initconst = {
 	.name		= "imx_pm",
-	.suspend_enter	= phyflex_suspend_enter,
-	.suspend_exit	= phyflex_suspend_exit,
+	.suspend_enter	= phycard_suspend_enter,
+	.suspend_exit	= phycard_suspend_exit,
 };
 
 
 #ifdef CONFIG_SND_SOC_IMX_TLV320AIC3007
 
-static struct regulator_consumer_supply tlv320aic3007_phyflex_consumer_iovdd = {
+static struct regulator_consumer_supply tlv320aic3007_phycard_consumer_iovdd = {
 	.supply		= "IOVDD",
 	.dev_name	= "1-0018",
 };
-static struct regulator_consumer_supply tlv320aic3007_phyflex_consumer_dvdd = {
+static struct regulator_consumer_supply tlv320aic3007_phycard_consumer_dvdd = {
 	.supply		= "DVDD",
 	.dev_name	= "1-0018",
 };
-static struct regulator_consumer_supply tlv320aic3007_phyflex_consumer_avdd = {
+static struct regulator_consumer_supply tlv320aic3007_phycard_consumer_avdd = {
 	.supply		= "AVDD",
 	.dev_name	= "1-0018",
 };
-static struct regulator_consumer_supply tlv320aic3007_phyflex_consumer_drvdd = {
+static struct regulator_consumer_supply tlv320aic3007_phycard_consumer_drvdd = {
 	.supply		= "DRVDD",
 	.dev_name	= "1-0018",
 };
 
-static struct regulator_init_data tlv320aic3007_phyflex_iovdd_reg_initdata = {
+static struct regulator_init_data tlv320aic3007_phycard_iovdd_reg_initdata = {
 	.num_consumer_supplies	= 1,
-	.consumer_supplies	= &tlv320aic3007_phyflex_consumer_iovdd,
+	.consumer_supplies	= &tlv320aic3007_phycard_consumer_iovdd,
 };
-static struct regulator_init_data tlv320aic3007_phyflex_dvdd_reg_initdata = {
+static struct regulator_init_data tlv320aic3007_phycard_dvdd_reg_initdata = {
 	.num_consumer_supplies	= 1,
-	.consumer_supplies	= &tlv320aic3007_phyflex_consumer_dvdd,
+	.consumer_supplies	= &tlv320aic3007_phycard_consumer_dvdd,
 };
-static struct regulator_init_data tlv320aic3007_phyflex_avdd_reg_initdata = {
+static struct regulator_init_data tlv320aic3007_phycard_avdd_reg_initdata = {
 	.num_consumer_supplies	= 1,
-	.consumer_supplies	= &tlv320aic3007_phyflex_consumer_avdd,
+	.consumer_supplies	= &tlv320aic3007_phycard_consumer_avdd,
 };
-static struct regulator_init_data tlv320aic3007_phyflex_drvdd_reg_initdata = {
+static struct regulator_init_data tlv320aic3007_phycard_drvdd_reg_initdata = {
 	.num_consumer_supplies	= 1,
-	.consumer_supplies	= &tlv320aic3007_phyflex_consumer_drvdd,
+	.consumer_supplies	= &tlv320aic3007_phycard_consumer_drvdd,
 };
 
-static struct fixed_voltage_config tlv320aic3007_phyflex_iovdd_reg_config = {
+static struct fixed_voltage_config tlv320aic3007_phycard_iovdd_reg_config = {
 	.supply_name	= "IOVDD",
 	.microvolts		= 3300000,
 	.gpio			= -1,
-	.init_data		= &tlv320aic3007_phyflex_iovdd_reg_initdata,
+	.init_data		= &tlv320aic3007_phycard_iovdd_reg_initdata,
 };
-static struct fixed_voltage_config tlv320aic3007_phyflex_dvdd_reg_config = {
+static struct fixed_voltage_config tlv320aic3007_phycard_dvdd_reg_config = {
 	.supply_name	= "DVDD",
 	.microvolts		= 1800000,
 	.gpio			= -1,
-	.init_data		= &tlv320aic3007_phyflex_dvdd_reg_initdata,
+	.init_data		= &tlv320aic3007_phycard_dvdd_reg_initdata,
 };
-static struct fixed_voltage_config tlv320aic3007_phyflex_avdd_reg_config = {
+static struct fixed_voltage_config tlv320aic3007_phycard_avdd_reg_config = {
 	.supply_name	= "AVDD",
 	.microvolts		= 3300000,
 	.gpio			= -1,
-	.init_data		= &tlv320aic3007_phyflex_avdd_reg_initdata,
+	.init_data		= &tlv320aic3007_phycard_avdd_reg_initdata,
 };
-static struct fixed_voltage_config tlv320aic3007_phyflex_drvdd_reg_config = {
+static struct fixed_voltage_config tlv320aic3007_phycard_drvdd_reg_config = {
 	.supply_name	= "DRVDD",
 	.microvolts		= 3300000,
 	.gpio			= -1,
-	.init_data		= &tlv320aic3007_phyflex_drvdd_reg_initdata,
+	.init_data		= &tlv320aic3007_phycard_drvdd_reg_initdata,
 };
 
-static struct platform_device tlv320aic3007_phyflex_iovdd_reg_devices = {
+static struct platform_device tlv320aic3007_phycard_iovdd_reg_devices = {
 	.name = "reg-fixed-voltage",
 	.id	  = 8,
 	.dev  = {
-		.platform_data = &tlv320aic3007_phyflex_iovdd_reg_config,
+		.platform_data = &tlv320aic3007_phycard_iovdd_reg_config,
 	},
 };
-static struct platform_device tlv320aic3007_phyflex_dvdd_reg_devices = {
+static struct platform_device tlv320aic3007_phycard_dvdd_reg_devices = {
 	.name = "reg-fixed-voltage",
 	.id   = 9,
 	.dev  = {
-		.platform_data = &tlv320aic3007_phyflex_dvdd_reg_config,
+		.platform_data = &tlv320aic3007_phycard_dvdd_reg_config,
 	},
 };
-static struct platform_device tlv320aic3007_phyflex_avdd_reg_devices = {
+static struct platform_device tlv320aic3007_phycard_avdd_reg_devices = {
 	.name = "reg-fixed-voltage",
 	.id	  = 10,
 	.dev  = {
-		.platform_data = &tlv320aic3007_phyflex_avdd_reg_config,
+		.platform_data = &tlv320aic3007_phycard_avdd_reg_config,
 	},
 };
-static struct platform_device tlv320aic3007_phyflex_drvdd_reg_devices = {
+static struct platform_device tlv320aic3007_phycard_drvdd_reg_devices = {
 	.name = "reg-fixed-voltage",
 	.id	  = 11,
 	.dev  = {
-		.platform_data = &tlv320aic3007_phyflex_drvdd_reg_config,
+		.platform_data = &tlv320aic3007_phycard_drvdd_reg_config,
 	},
 };
 
 #endif /* CONFIG_SND_SOC_TLV320AIC3007 */
 
-static struct regulator_consumer_supply phyflex_vmmc_consumers[] = {
+static struct regulator_consumer_supply phycard_vmmc_consumers[] = {
 	REGULATOR_SUPPLY("vmmc", "sdhci-esdhc-imx.1"),
 	REGULATOR_SUPPLY("vmmc", "sdhci-esdhc-imx.2"),
 	REGULATOR_SUPPLY("vmmc", "sdhci-esdhc-imx.3"),
 };
 
-static struct regulator_init_data phyflex_vmmc_init = {
-	.num_consumer_supplies = ARRAY_SIZE(phyflex_vmmc_consumers),
-	.consumer_supplies = phyflex_vmmc_consumers,
+static struct regulator_init_data phycard_vmmc_init = {
+	.num_consumer_supplies = ARRAY_SIZE(phycard_vmmc_consumers),
+	.consumer_supplies = phycard_vmmc_consumers,
 };
 
-static struct fixed_voltage_config phyflex_vmmc_reg_config = {
+static struct fixed_voltage_config phycard_vmmc_reg_config = {
 	.supply_name	= "vmmc",
 	.microvolts	= 3300000,
 	.gpio		= -1,
-	.init_data	= &phyflex_vmmc_init,
+	.init_data	= &phycard_vmmc_init,
 };
 
-static struct platform_device phyflex_vmmc_reg_devices = {
+static struct platform_device phycard_vmmc_reg_devices = {
 	.name		= "reg-fixed-voltage",
 	.id		= 0,
 	.dev		= {
-		.platform_data = &phyflex_vmmc_reg_config,
+		.platform_data = &phycard_vmmc_reg_config,
 	},
 };
 
-static struct mxc_audio_platform_data mx6_phyflex_audio_data;
+static struct mxc_audio_platform_data mx6_phycard_audio_data;
 
-static struct imx_ssi_platform_data mx6_phyflex_ssi_pdata = {
+static struct imx_ssi_platform_data mx6_phycard_ssi_pdata = {
 	.flags = IMX_SSI_DMA | IMX_SSI_SYN,
 };
 
-static struct mxc_audio_platform_data mx6_phyflex_audio_data = {
+static struct mxc_audio_platform_data mx6_phycard_audio_data = {
 	.ssi_num = 2,
 	.src_port = 2,
 	.ext_port = 5,
 	.hp_gpio = -1,
 };
 
-static struct platform_device mx6_phyflex_audio_device = {
+static struct platform_device mx6_phycard_audio_device = {
 	.name = "tlv320aic3007",
 };
 
-static int __init mx6_phyflex_init_audio(void)
+static int __init mx6_phycard_init_audio(void)
 {
 	/* SSI audio init part */
-	mxc_register_device(&mx6_phyflex_audio_device,
-						&mx6_phyflex_audio_data);
-	imx6q_add_imx_ssi(1, &mx6_phyflex_ssi_pdata);
+	mxc_register_device(&mx6_phycard_audio_device,
+						&mx6_phycard_audio_data);
+	imx6q_add_imx_ssi(1, &mx6_phycard_ssi_pdata);
 
 #ifdef CONFIG_SND_SOC_IMX_TLV320AIC3007
-	platform_device_register(&tlv320aic3007_phyflex_iovdd_reg_devices);
-	platform_device_register(&tlv320aic3007_phyflex_dvdd_reg_devices);
-	platform_device_register(&tlv320aic3007_phyflex_avdd_reg_devices);
-	platform_device_register(&tlv320aic3007_phyflex_drvdd_reg_devices);
+	platform_device_register(&tlv320aic3007_phycard_iovdd_reg_devices);
+	platform_device_register(&tlv320aic3007_phycard_dvdd_reg_devices);
+	platform_device_register(&tlv320aic3007_phycard_avdd_reg_devices);
+	platform_device_register(&tlv320aic3007_phycard_drvdd_reg_devices);
 #endif
 
 	return 0;
@@ -563,7 +563,7 @@ static int __init mx6_ac97_init_audio(void) {
 }
 #endif
 
-static struct mxc_dvfs_platform_data phyflex_dvfscore_data = {
+static struct mxc_dvfs_platform_data phycard_dvfscore_data = {
 	.reg_id			= "cpu_vddgp",
 	.clk1_id		= "cpu_clk",
 	.clk2_id		= "gpc_dvfs_clk",
@@ -586,7 +586,7 @@ static struct mxc_dvfs_platform_data phyflex_dvfscore_data = {
 	.delay_time		= 80,
 };
 
-static void __init mx6_phyflex_fixup(struct machine_desc *desc, struct tag *tags,
+static void __init mx6_phycard_fixup(struct machine_desc *desc, struct tag *tags,
 				   char **cmdline, struct meminfo *mi)
 {
 }
@@ -808,7 +808,7 @@ static void __init mx6_cameras_init(void)
 /*!
  * Board specific initialization.
  */
-static void __init mx6_phyflex_init(void)
+static void __init mx6_phycard_init(void)
 {
 	int i;
 
@@ -827,48 +827,47 @@ static void __init mx6_phyflex_init(void)
 	/* Init GPIO Led's */
 	platform_device_register(&leds_gpio);
 
-	gp_reg_id = phyflex_dvfscore_data.reg_id;
-	mx6_phyflex_init_uart();
+	gp_reg_id = phycard_dvfscore_data.reg_id;
+	mx6_phycard_init_uart();
 
 	imx6q_add_ipuv3(0, &ipu_data[0]);
-	for (i = 0; i < ARRAY_SIZE(phyflex_fb_data); i++)
-		imx6q_add_ipuv3fb(i, &phyflex_fb_data[i]);
+	for (i = 0; i < ARRAY_SIZE(phycard_fb_data); i++)
+		imx6q_add_ipuv3fb(i, &phycard_fb_data[i]);
 
 	imx6q_add_ldb(&ldb_data);
 
 	imx6q_add_imx_snvs_rtc();
-
-	imx6q_add_imx_i2c(0, &mx6_phyflex_i2c0_data);
-	imx6q_add_imx_i2c(1, &mx6_phyflex_i2c1_data);
+	imx6q_add_imx_i2c(0, &mx6_phycard_i2c0_data);
+	imx6q_add_imx_i2c(1, &mx6_phycard_i2c1_data);
 	i2c_register_board_info(0, mxc_i2c0_board_info, ARRAY_SIZE(mxc_i2c0_board_info));
 	i2c_register_board_info(1, mxc_i2c1_board_info, ARRAY_SIZE(mxc_i2c1_board_info));
 
 	/* SPI */
-	imx6q_add_ecspi(2, &mx6_phyflex_spi_data);
+	imx6q_add_ecspi(2, &mx6_phycard_spi_data);
 
 	imx6_init_fec(fec_data);
 
-	imx6q_add_anatop_thermal_imx(1, &mx6_phyflex_anatop_thermal_data);
+	imx6q_add_anatop_thermal_imx(1, &mx6_phycard_anatop_thermal_data);
 
-	imx6q_add_pm_imx(0, &mx6_phyflex_pm_data);
-	board_esdhc_init(2, MX6_PHYFLEX_SD3_CD, -EINVAL);
+	imx6q_add_pm_imx(0, &mx6_phycard_pm_data);
+	board_esdhc_init(2, MX6_PHYCARD_SD3_CD, -EINVAL);
 
 	imx_add_viv_gpu(&imx6_gpu_data, &imx6_gpu_pdata);
 	imx6q_add_vpu();
-	mx6_phyflex_init_usb();
+	mx6_phycard_init_usb();
 
 	/* Detecting HDA audio and STMPE811 touchscreen
 	 * or WM9712 AC97 audio and touchscreen */
 	gpio_request_one(MX6_PHYCARD_AC97_INT, GPIOF_IN, "Audio Detect");
 	if (gpio_get_value(MX6_PHYCARD_AC97_INT)) {
-		mx6_phyflex_init_audio();
+		mx6_phycard_init_audio();
 		i2c_register_board_info(1, mxc_i2c1_board_info_hda, ARRAY_SIZE(mxc_i2c1_board_info_hda));
 	} else {
 		mx6_ac97_init_audio();
 	}
 
 	mx6_cameras_init();
-	platform_device_register(&phyflex_vmmc_reg_devices);
+	platform_device_register(&phycard_vmmc_reg_devices);
 	mx6_cpu_regulator_init();
 
 	imx6q_add_otp();
@@ -877,7 +876,7 @@ static void __init mx6_phyflex_init(void)
 	imx6q_add_dma();
 	board_nand_init();
 
-	imx6q_add_dvfs_core(&phyflex_dvfscore_data);
+	imx6q_add_dvfs_core(&phycard_dvfscore_data);
 
 	platform_device_register(&w1_device);
 
@@ -903,7 +902,7 @@ static struct sys_timer mxc_timer = {
 	.init   = mx6_timer_init,
 };
 
-static void __init mx6_phyflex_reserve(void)
+static void __init mx6_phycard_reserve(void)
 {
 	phys_addr_t phys;
 
@@ -918,10 +917,10 @@ static void __init mx6_phyflex_reserve(void)
 
 MACHINE_START(MX6Q_PHYCARD, "Phytec i.MX 6Quad phyCARD Board")
 	.boot_params	= MX6_PHYS_OFFSET + 0x100,
-	.fixup		= mx6_phyflex_fixup,
+	.fixup		= mx6_phycard_fixup,
 	.map_io		= mx6_map_io,
 	.init_irq	= mx6_init_irq,
-	.init_machine	= mx6_phyflex_init,
+	.init_machine	= mx6_phycard_init,
 	.timer		= &mxc_timer,
-	.reserve	= mx6_phyflex_reserve,
+	.reserve	= mx6_phycard_reserve,
 MACHINE_END
