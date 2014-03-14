@@ -47,6 +47,7 @@
 #include "board-mx6q_phytec-common.h"
 #include "board-mx6q_phytec-sd.h"
 #include "board-mx6q_phytec-nand.h"
+#include "board-mx6q_phytec-pmic.h"
 
 #define MX6_PHYCARD_CAM0_LVDS_PWRDN    IMX_GPIO_NR(5, 27)
 #define MX6_PHYCARD_CAM0_OE            IMX_GPIO_NR(5, 20)
@@ -80,8 +81,11 @@ void __init early_console_setup(unsigned long base, struct clk *clk);
 
 extern struct regulator *(*get_cpu_regulator)(void);
 extern void (*put_cpu_regulator)(void);
-extern char *gp_reg_id;
 extern void mx6_cpu_regulator_init(void);
+
+extern char *gp_reg_id;
+extern char *soc_reg_id;
+extern char *pu_reg_id;
 
 
 static const struct anatop_thermal_platform_data
@@ -644,7 +648,8 @@ static int __init mx6_ac97_init_audio(void) {
 #endif
 
 static struct mxc_dvfs_platform_data phycard_dvfscore_data = {
-	.reg_id			= "cpu_vddgp",
+	.reg_id			= "VDDCORE",
+	.soc_id			= "VDDSOC",
 	.clk1_id		= "cpu_clk",
 	.clk2_id		= "gpc_dvfs_clk",
 	.gpc_cntr_offset	= MXC_GPC_CNTR_OFFSET,
@@ -908,6 +913,12 @@ static void __init mx6_phycard_init(void)
 	platform_device_register(&leds_gpio);
 
 	gp_reg_id = phycard_dvfscore_data.reg_id;
+	soc_reg_id = phycard_dvfscore_data.soc_id,
+	pu_reg_id = phycard_dvfscore_data.pu_id;
+
+	/* Init PMIC */
+	mx6_phyflex_init_da9063();
+
 	mx6_phycard_init_uart();
 
 	imx6q_add_ipuv3(0, &ipu_data[0]);
@@ -948,7 +959,6 @@ static void __init mx6_phycard_init(void)
 
 	mx6_cameras_init();
 	platform_device_register(&phycard_vmmc_reg_devices);
-	mx6_cpu_regulator_init();
 
 	imx6q_add_otp();
 	imx6q_add_viim();
