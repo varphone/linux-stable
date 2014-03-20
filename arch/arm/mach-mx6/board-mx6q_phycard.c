@@ -369,10 +369,7 @@ static struct fsl_mxc_ldb_platform_data ldb_data = {
 	.ipu_id		= 0,
 	.disp_id	= 0,
 	.ext_ref	= 1,
-	//.mode		= LDB_SIN0,
-	.mode		= LDB_SEP0,
-	.sec_ipu_id	= 1,
-	.sec_disp_id	= 1,
+	.mode		= LDB_SIN0,
 	.modes		= ldb_modedb,
 	.num_modes	= ARRAY_SIZE(ldb_modedb),
 };
