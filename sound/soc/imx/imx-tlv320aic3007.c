@@ -29,7 +29,6 @@ static int imx_hw_params(struct snd_pcm_substream *substream,
 	struct snd_soc_dai *codec_dai = rtd->codec_dai;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
 	int ret;
-	unsigned int channels = params_channels(params);
 
 	// set codec DAI configuration
 	ret = snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_I2S   |
@@ -143,11 +142,9 @@ static struct snd_soc_card imx_tlv320aic3007_card = {
 static int imx_audmux_config(int slave, int master)
 {
 	unsigned int ptcr, pdcr;
-    unsigned int ptcr_read, pdcr_read;
 	slave = slave - 1;
 	master = master - 1;
 
-	/* SSI0 mastered by port 5 */
 	ptcr = MXC_AUDMUX_V2_PTCR_TFSDIR |
 		MXC_AUDMUX_V2_PTCR_TFSEL(master) |
 		MXC_AUDMUX_V2_PTCR_TCLKDIR |
@@ -162,20 +159,17 @@ static int imx_audmux_config(int slave, int master)
 	return 0;
 }
 
-
 static int __devinit imx_tlv320aic3007_probe(struct platform_device *pdev)
 {
 	struct mxc_audio_platform_data *plat = pdev->dev.platform_data;
+	int ret = 0;
     
 	imx_audmux_config(plat->src_port, plat->ext_port);
     
-	int ret = 0;
-
-	ret = -EINVAL;
 	if (plat->init && plat->init())
-		return ret;
+		ret = -EINVAL;
 
-	return 0;
+	return ret;
 }
 
 static int imx_tlv320aic3007_remove(struct platform_device *pdev)
@@ -188,7 +182,6 @@ static int imx_tlv320aic3007_remove(struct platform_device *pdev)
 	return 0;
 }
 
-
 static struct platform_driver tlv320aic3007_audio_driver = {
 	.probe = imx_tlv320aic3007_probe,
 	.remove = imx_tlv320aic3007_remove,
@@ -196,8 +189,6 @@ static struct platform_driver tlv320aic3007_audio_driver = {
         .name = "tlv320aic3007",
     },
 };
-
-
 
 static struct platform_device *imx_tlv320aic3007_snd_device;
 
@@ -209,23 +200,22 @@ static int __init imx_tlv320aic3007_init(void)
 	if (ret)
 		return -ENOMEM;
 
-    imx_tlv320aic3007_snd_device = platform_device_alloc("soc-audio", -1);
+	imx_tlv320aic3007_snd_device = platform_device_alloc("soc-audio", -1);
 	if (!imx_tlv320aic3007_snd_device)
 		return -ENOMEM;
 
 	platform_set_drvdata(imx_tlv320aic3007_snd_device, &imx_tlv320aic3007_card);
 	ret = platform_device_add(imx_tlv320aic3007_snd_device);
 	if (ret)
-    {
 		platform_device_put(imx_tlv320aic3007_snd_device);
-    }
 
-    return ret;
+	return ret;
 }
 
 static void __exit imx_tlv320aic3007_exit(void)
 {
 	platform_device_unregister(imx_tlv320aic3007_snd_device);
+	platform_driver_unregister(&tlv320aic3007_audio_driver);
 }
 
 module_init(imx_tlv320aic3007_init);

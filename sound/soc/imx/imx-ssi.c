@@ -696,7 +696,6 @@ static void setup_channel_to_ac97(struct imx_ssi *imx_ssi)
 	writel(SSI_STCCR_WL(16) | SSI_STCCR_DC(12), base + SSI_SRCCR);
 
 	writel(SSI_SCR_SYN | SSI_SCR_NET | SSI_SCR_SSIEN, base + SSI_SCR);
-	writel(SSI_SOR_WAIT(3), base + SSI_SOR);
 
 	writel(SSI_SCR_SYN | SSI_SCR_NET | SSI_SCR_SSIEN |
 			SSI_SCR_TE | SSI_SCR_RE,
@@ -835,8 +834,11 @@ static int imx_ssi_probe(struct platform_device *pdev)
 		ac97_ssi = ssi;
 		setup_channel_to_ac97(ssi);
 		dai = &imx_ac97_dai;
-	} else
+	} else {
+		/* Disable SSI in AC97 mode */
+		writel(0x00, ssi->base + SSI_SACNT);
 		dai = &imx_ssi_dai;
+	}
 
 	writel(0x0, ssi->base + SSI_SIER);
 	

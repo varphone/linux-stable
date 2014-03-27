@@ -17,6 +17,7 @@
  */
 
 #include <linux/clk.h>
+#include <linux/delay.h>
 #include <linux/platform_device.h>
 #include <linux/fsl_devices.h>
 #include <linux/i2c/at24.h>
@@ -33,6 +34,7 @@
 #include <linux/w1-gpio.h>
 
 #include <mach/mxc_camera.h>
+#include <mach/audmux.h>
 
 #include <asm/irq.h>
 #include <asm/mach-types.h>
@@ -402,9 +404,6 @@ static const struct pm_platform_data mx6_phycard_pm_data __initconst = {
 	.suspend_exit	= phycard_suspend_exit,
 };
 
-
-#ifdef CONFIG_SND_SOC_IMX_TLV320AIC3007
-
 static struct regulator_consumer_supply tlv320aic3007_phycard_consumer_iovdd = {
 	.supply		= "IOVDD",
 	.dev_name	= "1-0018",
@@ -493,8 +492,6 @@ static struct platform_device tlv320aic3007_phycard_drvdd_reg_devices = {
 	},
 };
 
-#endif /* CONFIG_SND_SOC_TLV320AIC3007 */
-
 static struct regulator_consumer_supply phycard_vmmc_consumers[] = {
 	REGULATOR_SUPPLY("vmmc", "sdhci-esdhc-imx.1"),
 	REGULATOR_SUPPLY("vmmc", "sdhci-esdhc-imx.2"),
@@ -521,42 +518,43 @@ static struct platform_device phycard_vmmc_reg_devices = {
 	},
 };
 
-static struct mxc_audio_platform_data mx6_phycard_audio_data;
+static struct platform_device *phycard_ssi;
+static int mx6_phycard_init_tlv320_audio(void);
+static int mx6_phycard_exit_tlv320_audio(void);
+static int mx6_phycard_init_ac97_audio(void);
+static int mx6_phycard_exit_ac97_audio(void);
 
-static struct imx_ssi_platform_data mx6_phycard_ssi_pdata = {
+static struct imx_ssi_platform_data mx6_phycard_ssi_tlv320_pdata = {
 	.flags = IMX_SSI_DMA | IMX_SSI_SYN,
 };
 
-static struct mxc_audio_platform_data mx6_phycard_audio_data = {
+static struct mxc_audio_platform_data mx6_phycard_tlv320_audio_data = {
 	.ssi_num = 2,
 	.src_port = 2,
 	.ext_port = 5,
 	.hp_gpio = -1,
+	.init = mx6_phycard_init_tlv320_audio,
+	.finit = mx6_phycard_exit_tlv320_audio,
 };
 
-static struct platform_device mx6_phycard_audio_device = {
-	.name = "tlv320aic3007",
-};
-
-static int __init mx6_phycard_init_audio(void)
+static int mx6_phycard_init_tlv320_audio(void)
 {
-	/* SSI audio init part */
-	mxc_register_device(&mx6_phycard_audio_device,
-						&mx6_phycard_audio_data);
-	imx6q_add_imx_ssi(1, &mx6_phycard_ssi_pdata);
-
-#ifdef CONFIG_SND_SOC_IMX_TLV320AIC3007
-	platform_device_register(&tlv320aic3007_phycard_iovdd_reg_devices);
-	platform_device_register(&tlv320aic3007_phycard_dvdd_reg_devices);
-	platform_device_register(&tlv320aic3007_phycard_avdd_reg_devices);
-	platform_device_register(&tlv320aic3007_phycard_drvdd_reg_devices);
-#endif
+	phycard_ssi = imx6q_add_imx_ssi(1, &mx6_phycard_ssi_tlv320_pdata);
 
 	return 0;
 }
 
-#ifdef	CONFIG_SND_SOC_IMX_WM9712
-/* fo phyCARD */
+static int mx6_phycard_exit_tlv320_audio(void)
+{
+	platform_device_del(phycard_ssi);
+
+	return 0;
+}
+
+static struct platform_device mx6_phycard_tlv320_audio_device = {
+	.name = "tlv320aic3007",
+};
+
 static iomux_v3_cfg_t mx6q_ac97_ssi_pads[] = {
 	MX6Q_PAD_DISP0_DAT18__AUDMUX_AUD5_TXFS,
 	MX6Q_PAD_DISP0_DAT16__AUDMUX_AUD5_TXC,
@@ -566,7 +564,6 @@ static iomux_v3_cfg_t mx6q_ac97_gpio_pads[] = {
 	MX6Q_PAD_DISP0_DAT16__GPIO_5_10,
 };
 
-//	imx_imx_ssi_data imx6_imx_ssi_data[]
 static void mx6_ac97_warm_reset(struct snd_ac97 *ac97)
 {
 	mxc_iomux_v3_setup_multiple_pads(mx6q_ac97_gpio_pads, ARRAY_SIZE(mx6q_ac97_gpio_pads));
@@ -601,48 +598,57 @@ static struct imx_ssi_platform_data mx6_phycard_ssi_pdata = {
 	.ac97_warm_reset = mx6_ac97_warm_reset,
 };
 
-static struct platform_device mx6_phycard_audio_device = {
-	.name = "PhyCARD-ac97-audio",
+static struct mxc_audio_platform_data mx6_phycard_ac97_audio_data = {
+	.ssi_num = 2,
+	.src_port = 2,
+	.ext_port = 5,
+	.hp_gpio = -1,
+	.init = mx6_phycard_init_ac97_audio,
+	.finit = mx6_phycard_exit_ac97_audio,
 };
 
-static int imx_ac97_audmux_config(int slave, int master) {
-	
-	slave = slave - 1;
-	master = master - 1; 
-
-	// slave port audmux config
-	mxc_audmux_v2_configure_port(slave, MXC_AUDMUX_V2_PTCR_SYN |
-		MXC_AUDMUX_V2_PTCR_TCLKDIR | MXC_AUDMUX_V2_PTCR_TCSEL(master),
-		MXC_AUDMUX_V2_PDCR_RXDSEL(master));
-
-	// master port audmux config
-	mxc_audmux_v2_configure_port(master, MXC_AUDMUX_V2_PTCR_SYN |
-		MXC_AUDMUX_V2_PTCR_TFSDIR | MXC_AUDMUX_V2_PTCR_TFSEL(slave),
-		MXC_AUDMUX_V2_PDCR_RXDSEL(slave));
-
-	return 0;
-}
-
-static int __init mx6_ac97_init_audio(void) {
-
+static int mx6_phycard_init_ac97_audio(void)
+{
 	gpio_request_one(MX6_PHYCARD_SSI_RESET, GPIOF_OUT_INIT_HIGH, "AC97");
 	gpio_request_one(IMX_GPIO_NR(5, 12), GPIOF_OUT_INIT_HIGH, "AC97");
 	gpio_request_one(IMX_GPIO_NR(5, 10), GPIOF_OUT_INIT_HIGH, "AC97");
 
-#define	INTERNAL_PORT	2
-#define	EXTERNAL_PORT	5
-	imx_ac97_audmux_config(INTERNAL_PORT,EXTERNAL_PORT);
-
-	platform_device_register(&mx6_phycard_audio_device);
-	imx6q_add_imx_ssi(1, &mx6_phycard_ssi_pdata);
+	phycard_ssi = imx6q_add_imx_ssi(1, &mx6_phycard_ssi_pdata);
 
 	return 0;
 }
-#else
-static int __init mx6_ac97_init_audio(void) {
+
+static int mx6_phycard_exit_ac97_audio(void)
+{
+	platform_device_del(phycard_ssi);
+	phycard_ssi = 0;
+
+	gpio_free(MX6_PHYCARD_SSI_RESET);
+	gpio_free(IMX_GPIO_NR(5, 12));
+	gpio_free(IMX_GPIO_NR(5, 10));
+
 	return 0;
 }
-#endif
+
+static struct platform_device mx6_phycard_ac97_audio_device = {
+	.name = "imx-wm9712",
+};
+
+static void __init mx6_phycard_init_audio(void)
+{
+	platform_device_register(&tlv320aic3007_phycard_iovdd_reg_devices);
+	platform_device_register(&tlv320aic3007_phycard_dvdd_reg_devices);
+	platform_device_register(&tlv320aic3007_phycard_avdd_reg_devices);
+	platform_device_register(&tlv320aic3007_phycard_drvdd_reg_devices);
+
+	i2c_register_board_info(1, mxc_i2c1_board_info_hda,
+		ARRAY_SIZE(mxc_i2c1_board_info_hda));
+	mxc_register_device(&mx6_phycard_tlv320_audio_device,
+		&mx6_phycard_tlv320_audio_data);
+	mxc_register_device(&mx6_phycard_ac97_audio_device,
+		&mx6_phycard_ac97_audio_data);
+}
+
 
 static struct mxc_dvfs_platform_data phycard_dvfscore_data = {
 	.reg_id			= "VDDCORE",
@@ -943,16 +949,7 @@ static void __init mx6_phycard_init(void)
 	imx_add_viv_gpu(&imx6_gpu_data, &imx6_gpu_pdata);
 	imx6q_add_vpu();
 	mx6_phycard_init_usb();
-
-	/* Detecting HDA audio and STMPE811 touchscreen
-	 * or WM9712 AC97 audio and touchscreen */
-	gpio_request_one(MX6_PHYCARD_AC97_INT, GPIOF_IN, "Audio Detect");
-	if (gpio_get_value(MX6_PHYCARD_AC97_INT)) {
-		mx6_phycard_init_audio();
-		i2c_register_board_info(1, mxc_i2c1_board_info_hda, ARRAY_SIZE(mxc_i2c1_board_info_hda));
-	} else {
-		mx6_ac97_init_audio();
-	}
+	mx6_phycard_init_audio();
 
 	mx6_cameras_init();
 	platform_device_register(&phycard_vmmc_reg_devices);
