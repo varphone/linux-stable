@@ -58,6 +58,7 @@
 #define 	MT9P031_PIXEL_CLOCK_INVERT 		(1u << 15)
 #define MT9P031_FRAME_RESTART				0x0b
 #define		MT9P031_FRAME_RESTART_SET		(1u << 0)
+#define		MT9P031_FRAME_PAUSE_RESTART_SET		(1u << 1)
 #define MT9P031_SHUTTER_DELAY				0x0c
 #define MT9P031_RST					0x0d
 #define		MT9P031_RST_ENABLE			1
@@ -475,17 +476,23 @@ static int mt9p031_s_stream(struct v4l2_subdev *sd, int enable)
 	struct mt9p031 *mt9p031 = to_mt9p031(client);
 	int ret;
 
-	ret = mt9p031_write(client,
-			    MT9P031_FRAME_RESTART, MT9P031_FRAME_RESTART_SET);
-	if (ret < 0)
-		return ret;
-
-
 	if (!enable) {
-		ret = mt9p031_set_output_control(mt9p031, MT9P031_OUTPUT_CONTROL_CEN, 0);
-
+		/* enable pause_restart */
+		ret = mt9p031_write(client, MT9P031_FRAME_RESTART,
+					MT9P031_FRAME_PAUSE_RESTART_SET);
 		if (ret < 0)
 			return ret;
+		/* enable pause_restart + restart */
+		ret = mt9p031_write(client, MT9P031_FRAME_RESTART,
+					MT9P031_FRAME_PAUSE_RESTART_SET |
+					MT9P031_FRAME_RESTART_SET);
+		if (ret < 0)
+			return ret;
+		ret = mt9p031_set_output_control(mt9p031,
+						MT9P031_OUTPUT_CONTROL_CEN, 0);
+		if (ret < 0)
+			return ret;
+
 		if (mt9p031->use_pll)
 			return mt9p031_pll_disable(mt9p031);
 		else
@@ -498,6 +505,10 @@ static int mt9p031_s_stream(struct v4l2_subdev *sd, int enable)
 
 	/* Switch to master "normal" mode */
 	ret = mt9p031_set_output_control(mt9p031, 0, MT9P031_OUTPUT_CONTROL_CEN);
+	if (ret < 0)
+		return ret;
+	/* disable pause_restart + restart */
+	ret = mt9p031_write(client, MT9P031_FRAME_RESTART, 0);
 	if (ret < 0)
 		return ret;
 	if (mt9p031->use_pll)
