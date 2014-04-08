@@ -995,7 +995,7 @@ static void __init mx6_phycard_reserve(void)
 
 	if (imx6_gpu_pdata.reserved_mem_size) {
 		phys = memblock_alloc_base(
-			imx6_gpu_pdata.reserved_mem_size, SZ_4K, SZ_2G);
+			imx6_gpu_pdata.reserved_mem_size, SZ_4K, SZ_1G);
 		memblock_free(phys, imx6_gpu_pdata.reserved_mem_size);
 		memblock_remove(phys, imx6_gpu_pdata.reserved_mem_size);
 		imx6_gpu_pdata.reserved_mem_base = phys;
