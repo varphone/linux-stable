@@ -900,6 +900,18 @@ static void __init mx6_cameras_init(void)
 	gpio_direction_output(MX6_PHYCARD_CAM0_OE, 1);
 }
 
+#define SNVS_LPCR 0x38
+static void mx6_snvs_poweroff(void)
+{
+	u32 value;
+	void __iomem *mx6_snvs_base = MX6_IO_ADDRESS(MX6Q_SNVS_BASE_ADDR);
+
+	printk(KERN_INFO "Goodbye phyCARD-i.MX6!\n");
+
+	value = readl(mx6_snvs_base + SNVS_LPCR);
+	/* set TOP and DP_EN bit */
+	writel(value | 0x60, mx6_snvs_base + SNVS_LPCR);
+}
 
 /*!
  * Board specific initialization.
@@ -919,6 +931,8 @@ static void __init mx6_phycard_init(void)
 
 	/* Enable both CSI in IOMUX mode instead of MIPI */
 	mxc_iomux_set_gpr_register(1, 19, 2, 3);
+
+	pm_power_off = mx6_snvs_poweroff;
 
 	/* Init GPIO Led's */
 	platform_device_register(&leds_gpio);
