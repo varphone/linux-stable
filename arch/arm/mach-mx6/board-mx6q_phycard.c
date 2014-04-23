@@ -62,7 +62,8 @@
 
 #define MX6_PHYCARD_USB_OTG_PWR		IMX_GPIO_NR(4, 15)
 
-#define MX6_PHYCARD_USB_HOST1_OC	IMX_GPIO_NR(1, 3)
+#define MX6_PHYCARD_USB_H1_OC		IMX_GPIO_NR(1, 3)
+#define MX6_PHYCARD_USB_H1_PWR		IMX_GPIO_NR(1, 0)
 
 #define MX6_PHYCARD_RES_TOUCH_INT0	IMX_GPIO_NR(4, 29)
 #define MX6_PHYCARD_CAP_TOUCH_INT0	IMX_GPIO_NR(1, 6)
@@ -279,6 +280,13 @@ static void __init mx6_phycard_init_usb(void)
 	* Turn on VBUS power for USB.
 	*/
 	imx6_phycard_usbotg_vbus(true);
+
+	ret = gpio_request(MX6_PHYCARD_USB_H1_PWR, "usb-host1-pwr");
+        if (ret) {
+                pr_err("failed to get GPIO MX6_PHYCARD_USB_H1_PWR:%d\n", ret);
+                return;
+        }
+	gpio_direction_output(MX6_PHYCARD_USB_H1_PWR, 1);
 
 #ifdef CONFIG_USB_FSL_ARC_OTG
 	mx6_usb_dr_init();
