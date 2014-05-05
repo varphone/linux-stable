@@ -287,10 +287,6 @@ static void __init mx6_phycard_init_usb(void)
                 return;
         }
 	gpio_direction_output(MX6_PHYCARD_USB_H1_PWR, 1);
-
-#ifdef CONFIG_USB_FSL_ARC_OTG
-	mx6_usb_dr_init();
-#endif /* CONFIG_USB_FSL_ARC_OTG */
 }
 
 static struct viv_gpu_platform_data imx6_gpu_pdata __initdata = {
