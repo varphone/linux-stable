@@ -29,6 +29,7 @@ static int imx_hw_params(struct snd_pcm_substream *substream,
 	struct snd_soc_dai *codec_dai = rtd->codec_dai;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
 	int ret;
+	unsigned int channels = params_channels(params);
 
 	// set codec DAI configuration
 	ret = snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_I2S   |
@@ -48,7 +49,16 @@ static int imx_hw_params(struct snd_pcm_substream *substream,
 	if (ret < 0)
 		return ret;
 
-    snd_soc_dai_set_tdm_slot(cpu_dai, 0xfffffffc, 0xfffffffc, 2, 0);
+	switch (channels) {
+	case 2:
+		snd_soc_dai_set_tdm_slot(cpu_dai, 0xfffffffc, 0xfffffffc, 2, 0);
+		break;
+	case 1:
+		snd_soc_dai_set_tdm_slot(cpu_dai, 0xfffffffe, 0xfffffffe, 1, 0);
+		break;
+	default:
+		return -EINVAL;
+	}
 
     ret = snd_soc_dai_set_sysclk(cpu_dai, IMX_SSP_SYS_CLK, 0,
                                  SND_SOC_CLOCK_IN);
