@@ -22,8 +22,9 @@
 
 #define CODEC_CLOCK 19200000
 
+
 static int imx_hw_params(struct snd_pcm_substream *substream,
-			 struct snd_pcm_hw_params *params)
+	 struct snd_pcm_hw_params *params)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_dai *codec_dai = rtd->codec_dai;
@@ -31,21 +32,20 @@ static int imx_hw_params(struct snd_pcm_substream *substream,
 	int ret;
 	unsigned int channels = params_channels(params);
 
-	// set codec DAI configuration
-	ret = snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_I2S   |
-                              SND_SOC_DAIFMT_NB_NF |
-                              SND_SOC_DAIFMT_CBM_CFM);
+	/* set codec DAI configuration */
+	ret = snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_I2S |
+		SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBM_CFM);
 	if (ret < 0)
 		return ret;
 
 	/* set cpu DAI configuration */
 	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_I2S |
-							  SND_SOC_DAIFMT_NB_IF |
-                              SND_SOC_DAIFMT_CBM_CFM);
+		SND_SOC_DAIFMT_NB_IF | SND_SOC_DAIFMT_CBM_CFM);
 	if (ret < 0)
 		return ret;
 
-	ret = snd_soc_dai_set_sysclk(codec_dai, 0, CODEC_CLOCK, SND_SOC_CLOCK_OUT);
+	ret = snd_soc_dai_set_sysclk(codec_dai, 0, CODEC_CLOCK,
+		SND_SOC_CLOCK_OUT);
 	if (ret < 0)
 		return ret;
 
@@ -60,8 +60,8 @@ static int imx_hw_params(struct snd_pcm_substream *substream,
 		return -EINVAL;
 	}
 
-    ret = snd_soc_dai_set_sysclk(cpu_dai, IMX_SSP_SYS_CLK, 0,
-                                 SND_SOC_CLOCK_IN);
+	ret = snd_soc_dai_set_sysclk(cpu_dai, IMX_SSP_SYS_CLK, 0,
+		SND_SOC_CLOCK_IN);
 
 	return 0;
 }
@@ -70,7 +70,7 @@ static struct snd_soc_ops imx_ops = {
 	.hw_params = imx_hw_params,
 };
 
-/* davinci-evm machine dapm widgets */
+/* machine dapm widgets */
 static const struct snd_soc_dapm_widget aic3x_dapm_widgets[] = {
 	SND_SOC_DAPM_HP("Headphone Jack", NULL),
 	SND_SOC_DAPM_LINE("Line Out", NULL),
@@ -78,7 +78,7 @@ static const struct snd_soc_dapm_widget aic3x_dapm_widgets[] = {
 	SND_SOC_DAPM_LINE("Line In", NULL),
 };
 
-/* davinci-evm machine audio_mapnections to the codec pins */
+/* machine audio_mapnections to the codec pins */
 static const struct snd_soc_dapm_route audio_map[] = {
 	/* Headphone connected to HPLOUT, HPROUT */
 	{"Headphone Jack", NULL, "HPLOUT"},
@@ -107,11 +107,9 @@ static int imx_aic3x_init(struct snd_soc_pcm_runtime *rtd)
 	struct snd_soc_codec *codec = rtd->codec;
 	struct snd_soc_dapm_context *dapm = &codec->dapm;
 
-	/* Add davinci-evm specific widgets */
 	snd_soc_dapm_new_controls(dapm, aic3x_dapm_widgets,
-				  ARRAY_SIZE(aic3x_dapm_widgets));
+		ARRAY_SIZE(aic3x_dapm_widgets));
 
-	/* Set up davinci-evm specific audio path audio_map */
 	snd_soc_dapm_add_routes(dapm, audio_map, ARRAY_SIZE(audio_map));
 
 	/* not connected */
@@ -173,9 +171,9 @@ static int __devinit imx_tlv320aic3007_probe(struct platform_device *pdev)
 {
 	struct mxc_audio_platform_data *plat = pdev->dev.platform_data;
 	int ret = 0;
-    
+
 	imx_audmux_config(plat->src_port, plat->ext_port);
-    
+
 	if (plat->init && plat->init())
 		ret = -EINVAL;
 
@@ -196,8 +194,8 @@ static struct platform_driver tlv320aic3007_audio_driver = {
 	.probe = imx_tlv320aic3007_probe,
 	.remove = imx_tlv320aic3007_remove,
 	.driver = {
-        .name = "tlv320aic3007",
-    },
+		.name = "tlv320aic3007",
+	},
 };
 
 static struct platform_device *imx_tlv320aic3007_snd_device;
@@ -232,5 +230,5 @@ module_init(imx_tlv320aic3007_init);
 module_exit(imx_tlv320aic3007_exit);
 
 MODULE_AUTHOR("Lavnikevich Dmitry");
-MODULE_DESCRIPTION("TLV320AIC3007 PHYFlex ASoC driver");
+MODULE_DESCRIPTION("TLV320AIC3007 phyFLEX ASoC driver");
 MODULE_LICENSE("GPL");
