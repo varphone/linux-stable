@@ -862,40 +862,16 @@ static void ci_otg_fsm_wakeup_by_srp(struct ci_hdrc *ci)
 	}
 }
 
-static int ci_controller_suspend(struct device *dev)
+static void ci_controller_suspend(struct ci_hdrc *ci)
 {
-	struct ci_hdrc *ci = dev_get_drvdata(dev);
-
-	dev_dbg(dev, "at %s\n", __func__);
-
-	if (ci->in_lpm)
-		return 0;
-
-	/*
-	 * The registers for suspended host will not be updated
-	 * during system suspend.
-	 */
-	if (ci->roles[ci->role]->save)
-		ci->roles[ci->role]->save(ci);
-
-	if (ci_otg_is_fsm_mode(ci))
-		ci_otg_fsm_suspend_for_srp(ci);
-
 	disable_irq(ci->irq);
-
-	if (ci->transceiver)
-		usb_phy_set_wakeup(ci->transceiver, true);
-
 	ci_hdrc_enter_lpm(ci, true);
 
 	if (ci->transceiver)
 		usb_phy_set_suspend(ci->transceiver, 1);
 
 	ci->in_lpm = true;
-
 	enable_irq(ci->irq);
-
-	return 0;
 }
 
 static int ci_controller_resume(struct device *dev)
@@ -904,8 +880,7 @@ static int ci_controller_resume(struct device *dev)
 
 	dev_dbg(dev, "at %s\n", __func__);
 
-	if (!ci->in_lpm)
-		return 0;
+	WARN_ON(!ci->in_lpm);
 
 	ci_hdrc_enter_lpm(ci, false);
 
@@ -932,7 +907,6 @@ static int ci_controller_resume(struct device *dev)
 static int ci_suspend(struct device *dev)
 {
 	struct ci_hdrc *ci = dev_get_drvdata(dev);
-	int ret;
 
 	/*
 	 * Controller needs to be active during suspend, otherwise the core
@@ -943,14 +917,24 @@ static int ci_suspend(struct device *dev)
 	if (ci->in_lpm)
 		pm_runtime_resume(dev);
 
-	ret = ci_controller_suspend(dev);
-	if (ret)
-		return ret;
+	/*
+	 * The registers for suspended host will not be updated
+	 * during system suspend.
+	 */
+	if (ci->roles[ci->role]->save)
+		ci->roles[ci->role]->save(ci);
 
-	if (device_may_wakeup(dev))
+	if (device_may_wakeup(dev)) {
 		enable_irq_wake(ci->irq);
+		if (ci_otg_is_fsm_mode(ci))
+			ci_otg_fsm_suspend_for_srp(ci);
+		if (ci->transceiver)
+			usb_phy_set_wakeup(ci->transceiver, true);
+	}
 
-	return ret;
+	ci_controller_suspend(ci);
+
+	return 0;
 }
 
 static int ci_resume(struct device *dev)
@@ -998,7 +982,21 @@ static int ci_resume(struct device *dev)
 #ifdef CONFIG_PM_RUNTIME
 static int ci_runtime_suspend(struct device *dev)
 {
-	return ci_controller_suspend(dev);
+	struct ci_hdrc *ci = dev_get_drvdata(dev);
+
+	dev_dbg(dev, "at %s\n", __func__);
+
+	WARN_ON(ci->in_lpm);
+
+	if (ci_otg_is_fsm_mode(ci))
+		ci_otg_fsm_suspend_for_srp(ci);
+
+	if (ci->transceiver)
+		usb_phy_set_wakeup(ci->transceiver, true);
+
+	ci_controller_suspend(ci);
+
+	return 0;
 }
 
 static int ci_runtime_resume(struct device *dev)
