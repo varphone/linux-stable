@@ -1509,10 +1509,13 @@ static int gpmi_pre_bbt_scan(struct gpmi_nand_data  *this)
 	if (ret)
 		return ret;
 
-	/* extra init */
-	ret = extra_init(this);
-	if (ret != 0)
-		return ret;
+	/*
+	 * Can we enable the extra features? such as EDO or Sync mode.
+	 *
+	 * We do not check the return value now. That's means if we fail in
+	 * enable the extra features, we still can run in the normal way.
+	 */
+	extra_init(this);
 
 	/* NAND boot init, depends on the gpmi_set_geometry(). */
 	return nand_boot_init(this);
