@@ -419,6 +419,16 @@ choice
 	prompt "phyFLEX-i.MX6 RAM Size"
 	default PHYFLEX_1G
 
+config PHYFLEX_128M
+	bool "128MB RAM"
+	help
+	  phyFLEX-i.MX6 with 128MB RAM
+
+config PHYFLEX_256M
+	bool "256MB RAM"
+	help
+	  phyFLEX-i.MX6 with 256MB RAM
+
 config PHYFLEX_512M
         bool "512MB RAM"
         help
