@@ -489,7 +489,11 @@ static void __init mx6_phyflex_init_usb(void)
 }
 
 static struct viv_gpu_platform_data imx6q_gpu_pdata __initdata = {
+#if defined(CONFIG_PHYFLEX_128M)
+	.reserved_mem_size = SZ_32M,
+#else
 	.reserved_mem_size = SZ_128M,
+#endif
 };
 
 
@@ -1625,6 +1629,10 @@ static void __init mx6_phyflex_reserve(void)
 		size = SZ_2G;
 #elif defined(CONFIG_PHYFLEX_512M)
 		size = SZ_512M;
+#elif defined(CONFIG_PHYFLEX_256M)
+		size = SZ_256M;
+#elif defined(CONFIG_PHYFLEX_128M)
+		size = SZ_128M;
 #else
 		size = SZ_1G;
 #endif
