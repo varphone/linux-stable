@@ -138,17 +138,16 @@ static int prp_enc_setup(cam_data *cam)
 	mipi_csi2_info = mipi_csi2_get_info();
 
 	if (mipi_csi2_info) {
-		if (mipi_csi2_get_status(mipi_csi2_info)) {
-			ipu_id = mipi_csi2_get_bind_ipu(mipi_csi2_info);
-			csi_id = mipi_csi2_get_bind_csi(mipi_csi2_info);
+		if (mipi_csi2_get_status(mipi_csi2_info) && cam->is_mipi_cam) {
+			ipu_id = mipi_csi2_get_bind_ipu(mipi_csi2_info, cam->mipi_v_channel);
+			csi_id = mipi_csi2_get_bind_csi(mipi_csi2_info, cam->mipi_v_channel);
 
 			if (cam->ipu == ipu_get_soc(ipu_id)
 				&& cam->csi == csi_id) {
 				enc.csi_prp_enc_mem.mipi_en = true;
-				enc.csi_prp_enc_mem.mipi_vc =
-				mipi_csi2_get_virtual_channel(mipi_csi2_info);
+				enc.csi_prp_enc_mem.mipi_vc = cam->mipi_v_channel;
 				enc.csi_prp_enc_mem.mipi_id =
-				mipi_csi2_get_datatype(mipi_csi2_info);
+				mipi_csi2_get_datatype(mipi_csi2_info, cam->mipi_v_channel);
 
 				mipi_csi2_pixelclk_enable(mipi_csi2_info);
 			} else {
@@ -319,8 +318,8 @@ static int prp_enc_setup(cam_data *cam)
  *
  * @return  status
  */
-static int prp_enc_eba_update(struct ipu_soc *ipu, dma_addr_t eba,
-			      int *buffer_num)
+static int prp_enc_eba_update(void *private, struct ipu_soc *ipu, 
+			      dma_addr_t eba, int *buffer_num)
 {
 	int err = 0;
 
@@ -459,9 +458,9 @@ static int prp_enc_disabling_tasks(void *private)
 	mipi_csi2_info = mipi_csi2_get_info();
 
 	if (mipi_csi2_info) {
-		if (mipi_csi2_get_status(mipi_csi2_info)) {
-			ipu_id = mipi_csi2_get_bind_ipu(mipi_csi2_info);
-			csi_id = mipi_csi2_get_bind_csi(mipi_csi2_info);
+		if (mipi_csi2_get_status(mipi_csi2_info) && cam->is_mipi_cam) {
+			ipu_id = mipi_csi2_get_bind_ipu(mipi_csi2_info, cam->mipi_v_channel);
+			csi_id = mipi_csi2_get_bind_csi(mipi_csi2_info, cam->mipi_v_channel);
 
 			if (cam->ipu == ipu_get_soc(ipu_id)
 				&& cam->csi == csi_id)

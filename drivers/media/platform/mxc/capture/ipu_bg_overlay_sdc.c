@@ -117,8 +117,14 @@ static void get_disp_ipu(cam_data *cam)
 static irqreturn_t csi_enc_callback(int irq, void *dev_id)
 {
 	cam_data *cam = (cam_data *) dev_id;
+	ipu_channel_t csi_channel;
 
-	ipu_select_buffer(cam->ipu, CSI_MEM, IPU_OUTPUT_BUFFER, csi_buffer_num);
+	if (cam->csi == 1)
+		csi_channel = CSI_MEM1;
+	else
+		csi_channel = CSI_MEM0;
+
+	ipu_select_buffer(cam->ipu, csi_channel, IPU_OUTPUT_BUFFER, csi_buffer_num);
 	schedule_work(&cam->csi_work_struct);
 	csi_buffer_num = (csi_buffer_num == 0) ? 1 : 0;
 	return IRQ_HANDLED;
@@ -129,6 +135,7 @@ static int csi_enc_setup(cam_data *cam)
 	ipu_channel_params_t params;
 	u32 pixel_fmt;
 	int err = 0, sensor_protocol = 0;
+	ipu_channel_t csi_channel;
 #ifdef CONFIG_MXC_MIPI_CSI2
 	void *mipi_csi2_info;
 	int ipu_id;
@@ -142,6 +149,10 @@ static int csi_enc_setup(cam_data *cam)
 
 	memset(&params, 0, sizeof(ipu_channel_params_t));
 	params.csi_mem.csi = cam->csi;
+	if (cam->csi == 1)
+		csi_channel = CSI_MEM1;
+	else
+		csi_channel = CSI_MEM0;
 
 	sensor_protocol = ipu_csi_get_sensor_protocol(cam->ipu, cam->csi);
 	switch (sensor_protocol) {
@@ -166,17 +177,16 @@ static int csi_enc_setup(cam_data *cam)
 	mipi_csi2_info = mipi_csi2_get_info();
 
 	if (mipi_csi2_info) {
-		if (mipi_csi2_get_status(mipi_csi2_info)) {
-			ipu_id = mipi_csi2_get_bind_ipu(mipi_csi2_info);
-			csi_id = mipi_csi2_get_bind_csi(mipi_csi2_info);
+		if (mipi_csi2_get_status(mipi_csi2_info) && cam->is_mipi_cam) {
+			ipu_id = mipi_csi2_get_bind_ipu(mipi_csi2_info, cam->mipi_v_channel);
+			csi_id = mipi_csi2_get_bind_csi(mipi_csi2_info, cam->mipi_v_channel);
 
 			if (cam->ipu == ipu_get_soc(ipu_id)
 				&& cam->csi == csi_id) {
 				params.csi_mem.mipi_en = true;
-				params.csi_mem.mipi_vc =
-				mipi_csi2_get_virtual_channel(mipi_csi2_info);
+				params.csi_mem.mipi_vc = cam->mipi_v_channel;
 				params.csi_mem.mipi_id =
-				mipi_csi2_get_datatype(mipi_csi2_info);
+				mipi_csi2_get_datatype(mipi_csi2_info, cam->mipi_v_channel);
 
 				mipi_csi2_pixelclk_enable(mipi_csi2_info);
 			} else {
@@ -230,14 +240,14 @@ static int csi_enc_setup(cam_data *cam)
 	}
 	pr_debug("vf_bufs %x %x\n", cam->vf_bufs[0], cam->vf_bufs[1]);
 
-	err = ipu_init_channel(cam->ipu, CSI_MEM, &params);
+	err = ipu_init_channel(cam->ipu, csi_channel, &params);
 	if (err != 0) {
 		printk(KERN_ERR "ipu_init_channel %d\n", err);
 		goto out_1;
 	}
 
 	pixel_fmt = IPU_PIX_FMT_UYVY;
-	err = ipu_init_channel_buffer(cam->ipu, CSI_MEM, IPU_OUTPUT_BUFFER,
+	err = ipu_init_channel_buffer(cam->ipu, csi_channel, IPU_OUTPUT_BUFFER,
 				pixel_fmt, cam->crop_current.width,
 				cam->crop_current.height,
 				cam->crop_current.width, IPU_ROTATE_NONE,
@@ -247,7 +257,7 @@ static int csi_enc_setup(cam_data *cam)
 		printk(KERN_ERR "CSI_MEM output buffer\n");
 		goto out_1;
 	}
-	err = ipu_enable_channel(cam->ipu, CSI_MEM);
+	err = ipu_enable_channel(cam->ipu, csi_channel);
 	if (err < 0) {
 		printk(KERN_ERR "ipu_enable_channel CSI_MEM\n");
 		goto out_1;
@@ -255,8 +265,8 @@ static int csi_enc_setup(cam_data *cam)
 
 	csi_buffer_num = 0;
 
-	ipu_select_buffer(cam->ipu, CSI_MEM, IPU_OUTPUT_BUFFER, 0);
-	ipu_select_buffer(cam->ipu, CSI_MEM, IPU_OUTPUT_BUFFER, 1);
+	ipu_select_buffer(cam->ipu, csi_channel, IPU_OUTPUT_BUFFER, 0);
+	ipu_select_buffer(cam->ipu, csi_channel, IPU_OUTPUT_BUFFER, 1);
 	return err;
 out_1:
 	if (cam->vf_bufs_vaddr[0]) {
@@ -287,12 +297,18 @@ static int csi_enc_enabling_tasks(void *private)
 {
 	cam_data *cam = (cam_data *) private;
 	int err = 0;
+	uint32_t irq;
 
-	ipu_clear_irq(cam->ipu, IPU_IRQ_CSI0_OUT_EOF);
-	err = ipu_request_irq(cam->ipu, IPU_IRQ_CSI0_OUT_EOF,
+	if (cam->csi == 1)
+		irq = IPU_IRQ_CSI1_OUT_EOF;
+	else
+		irq = IPU_IRQ_CSI0_OUT_EOF;
+
+	ipu_clear_irq(cam->ipu, irq);
+	err = ipu_request_irq(cam->ipu, irq,
 			      csi_enc_callback, 0, "Mxc Camera", cam);
 	if (err != 0) {
-		printk(KERN_ERR "Error registering CSI0_OUT_EOF irq\n");
+		printk(KERN_ERR "Error registering CSI_OUT_EOF irq\n");
 		return err;
 	}
 
@@ -306,7 +322,7 @@ static int csi_enc_enabling_tasks(void *private)
 
 	return err;
 out1:
-	ipu_free_irq(cam->ipu, IPU_IRQ_CSI0_OUT_EOF, cam);
+	ipu_free_irq(cam->ipu, irq, cam);
 	return err;
 }
 
@@ -380,6 +396,7 @@ static int bg_overlay_stop(void *private)
 {
 	int err = 0;
 	cam_data *cam = (cam_data *) private;
+	ipu_channel_t csi_channel;
 #ifdef CONFIG_MXC_MIPI_CSI2
 	void *mipi_csi2_info;
 	int ipu_id;
@@ -389,9 +406,14 @@ static int bg_overlay_stop(void *private)
 	if (cam->overlay_active == false)
 		return 0;
 
-	err = ipu_disable_channel(cam->ipu, CSI_MEM, true);
+	if (cam->csi == 1)
+		csi_channel = CSI_MEM1;
+	else
+		csi_channel = CSI_MEM0;
 
-	ipu_uninit_channel(cam->ipu, CSI_MEM);
+	err = ipu_disable_channel(cam->ipu, csi_channel, true);
+
+	ipu_uninit_channel(cam->ipu, csi_channel);
 
 	csi_buffer_num = 0;
 
@@ -399,9 +421,9 @@ static int bg_overlay_stop(void *private)
 	mipi_csi2_info = mipi_csi2_get_info();
 
 	if (mipi_csi2_info) {
-		if (mipi_csi2_get_status(mipi_csi2_info)) {
-			ipu_id = mipi_csi2_get_bind_ipu(mipi_csi2_info);
-			csi_id = mipi_csi2_get_bind_csi(mipi_csi2_info);
+		if (mipi_csi2_get_status(mipi_csi2_info) && cam->is_mipi_cam) {
+			ipu_id = mipi_csi2_get_bind_ipu(mipi_csi2_info, cam->mipi_v_channel);
+			csi_id = mipi_csi2_get_bind_csi(mipi_csi2_info, cam->mipi_v_channel);
 
 			if (cam->ipu == ipu_get_soc(ipu_id)
 				&& cam->csi == csi_id)
@@ -466,11 +488,17 @@ static int bg_overlay_enable_csi(void *private)
 static int bg_overlay_disable_csi(void *private)
 {
 	cam_data *cam = (cam_data *) private;
+	uint32_t irq;
+
+	if (cam->csi == 1)
+		irq = IPU_IRQ_CSI1_OUT_EOF;
+	else
+		irq = IPU_IRQ_CSI0_OUT_EOF;
 
 	/* free csi eof irq firstly.
 	 * when disable csi, wait for idmac eof.
 	 * it requests eof irq again */
-	ipu_free_irq(cam->ipu, IPU_IRQ_CSI0_OUT_EOF, cam);
+	ipu_free_irq(cam->ipu, irq, cam);
 
 	return ipu_disable_csi(cam->ipu, cam->csi);
 }

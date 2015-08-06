@@ -35,8 +35,12 @@ for SOC imx6qdl.dtsi:
 for board imx6qdl-sabresd.dtsi:
 	mipi_csi@021dc000 {
 		status = "okay";
-		ipu_id = <0>;
-		csi_id = <1>;
-		v_channel = <0>;
 		lanes = <2>;
+
+		mipi-csi2-channel@0 {
+			ipu_id = <0>;
+			csi_id = <0>;
+			v_channel = <0>;
+			status = "okay";
+		};
 	};
