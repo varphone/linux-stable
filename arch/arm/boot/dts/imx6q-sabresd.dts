@@ -18,6 +18,10 @@
 / {
 	model = "Freescale i.MX6 Quad SABRE Smart Device Board";
 	compatible = "fsl,imx6q-sabresd", "fsl,imx6q";
+
+	v4l2_cap_1 {
+		ipu_id = <1>;
+	};
 };
 
 &battery {
@@ -137,6 +141,22 @@
 	};
 };
 
+&i2c2 {
+	ov5640_mipi: ov5640_mipi@3c {
+		ipu_id = <1>;
+		csi_id = <1>;
+		v_channel_id = <3>;
+	};
+};
+
+&mipi_csi {
+	mipi-csi2-channel@0 {
+		ipu_id = <1>;
+		csi_id = <1>;
+		v_channel = <3>;
+	};
+};
+
 &mxcfb1 {
 	status = "okay";
 };
@@ -156,3 +176,4 @@
 &sata {
 	status = "okay";
 };
+

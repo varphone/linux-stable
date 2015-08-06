@@ -31,6 +31,7 @@ Required properties for sensor
 - DVDD-supply: set according to the board.
 - pwn-gpios: set according to the board.
 - rst-gpios: set according to the board.
+- ipu_id: ipu id for v4l2 capture device 
 - csi_id: csi id for v4l2 capture device
   should be 0 or 1 for i.MX6DQ/i.MX6SDL.
 - mclk: should the value of mclk clock send out the sensor. unit is Hz.
@@ -78,6 +79,7 @@ Examples for sensors:
 		DVDD-supply = <&vgen2_reg>;  /* 1.5v*/
 		pwn-gpios = <&gpio1 16 1>;   /* active low: SD1_DAT0 */
 		rst-gpios = <&gpio1 17 0>;   /* active high: SD1_DAT1 */
+		ipu_id = <0>; 
 		csi_id = <0>;
 		mclk = <24000000>;
 		mclk_source = <0>;
@@ -95,6 +97,7 @@ Examples for sensors:
 		DVDD-supply = <&reg_3p3v>;  /* 1.8v */
 		PVDD-supply = <&reg_3p3v>;  /* 1.8v */
 		pwn-gpios = <&max7310_b 2 0>;
+		ipu_id = <0>; 
 		csi_id = <0>;
 		mclk = <24000000>;
 		mclk_source = <0>;

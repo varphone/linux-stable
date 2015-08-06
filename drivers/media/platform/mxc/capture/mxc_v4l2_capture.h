@@ -183,8 +183,8 @@ typedef struct _cam_data {
 	struct v4l2_rect crop_defrect;
 	struct v4l2_rect crop_current;
 
-	int (*enc_update_eba) (struct ipu_soc *ipu, dma_addr_t eba,
-			       int *bufferNum);
+	int (*enc_update_eba) (void *private, struct ipu_soc *ipu, 
+			       dma_addr_t eba, int *bufferNum);
 	int (*enc_enable) (void *private);
 	int (*enc_disable) (void *private);
 	int (*enc_enable_csi) (void *private);
@@ -208,6 +208,8 @@ typedef struct _cam_data {
 	wait_queue_head_t power_queue;
 	unsigned int ipu_id;
 	unsigned int csi;
+	unsigned int mipi_v_channel;
+	bool is_mipi_cam;
 	u8 mclk_source;
 	bool mclk_on[2];	/* two mclk sources at most now */
 	int current_input;
@@ -257,7 +259,10 @@ struct sensor_data {
 	u32 mclk;
 	u8 mclk_source;
 	struct clk *sensor_clk;
+	int ipu_id;
 	int csi;
+	int v_channel;
+	bool is_mipi;
 
 	void (*io_init)(void);
 };
