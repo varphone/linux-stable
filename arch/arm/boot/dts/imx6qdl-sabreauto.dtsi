@@ -267,6 +267,14 @@
 		status = "okay";
 	};
 
+	v4l2_cap_1 {
+		compatible = "fsl,imx6q-v4l2-capture";
+		ipu_id = <0>;
+		csi_id = <1>;
+		mclk_source = <0>;
+		status = "okay";
+	};
+
 	v4l2_out {
 		compatible = "fsl,mxc_v4l2_output";
 		status = "okay";
@@ -1005,6 +1013,18 @@
 		bank-width = <2>;
 		fsl,weim-cs-timing = <0x00620081 0x00000001 0x1c022000
 				0x0000c000 0x1404a38e 0x00000000>;
+	};
+};
+
+&mipi_csi {
+	status = "okay";
+	lanes = <4>;
+
+	mipi-csi2-channel@0 {
+		ipu_id = <0>;
+		csi_id = <0>;
+		v_channel = <0>;
+		status = "okay";
 	};
 };
 

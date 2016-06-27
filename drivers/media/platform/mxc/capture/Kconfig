@@ -33,6 +33,30 @@ config MXC_TVIN_ADV7180
 	---help---
 	  If you plan to use the adv7180 video decoder with your MXC system, say Y here.
 
+config MXC_GMSL_MAX9286
+        tristate "Maxim max9286 GMSL Deserializer Input support"
+        depends on !VIDEO_MXC_EMMA_CAMERA && I2C
+        ---help---
+          If you plan to use the max9286 GMSL Deserializer with your MXC system, say Y here.
+
+choice
+        prompt "Select Camera Sensor"
+
+config SENSOR_OV10635
+        bool "OmniVision OV10635 camera sensor"
+        depends on MXC_GMSL_MAX9286
+        default y
+        ---help---
+          Select OmniVision OV10635 camera sensor for Max9286.
+
+config SENSOR_AP0101
+        bool "Onsemi AP0101 and AR0140 camera sensor"
+        depends on MXC_GMSL_MAX9286
+        ---help---
+          Select Onsemi AP0101 + AR0140 camera sensor for Max9286.
+
+endchoice
+
 choice
 	prompt "Select Overlay Rounting"
 	default MXC_IPU_DEVICE_QUEUE_SDC

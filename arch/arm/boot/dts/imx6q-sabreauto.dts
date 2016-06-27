@@ -18,6 +18,22 @@
 / {
 	model = "Freescale i.MX6 Quad SABRE Automotive Board";
 	compatible = "fsl,imx6q-sabreauto", "fsl,imx6q";
+
+	v4l2_cap_2 {
+		compatible = "fsl,imx6q-v4l2-capture";
+		ipu_id = <1>;
+		csi_id = <0>;
+		mclk_source = <0>;
+		status = "okay";
+	};
+
+	v4l2_cap_3 {
+		compatible = "fsl,imx6q-v4l2-capture";
+		ipu_id = <1>;
+		csi_id = <1>;
+		mclk_source = <0>;
+		status = "okay";
+	};
 };
 
 &ldb {
@@ -48,4 +64,51 @@
 
 &sata {
 	status = "okay";
+};
+
+&i2c2 {
+	clock-frequency = <400000>;
+
+	max9286_mipi: max9286_mipi@6A {
+		compatible = "maxim,max9286_mipi";
+		reg = <0x6A>;
+		clocks = <&clks 201>;
+		clock-names = "csi_mclk";
+		csi_id = <0>;
+		mclk = <27000000>;
+		mclk_source = <0>;
+	};
+};
+
+&mipi_csi {
+	status = "okay";
+	lanes = <4>;
+
+	mipi-csi2-channel@0 {
+		ipu_id = <0>;
+		csi_id = <0>;
+		v_channel = <0>;
+		status = "okay";
+	};
+
+	mipi-csi2-channel@1 {
+		ipu_id = <0>;
+		csi_id = <1>;
+		v_channel = <1>;
+		status = "okay";
+	};
+
+	mipi-csi2-channel@2 {
+		ipu_id = <1>;
+		csi_id = <0>;
+		v_channel = <2>;
+		status = "okay";
+	};
+
+	mipi-csi2-channel@3 {
+		ipu_id = <1>;
+		csi_id = <1>;
+		v_channel = <3>;
+		status = "okay";
+	};
 };
