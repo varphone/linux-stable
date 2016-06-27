@@ -129,6 +129,14 @@
         };
 };
 
+&mipi_csi {
+	mipi-csi2-channel@0 {
+		ipu_id = <0>;
+		csi_id = <1>;
+		v_channel = <3>;
+	};
+};
+
 &ldb {
 	lvds-channel@0 {
 		crtc = "ipu1-di0";
