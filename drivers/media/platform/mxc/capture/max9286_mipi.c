@@ -6459,12 +6459,39 @@ static int ioctl_enum_framesizes(struct v4l2_int_device *s,
 {
 	struct sensor_data *sensor = s->priv;
 
-	if (fsize->index > 1)
+	if (fsize->index > 0)
 		return -EINVAL;
 
 	fsize->pixel_format = sensor->pix.pixelformat;
 	fsize->discrete.width = sensor->pix.width;
 	fsize->discrete.height = sensor->pix.height;
+	return 0;
+}
+
+/*!
+ * ioctl_enum_frameintervals - V4L2 sensor interface handler for
+ *			       VIDIOC_ENUM_FRAMEINTERVALS ioctl
+ * @s: pointer to standard V4L2 device structure
+ * @fival: standard V4L2 VIDIOC_ENUM_FRAMEINTERVALS ioctl structure
+ *
+ * Return 0 if successful, otherwise -EINVAL.
+ */
+static int ioctl_enum_frameintervals(struct v4l2_int_device *s,
+					 struct v4l2_frmivalenum *fival)
+{
+	if (fival->index > 0)
+		return -EINVAL;
+
+	if (fival->pixel_format == 0 || fival->width == 0 ||
+			fival->height == 0) {
+		pr_warning("Please assign pixelformat, width and height.\n");
+		return -EINVAL;
+	}
+
+	fival->type = V4L2_FRMIVAL_TYPE_DISCRETE;
+	fival->discrete.numerator = 1;
+	fival->discrete.denominator = 30;
+
 	return 0;
 }
 
@@ -6481,7 +6508,7 @@ static int ioctl_g_chip_ident(struct v4l2_int_device *s, int *id)
 	((struct v4l2_dbg_chip_ident *)id)->match.type =
 					V4L2_CHIP_MATCH_I2C_DRIVER;
 	strcpy(((struct v4l2_dbg_chip_ident *)id)->match.name,
-		"max9286_mipi_deseiralizer");
+		"ovmax9286_mipi_deseiralizer");
 
 	return 0;
 }
@@ -6506,6 +6533,9 @@ static int ioctl_enum_fmt_cap(struct v4l2_int_device *s,
 			      struct v4l2_fmtdesc *fmt)
 {
 	struct sensor_data *sensor = s->priv;
+
+	if (fmt->index > 0) /* only 1 pixelformat support so far */
+		return -EINVAL;
 
 	fmt->pixelformat = sensor->pix.pixelformat;
 
@@ -6593,6 +6623,8 @@ static struct v4l2_int_ioctl_desc max9286_ioctl_desc[] = {
 	{vidioc_int_s_ctrl_num, (v4l2_int_ioctl_func *) ioctl_s_ctrl},
 	{vidioc_int_enum_framesizes_num,
 				(v4l2_int_ioctl_func *) ioctl_enum_framesizes},
+	{vidioc_int_enum_frameintervals_num,
+				(v4l2_int_ioctl_func *) ioctl_enum_frameintervals},
 	{vidioc_int_g_chip_ident_num,
 				(v4l2_int_ioctl_func *) ioctl_g_chip_ident},
 };
