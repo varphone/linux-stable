@@ -5989,13 +5989,27 @@ static int max9286_hardware_init(struct sensor_data *sensor)
 
 	//Increase serializer reverse channel input thresholds
 #ifdef CONFIG_SENSOR_OV10635
-//	max9271_write_reg(0, 0x08, 0x09);
+#ifdef CONFIG_SERIALIZER_MAX96705
+	max9271_write_reg(0, 0x40, 0x0F);
+	msleep(2);
+	max9271_write_reg(0, 0x97, 0x5F);
+#endif
+#ifdef CONFIG_SERIALIZER_MAX9271
 	max9271_write_reg(0, 0x08, 0x01);
 #endif
+#endif
+
 #ifdef CONFIG_SENSOR_AP0101
+#ifdef CONFIG_SERIALIZER_MAX96705
 	//Invert VSYNC
-//	max9271_write_reg(0, 0x08, 0x89);
+	max9271_write_reg(0, 0x40, 0x2F);
+	msleep(2);
+	max9271_write_reg(0, 0x97, 0x5F);
+#endif
+#ifdef CONFIG_SERIALIZER_MAX9271
+	//Invert VSYNC
 	max9271_write_reg(0, 0x08, 0x81);
+#endif
 #endif
 	msleep(2);
 

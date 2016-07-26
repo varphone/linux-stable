@@ -58,6 +58,24 @@ config SENSOR_AP0101
 endchoice
 
 choice
+        prompt "Select Serializer Chip"
+
+config SERIALIZER_MAX9271
+        bool "Maxim MAX9271 Serializer"
+        depends on MXC_GMSL_MAX9286
+        default y
+        ---help---
+          Select MAX9271 Serializer for Max9286.
+
+config SERIALIZER_MAX96705
+        bool "Maxim MAX96705 Serializer"
+        depends on MXC_GMSL_MAX9286
+        ---help---
+          Select Select MAX96705 Serializer for Max9286.
+
+endchoice
+
+choice
 	prompt "Select Overlay Rounting"
 	default MXC_IPU_DEVICE_QUEUE_SDC
 	depends on VIDEO_MXC_IPU_CAMERA && FB_MXC_SYNC_PANEL
