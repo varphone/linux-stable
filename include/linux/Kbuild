@@ -41,7 +41,6 @@ header-y += pmic_external.h
 header-y += pmic_light.h
 header-y += pmic_rtc.h
 header-y += pmic_status.h
-header-y += pxp_device.h
 header-y += pxp_dma.h
 header-y += soundcard.h
 

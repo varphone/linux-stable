@@ -49,6 +49,7 @@
 
 #include <asm/io.h>
 #include <asm/irq.h>
+#include <asm/mach-types.h>
 #include <mach/dma.h>
 #include <mach/hardware.h>
 #include <mach/imx-uart.h>
@@ -189,6 +190,15 @@
 
 #define UART_NR 8
 
+#define Set485(c)	{ struct imxuart_platform_data *pdata = sport->port.dev->platform_data; \
+                          if(sport->port.line == 2 ){\
+                                udelay(1040); pdata->dir_set(c);\
+			  }\
+                        }
+
+/* #define TestCom(c)	if(sport->port.line != 0 ) printk(c); */
+#define TestCom(c)	 
+
 struct imx_port {
 	struct uart_port	port;
 	struct timer_list	timer;
@@ -212,6 +222,8 @@ struct imx_port {
 	struct work_struct	tsk_dma_rx, tsk_dma_tx;
 	unsigned int		dma_tx_nents;
 	bool			dma_is_rxing;
+	unsigned long flags;
+#define DMA_TX_IS_WORKING 1
 	wait_queue_head_t	dma_wait;
 };
 
@@ -226,6 +238,9 @@ struct imx_port_ucrs {
 #else
 #define USE_IRDA(sport)	(0)
 #endif
+
+#define SABRESD_485x7_CTR	IMX_GPIO_NR(3, 30)
+#define SABRESD_485x8_CTR	IMX_GPIO_NR(2, 20)
 
 /*
  * Save and restore functions for UCR1, UCR2 and UCR3 registers
@@ -345,6 +360,9 @@ static void imx_stop_tx(struct uart_port *port)
 
 	temp = readl(sport->port.membase + UCR1);
 	writel(temp & ~UCR1_TXMPTYEN, sport->port.membase + UCR1);
+
+	if (machine_is_myimx6ek200() || machine_is_myimx6ek314())
+		Set485(0);
 }
 
 /*
@@ -392,8 +410,10 @@ static inline void imx_transmit_buffer(struct imx_port *sport)
 	if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
 		uart_write_wakeup(&sport->port);
 
-	if (uart_circ_empty(xmit))
+	if (uart_circ_empty(xmit) && uart_tx_stopped(&sport->port)){
+		TestCom(">>>imx_stop_tx\r\n");
 		imx_stop_tx(&sport->port);
+	}
 }
 
 static void dma_tx_callback(void *data)
@@ -410,8 +430,9 @@ static void dma_tx_callback(void *data)
 	sport->port.icount.tx += sport->tx_bytes;
 	spin_unlock(&sport->port.lock);
 
-	if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
-		uart_write_wakeup(&sport->port);
+	clear_bit(DMA_TX_IS_WORKING, &sport->flags);
+	smp_mb__after_clear_bit();
+	uart_write_wakeup(&sport->port);
 	schedule_work(&sport->tsk_dma_tx);
 }
 
@@ -422,12 +443,10 @@ static void dma_tx_work(struct work_struct *w)
 	struct scatterlist *sgl = &sport->tx_sgl[0];
 	struct dma_async_tx_descriptor *desc;
 	struct dma_chan	*chan = sport->dma_chan_tx;
-	enum dma_status status;
 	unsigned long flags;
 	int ret;
 
-	status = chan->device->device_tx_status(chan, (dma_cookie_t)NULL, NULL);
-	if (DMA_IN_PROGRESS == status)
+	if (test_and_set_bit(DMA_TX_IS_WORKING, &sport->flags))
 		return;
 
 	spin_lock_irqsave(&sport->port.lock, flags);
@@ -450,13 +469,13 @@ static void dma_tx_work(struct work_struct *w)
 				sport->dma_tx_nents, DMA_TO_DEVICE);
 		if (ret == 0) {
 			pr_err("DMA mapping error for TX.\n");
-			return;
+			goto err_out;
 		}
 		desc = chan->device->device_prep_slave_sg(chan, sgl,
 				sport->dma_tx_nents, DMA_TO_DEVICE, 0);
 		if (!desc) {
 			pr_err("We cannot prepare for the TX slave dma!\n");
-			return;
+			goto err_out;
 		}
 		desc->callback = dma_tx_callback;
 		desc->callback_param = sport;
@@ -466,6 +485,9 @@ static void dma_tx_work(struct work_struct *w)
 		return;
 	}
 	spin_unlock_irqrestore(&sport->port.lock, flags);
+err_out:
+	clear_bit(DMA_TX_IS_WORKING, &sport->flags);
+	smp_mb__after_clear_bit();
 	return;
 }
 
@@ -476,6 +498,10 @@ static void imx_start_tx(struct uart_port *port)
 {
 	struct imx_port *sport = (struct imx_port *)port;
 	unsigned long temp;
+
+	TestCom("------------imx_start_tx\n");
+	if (machine_is_myimx6ek200() || machine_is_myimx6ek314())
+		Set485(1); 
 
 	if (USE_IRDA(sport)) {
 		/* half duplex in IrDA mode; have to disable receive mode */
@@ -535,19 +561,24 @@ static irqreturn_t imx_txint(int irq, void *dev_id)
 	struct circ_buf *xmit = &sport->port.state->xmit;
 	unsigned long flags;
 
+	TestCom("------------sport->imx_txint ------ >  ");
+
 	spin_lock_irqsave(&sport->port.lock,flags);
 	if (sport->port.x_char)
 	{
+		TestCom("next char \n");
 		/* Send next char */
 		writel(sport->port.x_char, sport->port.membase + URTX0);
 		goto out;
 	}
 
 	if (uart_circ_empty(xmit) || uart_tx_stopped(&sport->port)) {
+		TestCom("send last pk \n");
 		imx_stop_tx(&sport->port);
 		goto out;
 	}
 
+	TestCom("imx_transmit_buffer 2\n");
 	imx_transmit_buffer(sport);
 
 	if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
@@ -974,11 +1005,13 @@ static int imx_startup(struct uart_port *port)
 	unsigned long flags, temp;
 	struct tty_struct *tty;
 
+	TestCom("------------imx_startup\n");
+	if (machine_is_myimx6ek200() || machine_is_myimx6ek314())
+		Set485(0);
+
 	clk_enable(sport->clk);
 
-#ifndef CONFIG_SERIAL_CORE_CONSOLE
 	imx_setup_ufcr(sport, 0);
-#endif
 
 	/* disable the DREN bit (Data Ready interrupt enable) before
 	 * requesting IRQs
@@ -1051,6 +1084,7 @@ static int imx_startup(struct uart_port *port)
 		INIT_WORK(&sport->tsk_dma_tx, dma_tx_work);
 		INIT_WORK(&sport->tsk_dma_rx, dma_rx_work);
 		init_waitqueue_head(&sport->dma_wait);
+		sport->flags = 0;
 	}
 
 	spin_lock_irqsave(&sport->port.lock, flags);
@@ -1150,6 +1184,8 @@ static void imx_shutdown(struct uart_port *port)
 	struct imx_port *sport = (struct imx_port *)port;
 	unsigned long temp;
 	unsigned long flags;
+
+	TestCom("------------imx_shutdown\n");
 
 	if (sport->enable_dma) {
 		/* We have to wait for the DMA to finish. */

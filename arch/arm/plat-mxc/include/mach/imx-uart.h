@@ -34,6 +34,7 @@ struct imxuart_platform_data {
 	unsigned short transceiver_delay;
 	unsigned int dma_req_rx;
 	unsigned int dma_req_tx;
+	void (*dir_set)(int value);
 };
 
 #endif

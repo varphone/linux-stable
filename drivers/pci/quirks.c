@@ -2856,6 +2856,19 @@ static void __devinit disable_igfx_irq(struct pci_dev *dev)
 DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_INTEL, 0x0102, disable_igfx_irq);
 DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_INTEL, 0x010a, disable_igfx_irq);
 
+static void __devinit fixup_tw6869_class(struct pci_dev* dev)
+{
+	printk(KERN_DEBUG "Start fixup imx6dq pcie tw6869\n");
+
+	if (dev->class == PCI_CLASS_NOT_DEFINED) {
+		dev_info(&dev->dev, "Setting PCI class for tw6869 PCIe device\n");
+		dev->class = PCI_CLASS_MULTIMEDIA_VIDEO;
+	}
+
+	printk(KERN_DEBUG "End fixup imx6dq pcie tw6869\n");
+}
+DECLARE_PCI_FIXUP_EARLY(0x1797, 0x6869, fixup_tw6869_class);
+
 static void pci_do_fixups(struct pci_dev *dev, struct pci_fixup *f,
 			  struct pci_fixup *end)
 {

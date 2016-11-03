@@ -640,7 +640,7 @@ static int __init imx_asoc_init(void)
 	if (ret < 0)
 		goto exit;
 
-	if (machine_is_mx6q_sabresd())
+	if (machine_is_mx6q_sabresd() || machine_is_myimx6ek200() || machine_is_myimx6ek314())
 		imx_dai[0].codec_name = "wm8962.0-001a";
 	else if (machine_is_mx6sl_arm2() | machine_is_mx6sl_evk())
 		imx_dai[0].codec_name = "wm8962.1-001a";

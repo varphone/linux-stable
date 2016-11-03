@@ -1060,6 +1060,7 @@ _AllocateLinear(
 
         /* Free the command buffer. */
         gcmkCHECK_STATUS(gckVIDMEM_Free(
+            Command->kernel->kernel,
             node
             ));
     }
@@ -1082,7 +1083,7 @@ _FreeLinear(
         gcmkERR_BREAK(gckVIDMEM_Unlock(Kernel->kernel, Node, gcvSURF_TYPE_UNKNOWN, gcvNULL));
 
         /* Free the linear buffer. */
-        gcmkERR_BREAK(gckVIDMEM_Free(Node));
+        gcmkERR_BREAK(gckVIDMEM_Free(Kernel->kernel, Node));
     }
     while (gcvFALSE);
 
@@ -1676,7 +1677,7 @@ _TaskFreeVideoMemory(
             = (gcsTASK_FREE_VIDEO_MEMORY_PTR) TaskHeader->task;
 
         /* Free video memory. */
-        gcmkERR_BREAK(gckVIDMEM_Free(gcmUINT64_TO_PTR(task->node)));
+        gcmkERR_BREAK(gckVIDMEM_Free(Command->kernel->kernel, gcmUINT64_TO_PTR(task->node)));
 
         /* Update the reference counter. */
         TaskHeader->container->referenceCount -= 1;
@@ -2819,6 +2820,7 @@ gckVGCOMMAND_Construct(
         ** Enable TS overflow interrupt.
         */
 
+        command->info.tsOverflowInt = 0;
         gcmkERR_BREAK(gckVGINTERRUPT_Enable(
             Kernel->interrupt,
             &command->info.tsOverflowInt,
@@ -3406,45 +3408,33 @@ gckVGCOMMAND_Commit(
         gctBOOL previousExecuted;
         gctUINT controlIndex;
 
+        gcmkERR_BREAK(gckVGHARDWARE_SetPowerManagementState(
+            Command->hardware, gcvPOWER_ON_AUTO
+            ));
+
+        /* Acquire the power semaphore. */
+        gcmkERR_BREAK(gckOS_AcquireSemaphore(
+            Command->os, Command->powerSemaphore
+            ));
+
         /* Acquire the mutex. */
-        gcmkERR_BREAK(gckOS_AcquireMutex(
+        status = gckOS_AcquireMutex(
             Command->os,
             Command->commitMutex,
             gcvINFINITE
-            ));
-
-        status = gckVGHARDWARE_SetPowerManagementState(
-            Command->hardware, gcvPOWER_ON_AUTO);
+            );
 
         if (gcmIS_ERROR(status))
         {
-            /* Acquire the mutex. */
-            gcmkVERIFY_OK(gckOS_ReleaseMutex(
-                Command->os,
-                Command->commitMutex
-                ));
-
+            gcmkVERIFY_OK(gckOS_ReleaseSemaphore(
+                Command->os, Command->powerSemaphore));
             break;
         }
-            /* Acquire the power semaphore. */
-        status = gckOS_AcquireSemaphore(
-            Command->os, Command->powerSemaphore);
-
-        if (gcmIS_ERROR(status))
-        {
-            /* Acquire the mutex. */
-            gcmkVERIFY_OK(gckOS_ReleaseMutex(
-                Command->os,
-                Command->commitMutex
-                ));
-
-            break;
-        }
-
-        gcmkERR_BREAK(_FlushMMU(Command));
 
         do
         {
+            gcmkERR_BREAK(_FlushMMU(Command));
+
             /* Assign a context ID if not yet assigned. */
             if (Context->id == 0)
             {
@@ -3669,14 +3659,14 @@ gckVGCOMMAND_Commit(
         }
         while (gcvFALSE);
 
-        gcmkVERIFY_OK(gckOS_ReleaseSemaphore(
-            Command->os, Command->powerSemaphore));
-
         /* Release the mutex. */
         gcmkCHECK_STATUS(gckOS_ReleaseMutex(
             Command->os,
             Command->commitMutex
             ));
+
+        gcmkVERIFY_OK(gckOS_ReleaseSemaphore(
+            Command->os, Command->powerSemaphore));
     }
     while (gcvFALSE);
 

@@ -684,6 +684,10 @@ config TOUCHSCREEN_NOVATEK
 	 To compile this driver as a module, choose M here: the
 	 module will be called novatek_ts
 
+config TOUCHSCREEN_FT5X06
+	tristate "ft5x06 touchscreen"
+	help
+	  This is ft5x06 driver.
 
 config TOUCHSCREEN_TOUCHIT213
 	tristate "Sahara TouchIT-213 touchscreen"
