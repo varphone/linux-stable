@@ -49,7 +49,6 @@ struct dma_pool {		/* the pool */
 	size_t allocation;
 	size_t boundary;
 	char name[32];
-	wait_queue_head_t waitq;
 	struct list_head pools;
 };
 
@@ -60,8 +59,6 @@ struct dma_page {		/* cacheable header for 'allocation' bytes */
 	unsigned int in_use;
 	unsigned int offset;
 };
-
-#define	POOL_TIMEOUT_JIFFIES	((100 /* msec */ * HZ) / 1000)
 
 static DEFINE_MUTEX(pools_lock);
 
@@ -171,7 +168,6 @@ struct dma_pool *dma_pool_create(const char *name, struct device *dev,
 	retval->size = size;
 	retval->boundary = boundary;
 	retval->allocation = allocation;
-	init_waitqueue_head(&retval->waitq);
 
 	if (dev) {
 		int ret;
@@ -210,30 +206,6 @@ static void pool_initialise_page(struct dma_pool *pool, struct dma_page *page)
 		*(int *)(page->vaddr + offset) = next;
 		offset = next;
 	} while (offset < pool->allocation);
-}
-
-static struct dma_page *pool_alloc_page_nonbufferable(struct dma_pool *pool, gfp_t mem_flags)
-{
-	struct dma_page *page;
-
-	page = kmalloc(sizeof(*page), mem_flags);
-	if (!page)
-		return NULL;
-	page->vaddr = dma_alloc_noncacheable(pool->dev, pool->allocation,
-					 &page->dma, mem_flags);
-	if (page->vaddr) {
-#ifdef	DMAPOOL_DEBUG
-		memset(page->vaddr, POOL_POISON_FREED, pool->allocation);
-#endif
-		pool_initialise_page(pool, page);
-		list_add(&page->page_list, &pool->page_list);
-		page->in_use = 0;
-		page->offset = 0;
-	} else {
-		kfree(page);
-		page = NULL;
-	}
-	return page;
 }
 
 static struct dma_page *pool_alloc_page(struct dma_pool *pool, gfp_t mem_flags)
@@ -338,30 +310,21 @@ void *dma_pool_alloc(struct dma_pool *pool, gfp_t mem_flags,
 	might_sleep_if(mem_flags & __GFP_WAIT);
 
 	spin_lock_irqsave(&pool->lock, flags);
- restart:
 	list_for_each_entry(page, &pool->page_list, page_list) {
 		if (page->offset < pool->allocation)
 			goto ready;
 	}
-	page = pool_alloc_page(pool, GFP_ATOMIC);
-	if (!page) {
-		if (mem_flags & __GFP_WAIT) {
-			DECLARE_WAITQUEUE(wait, current);
 
-			__set_current_state(TASK_UNINTERRUPTIBLE);
-			__add_wait_queue(&pool->waitq, &wait);
-			spin_unlock_irqrestore(&pool->lock, flags);
+	/* pool_alloc_page() might sleep, so temporarily drop &pool->lock */
+	spin_unlock_irqrestore(&pool->lock, flags);
 
-			schedule_timeout(POOL_TIMEOUT_JIFFIES);
+	page = pool_alloc_page(pool, mem_flags);
+	if (!page)
+		return NULL;
 
-			spin_lock_irqsave(&pool->lock, flags);
-			__remove_wait_queue(&pool->waitq, &wait);
-			goto restart;
-		}
-		retval = NULL;
-		goto done;
-	}
+	spin_lock_irqsave(&pool->lock, flags);
 
+	list_add(&page->page_list, &pool->page_list);
  ready:
 	page->in_use++;
 	offset = page->offset;
@@ -371,7 +334,6 @@ void *dma_pool_alloc(struct dma_pool *pool, gfp_t mem_flags,
 #ifdef	DMAPOOL_DEBUG
 	memset(retval, POOL_POISON_ALLOCATED, pool->size);
 #endif
- done:
 	spin_unlock_irqrestore(&pool->lock, flags);
 	return retval;
 }
@@ -387,6 +349,7 @@ EXPORT_SYMBOL(dma_pool_alloc);
  * and reports its dma address through the handle.
  * If such a memory block can't be allocated, %NULL is returned.
  */
+/*
 void *dma_pool_alloc_nonbufferable(struct dma_pool *pool, gfp_t mem_flags,
 		     dma_addr_t *handle)
 {
@@ -436,6 +399,7 @@ void *dma_pool_alloc_nonbufferable(struct dma_pool *pool, gfp_t mem_flags,
 	return retval;
 }
 EXPORT_SYMBOL(dma_pool_alloc_nonbufferable);
+*/
 
 static struct dma_page *pool_find_page(struct dma_pool *pool, dma_addr_t dma)
 {
@@ -518,8 +482,6 @@ void dma_pool_free(struct dma_pool *pool, void *vaddr, dma_addr_t dma)
 	page->in_use--;
 	*(int *)vaddr = page->offset;
 	page->offset = offset;
-	if (waitqueue_active(&pool->waitq))
-		wake_up_locked(&pool->waitq);
 	/*
 	 * Resist a temptation to do
 	 *    if (!is_page_busy(page)) pool_free_page(pool, page);
