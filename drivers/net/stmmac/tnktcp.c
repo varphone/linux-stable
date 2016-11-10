@@ -209,12 +209,12 @@ int tnk_tcp_prepare(struct sock *sk, struct sk_buff *skb, int inbound)
 		goto out;
 	}
 	dst = __sk_dst_get(sk);
-	if (!dst || !dst->neighbour) {
+	if (!dst || !dst->_neighbour) {
 		TNK_DBG("%s: Neighbour pointer unset\n", __func__);
 		goto out;
 	}
 
-	ndev = dst->neighbour->dev;
+	ndev = dst->_neighbour->dev;
 	if (unlikely(!ndev)) {
 		pr_err("%s: skb->dev is NULL\n", __func__);
 		err = -EINVAL;
@@ -246,7 +246,7 @@ int tnk_tcp_prepare(struct sock *sk, struct sk_buff *skb, int inbound)
 		sk->sk_tnkinfo.gmac_id = priv->id;
 	}
 
-	memcpy(sk->sk_tnkinfo.rmac, dst->neighbour->ha,
+	memcpy(sk->sk_tnkinfo.rmac, dst->_neighbour->ha,
 	       sizeof(sk->sk_tnkinfo.rmac));
 
 	TNK_DBG("%s: Remote MAC address is %02x:%02x:%02x:%02x:%02x:%02x\n",
