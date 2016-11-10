@@ -50,28 +50,28 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_gpio_leds>;
 
-		led-heartbeat {			/* J4:3; U14:24 */
-			label = "Heartbeat";
-			gpios = <&gpio1 15 0>;
-			linux,default-trigger = "heartbeat";
-		};
-		
-		led-timer {				/* J4:5; U14:28 */
-            gpios = <&gpio1 14 0>;
-            linux,default-trigger = "timer";
-            default-state = "off";
-		};
-
-		led-default {			/* J4:9; U14:26 */
+		led-default {			/* D7 */
 			label = "default";
-			gpios = <&gpio1 13 0>;
+			gpios = <&gpio6 11 0>;
 			linux,default-trigger = "default-on";
 			default-state = "on";
 		};
 		
-		led-gpio {				/* J4:11; U14:25 */
+		led-heartbeat {			/* D8 */
+			label = "Heartbeat";
+			gpios = <&gpio2 26 0>;
+			linux,default-trigger = "heartbeat";
+		};
+		
+		led-timer {				/* D9 */
+			gpios = <&gpio3 21 0>;
+			linux,default-trigger = "timer";
+			default-state = "off";
+		};
+
+		led-gpio {				/* D10 */
 			label = "gpio1_12";
-			gpios = <&gpio1 12 0>;
+			gpios = <&gpio3 22 0>;
 			linux,default-trigger = "gpio";
 		};
 		
@@ -234,11 +234,11 @@
 				MX6QDL_PAD_GPIO_9__WDOG1_B			0x80000000
 				MX6QDL_PAD_GPIO_0__CCM_CLKO1    	0x130b0
 				/* GPIO, J4 */
-				MX6QDL_PAD_NANDF_CS0__GPIO6_IO11	0x80000000
-				MX6QDL_PAD_EIM_RW__GPIO2_IO26		0x80000000
+				MX6QDL_PAD_SD2_DAT0__GPIO1_IO15	0x80000000
+				MX6QDL_PAD_SD2_DAT1__GPIO1_IO14	0x80000000
+				MX6QDL_PAD_SD2_DAT2__GPIO1_IO13	0x80000000
+				MX6QDL_PAD_SD2_DAT3__GPIO1_IO12	0x80000000
 				MX6QDL_PAD_SD1_CLK__GPIO1_IO20		0x80000000
-				MX6QDL_PAD_EIM_D21__GPIO3_IO21		0x80000000
-				MX6QDL_PAD_EIM_D22__GPIO3_IO22		0x80000000
 				MX6QDL_PAD_SD2_CLK__GPIO1_IO10		0x80000000
 				MX6QDL_PAD_SD2_CMD__GPIO1_IO11		0x80000000
 				/* J21:11,12 */
@@ -391,10 +391,10 @@
 
 		pinctrl_gpio_leds: gpio_ledsgrp {
 			fsl,pins = <
-				MX6QDL_PAD_SD2_DAT0__GPIO1_IO15	0x80000000
-				MX6QDL_PAD_SD2_DAT1__GPIO1_IO14	0x80000000
-				MX6QDL_PAD_SD2_DAT2__GPIO1_IO13	0x80000000
-				MX6QDL_PAD_SD2_DAT3__GPIO1_IO12	0x80000000
+				MX6QDL_PAD_NANDF_CS0__GPIO6_IO11	0x80000000
+				MX6QDL_PAD_EIM_RW__GPIO2_IO26		0x80000000
+				MX6QDL_PAD_EIM_D21__GPIO3_IO21		0x80000000
+				MX6QDL_PAD_EIM_D22__GPIO3_IO22		0x80000000
 			>;
 		};
 

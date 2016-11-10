@@ -66,6 +66,10 @@ config FB_MXC_EINK_V2_PANEL
 	select FB_DEFERRED_IO
 	tristate "E-Ink Panel Framebuffer based on EPDC V2"
 
+config FB_MYZR_CH7026
+	depends on FB_MXC_SYNC_PANEL
+	tristate "Chrontel CH7026 VGA Interface Chip"
+
 config FB_MXC_EINK_AUTO_UPDATE_MODE
     bool "E-Ink Auto-update Mode Support"
     default n

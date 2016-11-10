@@ -5,7 +5,6 @@
  */
 
 #include <dt-bindings/input/input.h>
-#include "myimx6aco-iomux.dtsi"
 
 / {
 	aliases {
@@ -44,87 +43,70 @@
 			regulator-name = "wm8962-supply";
 			enable-active-high;
 		};
+
+		reg_mipi_dsi_pwr_on: mipi_dsi_pwr_on {
+			compatible = "regulator-fixed";
+			regulator-name = "mipi_dsi_pwr_on";
+			enable-active-high;
+		};
 	};
 
 	leds {
 		compatible = "gpio-leds";
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_gpio_leds>;
+		pinctrl-0 = <&pinctrl_sd1_led>;
+
+		led-heartbeat {			/* J4:3; U14:24 */
+			label = "Heartbeat";
+			gpios = <&gpio1 15 0>;
+			linux,default-trigger = "heartbeat";
+		};
 		
-		led-default {
+		led-timer {				/* J4:5; U14:28 */
+            gpios = <&gpio1 14 0>;
+            linux,default-trigger = "timer";
+            default-state = "off";
+		};
+
+		led-default {			/* J4:9; U14:26 */
 			label = "default";
-			gpios = <&gpio2 3 0>; /* D10 */
+			gpios = <&gpio1 13 0>;
 			linux,default-trigger = "default-on";
 			default-state = "on";
 		};
 		
-		led-heartbeat {
-			label = "Heartbeat";
-			gpios = <&gpio1 26 0>; /* D11 */
-			linux,default-trigger = "heartbeat";
-		};
-		
-		led-timer {
-			gpios = <&gpio1 30 0>; /* D12 */
-			linux,default-trigger = "timer";
-			default-state = "on";
-		};
-		
-		led-gpio {
-			label = "gpio_led";
-			gpios = <&gpio1 24 0>; /* D13 */
+		led-gpio {				/* J4:11; U14:25 */
+			label = "gpio1_12";
+			gpios = <&gpio1 12 0>;
 			linux,default-trigger = "gpio";
 		};
+		
 	};
 
 	gpio-keys {
 		compatible = "gpio-keys";
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_gpio_keys>;
+		pinctrl-0 = <&pinctrl_nandf_keys>;
 
 		power {
 			label = "Power Button";
+			gpios = <&gpio1 4 1>;
 			gpio-key,wakeup;
-			gpios = <&gpio2 7 1>; /* SW11 */
 			linux,code = <KEY_POWER>;
 		};
 
 		volume-up {
 			label = "Volume Up";
+			gpios = <&gpio6 15 1>;
 			gpio-key,wakeup;
-			gpios = <&gpio2 6 1>; /* SW13 */
 			linux,code = <KEY_VOLUMEUP>;
 		};
 
 		volume-down {
 			label = "Volume Down";
+			gpios = <&gpio6 10 1>;
 			gpio-key,wakeup;
-			gpios = <&gpio2 4 1>; /* SW20 */
 			linux,code = <KEY_VOLUMEDOWN>;
-		};
-
-		key-right {
-			label = "Key Right";
-			gpios = <&gpio6 9 1>; /* SW6 */
-			linux,code = <KEY_RIGHT>;
-		};
-
-		key-down {
-			label = "Key Down";
-			gpios = <&gpio1 4 1>; /* SW12 */
-			linux,code = <KEY_DOWN>;
-		};
-
-		key-up {
-			label = "Key Up";
-			gpios = <&gpio6 15 1>; /* SW14 */
-			linux,code = <KEY_UP>;
-		};
-
-		key-left {
-			label = "Key Left";
-			gpios = <&gpio6 10 1>; /* SW21 */
-			linux,code = <KEY_LEFT>;
 		};
 	};
 	
@@ -151,7 +133,7 @@
 		mux-int-port = <2>;
 		mux-ext-port = <3>;
 		hp-det-gpios = <&gpio1 5 1>;
-		mic-det-gpios = <&gpio3 12 1>;
+		mic-det-gpios = <&gpio1 24 1>;
 	};
 
 	sound-hdmi {
@@ -209,7 +191,7 @@
 		disp_id = <0>;
 		default_ifmt = "RGB24";
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_ipu1_disp0>;
+		pinctrl-0 = <&pinctrl_lcd_disp0>;
 		status = "okay";
 	};
 
@@ -250,7 +232,7 @@
 
 &iomuxc {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_hog &pinctrl_zlg7290_io>;
+	pinctrl-0 = <&pinctrl_eim0_pad &pinctrl_lcd_pad &pinctrl_sd1_pad &pinctrl_sd2_pad &pinctrl_sd3_pad &pinctrl_enet_pad &pinctrl_gpio_pad &pinctrl_nandf_pad>;
 };
 
 &dcic1 {
@@ -272,7 +254,7 @@
 
 &audmux {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_audmux &pinctrl_audmux_det>;
+	pinctrl-0 = <&pinctrl_csi_aud3 &pinctrl_gpio_audio>;
 	status = "okay";
 };
 
@@ -281,27 +263,11 @@
 	status = "okay";
 };
 
-&ecspi1 {
-	fsl,spi-num-chipselects = <1>;
-	cs-gpios = <&gpio2 30 0>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_ecspi1 &pinctrl_ecspi1_cs0>;
-	status = "okay";
-
-	flash: m25p80@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		compatible = "sst,sst25vf016b";
-		spi-max-frequency = <20000000>;
-		reg = <0>;
-	};
-};
-
 &ecspi2 {
 	fsl,spi-num-chipselects = <1>;
-	cs-gpios = <&gpio2 26 0>;
+	cs-gpios = <&gpio2 27 0>;
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_ecspi2 &pinctrl_ecspi2_cs0 &pinctrl_ecspi2_io>;
+	pinctrl-0 = <&pinctrl_eim1_spi2>;
 	status = "okay";
 
 	spidev@0 {
@@ -313,7 +279,7 @@
 
 &fec {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_enet &pinctrl_enet_irq &pinctrl_enet_rst &pinctrl_smi>;
+	pinctrl-0 = <&pinctrl_enet_rgmii &pinctrl_rgmii_rgmii>;
 	phy-mode = "rgmii";
 	phy-reset-gpios = <&gpio1 25 0>;
 	fsl,magic-packet;
@@ -322,13 +288,13 @@
 
 &flexcan1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_flexcan1>;
+	pinctrl-0 = <&pinctrl_gpio_can1>;
 	status = "okay"; 
 };
 
 &flexcan2 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_flexcan2>;
+	pinctrl-0 = <&pinctrl_gpio_can2>;
 	status = "okay";
 };
 
@@ -338,7 +304,7 @@
 
 &hdmi_cec {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_hdmi_cec>;
+	pinctrl-0 = <&pinctrl_gpio_hdmi>;
 	status = "okay";
 };
 
@@ -357,21 +323,13 @@
 &i2c1 {
 	clock-frequency = <100000>;
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_i2c1>;
+	pinctrl-0 = <&pinctrl_csi_i2c1>;
 	status = "okay";
 
 	codec: wm8962@1a {
 		compatible = "wlf,wm8962";
 		reg = <0x1a>;
 		clocks = <&clks 201>;
-		DCVDD-supply = <&reg_audio>;
-		DBVDD-supply = <&reg_audio>;
-		AVDD-supply = <&reg_audio>;
-		CPVDD-supply = <&reg_audio>;
-		MICVDD-supply = <&reg_audio>;
-		PLLVDD-supply = <&reg_audio>;
-		SPKVDD1-supply = <&reg_audio>;
-		SPKVDD2-supply = <&reg_audio>;
 		amic-mono;
 		gpio-cfg = <
 			0x0000 /* 0:Default */
@@ -387,7 +345,7 @@
 		compatible = "ovti,ov564x";
 		reg = <0x3c>;
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_ipu1_csi0 &pinctrl_csi0_io>;
+		pinctrl-0 = <&pinctrl_csi_csi0>;
 		clocks = <&clks IMX6QDL_CLK_CKO>;
 		clock-names = "csi_mclk";
 		pwn-gpios = <&gpio5 20 1>;
@@ -405,28 +363,21 @@
 &i2c2 {
 	clock-frequency = <100000>;
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_i2c2>;
+	pinctrl-0 = <&pinctrl_gpio_i2c2>;
 	status = "okay";
 
 	hdmi: edid@50 {
 		compatible = "fsl,imx6-hdmi-i2c";
 		reg = <0x50>;
 	};
-	
-	keypad: zlg7290@38 {
-		compatible = "myzr,zlg7290";
-		reg = <0x38>;
-		interrupt-parent = <&gpio7>;
-		interrupts = <12 0>;
-	};
 
 	ov564x_mipi: ov564x_mipi@3c {
-		compatible = "ovti,ov564x_mipi", "myzr,my-ov564x";
+		compatible = "ovti,ov564x_mipi";
 		reg = <0x3c>;
 		clocks = <&clks 201>;
 		clock-names = "csi_mclk";
-		pwn-gpios = <&gpio7 12 1>;
-		rst-gpios = <&gpio7 13 0>;
+		/* pwn-gpios = <&gpio7 12 1>; Conflict with RT568 */
+		/* rst-gpios = <&gpio7 13 0>; Conflict with RT568 */
 		csi_id = <1>;
 		mclk = <24000000>;
 		mclk_source = <0>;
@@ -436,14 +387,14 @@
 &i2c3 {
 	clock-frequency = <100000>;
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_i2c3>;
+	pinctrl-0 = <&pinctrl_gpio_i2c3>;
 	status = "okay";
 
 	myzr: myts_ft5x0x@38 {
 		compatible = "myzr,myts-ft5316";
 		reg = <0x38>;
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_myts>;
+		pinctrl-0 = <&pinctrl_nandf_ft5x0x>;
 		interrupt-parent = <&gpio6>;
 		interrupts = <7 0>;
 		reset-gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
@@ -506,39 +457,47 @@
 	lanes = <2>;
 };
 
-&pwm1 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_pwm1>;
+&mipi_dsi {
+	dev_id = <0>;
+	disp_id = <1>;
+	lcd_panel = "TRULY-WVGA";
+	disp-power-on-supply = <&reg_mipi_dsi_pwr_on>;
 	status = "okay";
 };
 
-&pwm4 {
+&pwm1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_pwm4>;
+	pinctrl-0 = <&pinctrl_sd1_pwm1>;
 	status = "okay";
 };
 
 &uart1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart1>;
+	pinctrl-0 = <&pinctrl_csi_uart1>;
 	status = "okay";
 };
 
 &uart2 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart2>;
+	pinctrl-0 = <&pinctrl_eim0_uart2>;
+	status = "okay";
+};
+
+&uart3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_eim0_uart3>;
 	status = "okay";
 };
 
 &uart4 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart4>;
+	pinctrl-0 = <&pinctrl_gpio_uart4>;
 	status = "okay";
 };
 
 &uart5 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart5>;
+	pinctrl-0 = <&pinctrl_gpio_uart5>;
 	status = "okay";
 };
 
@@ -550,7 +509,7 @@
 &usbotg {
 	vbus-supply = <&reg_usb_otg_vbus>;
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usb_otg_id>;
+	pinctrl-0 = <&pinctrl_gpio_usbotg>;
 	disable-over-current;
 	srp-disable;
 	hnp-disable;
@@ -560,7 +519,7 @@
 
 &usdhc3 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usdhc3 &pinctrl_usdhc3_rst &pinctrl_usdhc3_cd>;
+	pinctrl-0 = <&pinctrl_sd3_sd3>;
 	bus-width = <4>;
 	cd-gpios = <&gpio4 10 0>;
 	wp-gpios = <&gpio7 8 0>;
@@ -570,17 +529,8 @@
 	status = "okay";
 };
 
-&usdhc4 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usdhc4>;
-	bus-width = <8>;
-	non-removable;
-	no-1-8-v;
-	keep-power-in-suspend;
-	status = "okay";
-};
-
 &pcie {
+	pinctrl-0 = <&pinctrl_nandf_pcie>;
 	power-on-gpio = <&gpio6 8 0>;
 	reset-gpio = <&gpio6 14 0>;
 	status = "okay";
