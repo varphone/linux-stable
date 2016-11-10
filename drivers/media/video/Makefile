@@ -38,6 +38,7 @@ obj-$(CONFIG_VIDEO_SAA7127) += saa7127.o
 obj-$(CONFIG_VIDEO_SAA7185) += saa7185.o
 obj-$(CONFIG_VIDEO_SAA7191) += saa7191.o
 obj-$(CONFIG_VIDEO_ADV7170) += adv7170.o
+obj-$(CONFIG_VIDEO_TW68)    += TW68-video.o TW68-core.o videobuf-vmalloc.o videobuf-dma-sg.o
 obj-$(CONFIG_VIDEO_ADV7175) += adv7175.o
 obj-$(CONFIG_VIDEO_ADV7180) += adv7180.o
 obj-$(CONFIG_VIDEO_ADV7343) += adv7343.o
@@ -87,6 +88,15 @@ obj-$(CONFIG_SOC_CAMERA_TW9910)		+= tw9910.o
 
 # And now the v4l2 drivers:
 
+obj-$(CONFIG_VIDEO_MXC_IPU_CAMERA) += mxc/capture/
+obj-$(CONFIG_VIDEO_MXC_CSI_CAMERA) += mxc/capture/
+obj-$(CONFIG_VIDEO_MXC_IPU_OUTPUT) += mxc/output/
+obj-$(CONFIG_VIDEO_MXC_IPUV1_WVGA_OUTPUT) += mxc/output/
+obj-$(CONFIG_VIDEO_MXC_EMMA_OUTPUT) += mxc/output/
+obj-$(CONFIG_VIDEO_MXC_PXP_V4L2) += mxc/output/
+obj-$(CONFIG_VIDEO_MXC_OPL) += mxc/opl/
+obj-$(CONFIG_VIDEO_PXP) += pxp.o
+obj-$(CONFIG_VIDEO_MXS_PXP)     += mxs_pxp.o
 obj-$(CONFIG_VIDEO_BT848) += bt8xx/
 obj-$(CONFIG_VIDEO_ZORAN) += zoran/
 obj-$(CONFIG_VIDEO_CQCAM) += c-qcam.o

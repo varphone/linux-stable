@@ -638,6 +638,9 @@ static int mmc_sdio_suspend(struct mmc_host *host)
 		mmc_release_host(host);
 	}
 
+	if (!err)
+		mmc_claim_host(host);
+
 	return err;
 }
 
@@ -648,11 +651,8 @@ static int mmc_sdio_resume(struct mmc_host *host)
 	BUG_ON(!host);
 	BUG_ON(!host->card);
 
-	/* Basic card reinitialization. */
-	mmc_claim_host(host);
-
 	/* No need to reinitialize powered-resumed nonremovable cards */
-	if (mmc_card_is_removable(host) || !mmc_card_keep_power(host))
+	if (mmc_card_is_removable(host) && !mmc_card_keep_power(host))
 		err = mmc_sdio_init_card(host, host->ocr, host->card,
 					mmc_card_keep_power(host));
 	else if (mmc_card_keep_power(host) && mmc_card_wake_sdio_irq(host)) {
