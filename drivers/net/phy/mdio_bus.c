@@ -120,6 +120,50 @@ struct mii_bus *of_mdio_find_bus(struct device_node *mdio_bus_np)
 	return d ? to_mii_bus(d) : NULL;
 }
 EXPORT_SYMBOL(of_mdio_find_bus);
+
+/* Walk the list of subnodes of a mdio bus and look for a node that matches the
+ * phy's address with its 'reg' property. If found, set the of_node pointer for
+ * the phy. This allows auto-probed pyh devices to be supplied with information
+ * passed in via DT.
+ */
+static void of_mdiobus_link_phydev(struct mii_bus *mdio,
+				   struct phy_device *phydev)
+{
+	struct device *dev = &phydev->dev;
+	struct device_node *child;
+
+	if (dev->of_node || !mdio->dev.of_node)
+		return;
+
+	for_each_available_child_of_node(mdio->dev.of_node, child) {
+		int addr;
+		int ret;
+
+		ret = of_property_read_u32(child, "reg", &addr);
+		if (ret < 0) {
+			dev_err(dev, "%s has invalid PHY address\n",
+				child->full_name);
+			continue;
+		}
+
+		/* A PHY must have a reg property in the range [0-31] */
+		if (addr >= PHY_MAX_ADDR) {
+			dev_err(dev, "%s PHY address %i is too large\n",
+				child->full_name, addr);
+			continue;
+		}
+
+		if (addr == phydev->addr) {
+			dev->of_node = child;
+			return;
+		}
+	}
+}
+#else /* !IS_ENABLED(CONFIG_OF_MDIO) */
+static inline void of_mdiobus_link_phydev(struct mii_bus *mdio,
+					  struct phy_device *phydev)
+{
+}
 #endif
 
 /**
@@ -233,6 +277,12 @@ struct phy_device *mdiobus_scan(struct mii_bus *bus, int addr)
 	if (IS_ERR(phydev) || phydev == NULL)
 		return phydev;
 
+	/*
+	 * For DT, see if the auto-probed phy has a correspoding child
+	 * in the bus node, and set the of_node pointer in this case.
+	 */
+	of_mdiobus_link_phydev(bus, phydev);
+
 	err = phy_device_register(phydev);
 	if (err) {
 		phy_device_free(phydev);
@@ -326,9 +376,23 @@ static bool mdio_bus_phy_may_suspend(struct phy_device *phydev)
 	if (!drv || !phydrv->suspend)
 		return false;
 
-	/* PHY not attached? May suspend. */
+	/*
+	 * netdev is NULL has three cases:
+	 * - phy is not found
+	 * - phy is found, match to general phy driver
+	 * - phy is found, match to specifical phy driver
+	 *
+	 * Case 1: phy is not found, cannot communicate by MDIO bus.
+	 * Case 2: phy is found:
+	 *         if phy dev driver probe/bind err, netdev is not __open__ status,
+	 *            mdio bus is unregistered.
+	 *	   if phy is detached, phy had entered suspended status.
+	 * Case 3: phy is found, phy is detached, phy had entered suspended status.
+	 *
+	 * So, in here, it shouldn't set phy to suspend by calling mdio bus.
+	 */
 	if (!netdev)
-		return true;
+		return false;
 
 	/* Don't suspend PHY if the attched netdev parent may wakeup.
 	 * The parent may point to a PCI device, as in tg3 driver.

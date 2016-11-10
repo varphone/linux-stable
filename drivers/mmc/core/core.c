@@ -16,6 +16,7 @@
 #include <linux/completion.h>
 #include <linux/device.h>
 #include <linux/delay.h>
+#include <linux/of.h>
 #include <linux/pagemap.h>
 #include <linux/err.h>
 #include <linux/leds.h>
@@ -2137,7 +2138,7 @@ static unsigned int mmc_do_calc_max_discard(struct mmc_card *card,
 		y = 0;
 		for (x = 1; x && x <= max_qty && max_qty - x >= qty; x <<= 1) {
 			timeout = mmc_erase_timeout(card, arg, qty + x);
-			if (timeout > host->max_discard_to)
+			if (timeout > host->max_busy_timeout)
 				break;
 			if (timeout < last_timeout)
 				break;
@@ -2169,7 +2170,7 @@ unsigned int mmc_calc_max_discard(struct mmc_card *card)
 	struct mmc_host *host = card->host;
 	unsigned int max_discard, max_trim;
 
-	if (!host->max_discard_to)
+	if (!host->max_busy_timeout)
 		return UINT_MAX;
 
 	/*
@@ -2189,7 +2190,7 @@ unsigned int mmc_calc_max_discard(struct mmc_card *card)
 		max_discard = 0;
 	}
 	pr_debug("%s: calculated max. discard sectors %u for timeout %u ms\n",
-		 mmc_hostname(host), max_discard, host->max_discard_to);
+		 mmc_hostname(host), max_discard, host->max_busy_timeout);
 	return max_discard;
 }
 EXPORT_SYMBOL(mmc_calc_max_discard);
@@ -2713,6 +2714,41 @@ void mmc_init_context_info(struct mmc_host *host)
 	init_waitqueue_head(&host->context_info.wait);
 }
 
+static int __mmc_max_reserved_idx = -1;
+
+/**
+ * mmc_first_nonreserved_index() - get the first index that is not reserved
+ */
+int mmc_first_nonreserved_index(void)
+{
+	return __mmc_max_reserved_idx + 1;
+}
+
+/**
+ * mmc_get_reserved_index() - get the index reserved for this host
+ *
+ * Return: The index reserved for this host or negative error value if
+ *         no index is reserved for this host
+ */
+int mmc_get_reserved_index(struct mmc_host *host)
+{
+	return of_alias_get_id(host->parent->of_node, "mmc");
+}
+
+static void mmc_of_reserve_idx(void)
+{
+	int max;
+
+	max = of_alias_max_index("mmc");
+	if (max < 0)
+		return;
+
+	__mmc_max_reserved_idx = max;
+
+	pr_debug("MMC: reserving %d slots for of aliases\n",
+			__mmc_max_reserved_idx + 1);
+}
+
 static int __init mmc_init(void)
 {
 	int ret;
@@ -2720,6 +2756,8 @@ static int __init mmc_init(void)
 	workqueue = alloc_ordered_workqueue("kmmcd", 0);
 	if (!workqueue)
 		return -ENOMEM;
+
+	mmc_of_reserve_idx();
 
 	ret = mmc_register_bus();
 	if (ret)

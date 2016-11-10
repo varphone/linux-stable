@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2007 Freescale Semiconductor, Inc. All Rights Reserved.
+ * Copyright 2004-2007, 2015 Freescale Semiconductor, Inc. All Rights Reserved.
  * Copyright (C) 2008 Juergen Beisert
  *
  * This program is free software; you can redistribute it and/or
@@ -21,9 +21,10 @@
 #include <linux/clk.h>
 #include <linux/completion.h>
 #include <linux/delay.h>
+#include <linux/dmaengine.h>
+#include <linux/dma-mapping.h>
 #include <linux/err.h>
 #include <linux/gpio.h>
-#include <linux/init.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
 #include <linux/irq.h>
@@ -38,6 +39,7 @@
 #include <linux/of_device.h>
 #include <linux/of_gpio.h>
 
+#include <linux/platform_data/dma-imx.h>
 #include <linux/platform_data/spi-imx.h>
 
 #define DRIVER_NAME "spi_imx"
@@ -51,7 +53,14 @@
 /* generic defines to abstract from the different register layouts */
 #define MXC_INT_RR	(1 << 0) /* Receive data ready interrupt */
 #define MXC_INT_TE	(1 << 1) /* Transmit FIFO empty interrupt */
+#define MXC_INT_TCEN    (1 << 7)   /* Transfer complete */
 
+/* The maximum  bytes that a sdma BD can transfer.*/
+#define MAX_SDMA_BD_BYTES  (1 << 15)
+/* 3 Sec for 1MB or less than 1MB, else change with the transfer length */
+#define IMX_DEFAULT_DMA_TIMEOUT (msecs_to_jiffies(3000))
+#define IMX_DMA_TIMEOUT(len) ((len < 0x100000) ? IMX_DEFAULT_DMA_TIMEOUT : \
+				len * IMX_DEFAULT_DMA_TIMEOUT / 0x100000)
 struct spi_imx_config {
 	unsigned int speed_hz;
 	unsigned int bpw;
@@ -95,6 +104,17 @@ struct spi_imx_data {
 	void *rx_buf;
 	const void *tx_buf;
 	unsigned int txfifo; /* number of words pushed in tx FIFO */
+
+	/* DMA */
+	unsigned int dma_is_inited;
+	bool usedma;
+	u32 rx_wml;
+	u32 tx_wml;
+	u32 rxt_wml;
+	struct completion dma_rx_completion;
+	struct completion dma_tx_completion;
+	struct dma_slave_config rx_config;
+	struct dma_slave_config tx_config;
 
 	const struct spi_imx_devtype_data *devtype_data;
 	int chipselect[0];
@@ -182,9 +202,21 @@ static unsigned int spi_imx_clkdiv_2(unsigned int fin,
 	return 7;
 }
 
+static bool spi_imx_can_dma(struct spi_master *master, struct spi_device *spi,
+			 struct spi_transfer *transfer)
+{
+	struct spi_imx_data *spi_imx = spi_master_get_devdata(master);
+
+	if (spi_imx->dma_is_inited &&
+		(transfer->len > spi_imx_get_fifosize(spi_imx)))
+		return true;
+	return false;
+}
+
 #define MX51_ECSPI_CTRL		0x08
 #define MX51_ECSPI_CTRL_ENABLE		(1 <<  0)
 #define MX51_ECSPI_CTRL_XCH		(1 <<  2)
+#define MX51_ECSPI_CTRL_SMC		(1 << 3)
 #define MX51_ECSPI_CTRL_MODE_MASK	(0xf << 4)
 #define MX51_ECSPI_CTRL_POSTDIV_OFFSET	8
 #define MX51_ECSPI_CTRL_PREDIV_OFFSET	12
@@ -201,6 +233,19 @@ static unsigned int spi_imx_clkdiv_2(unsigned int fin,
 #define MX51_ECSPI_INT		0x10
 #define MX51_ECSPI_INT_TEEN		(1 <<  0)
 #define MX51_ECSPI_INT_RREN		(1 <<  3)
+#define MX51_ECSPI_INT_TCEN             (1 << 7)
+
+#define MX51_ECSPI_DMA      0x14
+#define MX51_ECSPI_DMA_TX_WML_OFFSET	0
+#define MX51_ECSPI_DMA_TX_WML_MASK	0x3F
+#define MX51_ECSPI_DMA_RX_WML_OFFSET	16
+#define MX51_ECSPI_DMA_RX_WML_MASK	(0x3F << 16)
+#define MX51_ECSPI_DMA_RXT_WML_OFFSET	24
+#define MX51_ECSPI_DMA_RXT_WML_MASK	(0x3F << 24)
+
+#define MX51_ECSPI_DMA_TEDEN_OFFSET	7
+#define MX51_ECSPI_DMA_RXDEN_OFFSET	23
+#define MX51_ECSPI_DMA_RXTDEN_OFFSET	31
 
 #define MX51_ECSPI_STAT		0x18
 #define MX51_ECSPI_STAT_RR		(1 <<  3)
@@ -253,22 +298,30 @@ static void __maybe_unused mx51_ecspi_intctrl(struct spi_imx_data *spi_imx, int 
 	if (enable & MXC_INT_RR)
 		val |= MX51_ECSPI_INT_RREN;
 
+	if (enable & MXC_INT_TCEN)
+		val |= MX51_ECSPI_INT_TCEN;
+
 	writel(val, spi_imx->base + MX51_ECSPI_INT);
 }
 
 static void __maybe_unused mx51_ecspi_trigger(struct spi_imx_data *spi_imx)
 {
-	u32 reg;
-
-	reg = readl(spi_imx->base + MX51_ECSPI_CTRL);
-	reg |= MX51_ECSPI_CTRL_XCH;
+	u32 reg = readl(spi_imx->base + MX51_ECSPI_CTRL);
+	/*
+	 * To workaround TKT238285, SDMA script need use XCH instead of SMC
+	 * just like PIO mode.
+	 */
+	if (!spi_imx->usedma)
+		reg |= MX51_ECSPI_CTRL_XCH;
+	else
+		reg &= ~MX51_ECSPI_CTRL_SMC;
 	writel(reg, spi_imx->base + MX51_ECSPI_CTRL);
 }
 
 static int __maybe_unused mx51_ecspi_config(struct spi_imx_data *spi_imx,
 		struct spi_imx_config *config)
 {
-	u32 ctrl = MX51_ECSPI_CTRL_ENABLE, cfg = 0;
+	u32 ctrl = MX51_ECSPI_CTRL_ENABLE, cfg = 0, dma = 0;
 	u32 clk = config->speed_hz, delay;
 
 	/*
@@ -319,6 +372,18 @@ static int __maybe_unused mx51_ecspi_config(struct spi_imx_data *spi_imx,
 		udelay(delay);
 	else			/* SCLK is _very_ slow */
 		usleep_range(delay, delay + 10);
+
+	/*
+	 * Configure the DMA register: setup the watermark
+	 * and enable DMA request.
+	 */
+	if (spi_imx->dma_is_inited) {
+		spi_imx->rx_wml = spi_imx_get_fifosize(spi_imx) / 2;
+		dma = (spi_imx->rx_wml - 1) << MX51_ECSPI_DMA_RX_WML_OFFSET
+		      | (1 << MX51_ECSPI_DMA_TEDEN_OFFSET)
+		      | (1 << MX51_ECSPI_DMA_RXDEN_OFFSET);
+		writel(dma, spi_imx->base + MX51_ECSPI_DMA);
+	}
 
 	return 0;
 }
@@ -703,6 +768,7 @@ static int spi_imx_setupxfer(struct spi_device *spi,
 {
 	struct spi_imx_data *spi_imx = spi_master_get_devdata(spi->master);
 	struct spi_imx_config config;
+	int ret;
 
 	config.bpw = t ? t->bits_per_word : spi->bits_per_word;
 	config.speed_hz  = t ? t->speed_hz : spi->max_speed_hz;
@@ -718,12 +784,35 @@ static int spi_imx_setupxfer(struct spi_device *spi,
 	if (config.bpw <= 8) {
 		spi_imx->rx = spi_imx_buf_rx_u8;
 		spi_imx->tx = spi_imx_buf_tx_u8;
+		spi_imx->tx_config.dst_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE;
+		spi_imx->rx_config.src_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE;
 	} else if (config.bpw <= 16) {
 		spi_imx->rx = spi_imx_buf_rx_u16;
 		spi_imx->tx = spi_imx_buf_tx_u16;
+		spi_imx->tx_config.dst_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
+		spi_imx->rx_config.src_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
 	} else {
 		spi_imx->rx = spi_imx_buf_rx_u32;
 		spi_imx->tx = spi_imx_buf_tx_u32;
+		spi_imx->tx_config.dst_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
+		spi_imx->rx_config.src_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
+	}
+
+	if (spi_imx->bitbang.master->can_dma &&
+	    spi_imx_can_dma(spi_imx->bitbang.master, spi, t)) {
+		ret = dmaengine_slave_config(spi_imx->bitbang.master->dma_tx,
+						&spi_imx->tx_config);
+		if (ret) {
+			dev_err(&spi->dev, "error in TX dma configuration.\n");
+			return ret;
+		}
+
+		ret = dmaengine_slave_config(spi_imx->bitbang.master->dma_rx,
+						&spi_imx->rx_config);
+		if (ret) {
+			dev_err(&spi->dev, "error in RX dma configuration.\n");
+			return ret;
+		}
 	}
 
 	spi_imx->devtype_data->config(spi_imx, &config);
@@ -731,7 +820,221 @@ static int spi_imx_setupxfer(struct spi_device *spi,
 	return 0;
 }
 
-static int spi_imx_transfer(struct spi_device *spi,
+static void spi_imx_sdma_exit(struct spi_imx_data *spi_imx)
+{
+	struct spi_master *master = spi_imx->bitbang.master;
+
+	if (master->dma_rx) {
+		dma_release_channel(master->dma_rx);
+		master->dma_rx = NULL;
+	}
+
+	if (master->dma_tx) {
+		dma_release_channel(master->dma_tx);
+		master->dma_tx = NULL;
+	}
+
+	spi_imx->dma_is_inited = 0;
+}
+
+static int spi_imx_sdma_init(struct device *dev, struct spi_imx_data *spi_imx,
+			     struct spi_master *master,
+			     const struct resource *res)
+{
+	int ret;
+
+	/* Prepare for TX DMA: */
+	master->dma_tx = dma_request_slave_channel(dev, "tx");
+	if (!master->dma_tx) {
+		dev_err(dev, "cannot get the TX DMA channel!\n");
+		ret = -EINVAL;
+		goto err;
+	}
+
+	spi_imx->tx_config.direction = DMA_MEM_TO_DEV;
+	spi_imx->tx_config.dst_addr = res->start + MXC_CSPITXDATA;
+	spi_imx->tx_config.dst_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE;
+	spi_imx->tx_config.dst_maxburst = spi_imx_get_fifosize(spi_imx) / 4;
+	ret = dmaengine_slave_config(master->dma_tx, &spi_imx->tx_config);
+	if (ret) {
+		dev_err(dev, "error in TX dma configuration.\n");
+		goto err;
+	}
+
+	/* Prepare for RX : */
+	master->dma_rx = dma_request_slave_channel(dev, "rx");
+	if (!master->dma_rx) {
+		dev_dbg(dev, "cannot get the DMA channel.\n");
+		ret = -EINVAL;
+		goto err;
+	}
+
+	spi_imx->rx_config.direction = DMA_DEV_TO_MEM;
+	spi_imx->rx_config.src_addr = res->start + MXC_CSPIRXDATA;
+	spi_imx->rx_config.src_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE;
+	spi_imx->rx_config.src_maxburst = spi_imx_get_fifosize(spi_imx) / 2;
+	ret = dmaengine_slave_config(master->dma_rx, &spi_imx->rx_config);
+	if (ret) {
+		dev_err(dev, "error in RX dma configuration.\n");
+		goto err;
+	}
+
+	init_completion(&spi_imx->dma_rx_completion);
+	init_completion(&spi_imx->dma_tx_completion);
+	master->can_dma = spi_imx_can_dma;
+	master->max_dma_len = MAX_SDMA_BD_BYTES;
+	spi_imx->bitbang.master->flags = SPI_MASTER_MUST_RX |
+					 SPI_MASTER_MUST_TX;
+	spi_imx->dma_is_inited = 1;
+
+	return 0;
+err:
+	spi_imx_sdma_exit(spi_imx);
+	return ret;
+}
+
+static void spi_imx_dma_rx_callback(void *cookie)
+{
+	struct spi_imx_data *spi_imx = (struct spi_imx_data *)cookie;
+
+	complete(&spi_imx->dma_rx_completion);
+}
+
+static void spi_imx_dma_tx_callback(void *cookie)
+{
+	struct spi_imx_data *spi_imx = (struct spi_imx_data *)cookie;
+
+	complete(&spi_imx->dma_tx_completion);
+}
+
+static void spi_imx_tail_pio_set(struct spi_imx_data *spi_imx, int left)
+{
+
+	switch (spi_imx->rx_config.src_addr_width) {
+	case DMA_SLAVE_BUSWIDTH_1_BYTE:
+		spi_imx->rx = spi_imx_buf_rx_u8;
+		break;
+	case DMA_SLAVE_BUSWIDTH_2_BYTES:
+		spi_imx->rx = spi_imx_buf_rx_u16;
+		break;
+	case DMA_SLAVE_BUSWIDTH_4_BYTES:
+		spi_imx->rx = spi_imx_buf_rx_u32;
+		break;
+	default:
+		spi_imx->rx = spi_imx_buf_rx_u8;
+		break;
+	}
+
+	spi_imx->txfifo = left / spi_imx->tx_config.dst_addr_width;
+}
+
+static int spi_imx_dma_transfer(struct spi_imx_data *spi_imx,
+				struct spi_transfer *transfer)
+{
+	struct dma_async_tx_descriptor *desc_tx = NULL, *desc_rx = NULL;
+	int ret;
+	int left = 0;
+	struct spi_master *master = spi_imx->bitbang.master;
+	struct sg_table *tx = &transfer->tx_sg, *rx = &transfer->rx_sg;
+
+	if (tx) {
+		desc_tx = dmaengine_prep_slave_sg(master->dma_tx,
+					tx->sgl, tx->nents, DMA_TO_DEVICE,
+					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+		if (!desc_tx)
+			goto no_dma;
+
+		desc_tx->callback = spi_imx_dma_tx_callback;
+		desc_tx->callback_param = (void *)spi_imx;
+		dmaengine_submit(desc_tx);
+	}
+
+	if (rx) {
+		struct scatterlist *sgl_last = &rx->sgl[rx->nents - 1];
+		unsigned int	orig_length = sgl_last->length;
+		int	wml_mask = ~(spi_imx->rx_wml - 1);
+		/*
+		 * Adjust the transfer lenth of the last scattlist if there are
+		 * some tail data, use PIO read to get the tail data since DMA
+		 * sometimes miss the last tail interrupt.
+		 */
+		left = transfer->len % spi_imx->rx_wml;
+		if (left)
+			sgl_last->length = orig_length & wml_mask;
+
+		desc_rx = dmaengine_prep_slave_sg(master->dma_rx,
+					rx->sgl, rx->nents, DMA_FROM_DEVICE,
+					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+		if (!desc_rx)
+			goto no_dma;
+
+		desc_rx->callback = spi_imx_dma_rx_callback;
+		desc_rx->callback_param = (void *)spi_imx;
+		dmaengine_submit(desc_rx);
+	}
+
+	reinit_completion(&spi_imx->dma_rx_completion);
+	reinit_completion(&spi_imx->dma_tx_completion);
+
+	/* Trigger the cspi module. */
+	spi_imx->devtype_data->trigger(spi_imx);
+
+	dma_async_issue_pending(master->dma_tx);
+	dma_async_issue_pending(master->dma_rx);
+	/* Wait SDMA to finish the data transfer.*/
+	ret = wait_for_completion_timeout(&spi_imx->dma_tx_completion,
+					  IMX_DMA_TIMEOUT(transfer->len));
+	if (!ret) {
+		pr_warn("%s %s: I/O Error in DMA TX:%x\n",
+			dev_driver_string(&master->dev),
+			dev_name(&master->dev), transfer->len);
+		dmaengine_terminate_all(master->dma_tx);
+	} else {
+		ret = wait_for_completion_timeout(&spi_imx->dma_rx_completion,
+				IMX_DMA_TIMEOUT(transfer->len));
+		if (!ret) {
+			pr_warn("%s %s: I/O Error in DMA RX:%x\n",
+				dev_driver_string(&master->dev),
+				dev_name(&master->dev), transfer->len);
+			spi_imx->devtype_data->reset(spi_imx);
+			dmaengine_terminate_all(master->dma_rx);
+		} else if (left) {
+			/* read the tail data by PIO */
+			dma_sync_sg_for_cpu(master->dma_rx->device->dev,
+					    &rx->sgl[rx->nents - 1], 1,
+					    DMA_FROM_DEVICE);
+			spi_imx->rx_buf = transfer->rx_buf
+						+ (transfer->len - left);
+			spi_imx_tail_pio_set(spi_imx, left);
+			reinit_completion(&spi_imx->xfer_done);
+
+			spi_imx->devtype_data->intctrl(spi_imx, MXC_INT_TCEN);
+
+			ret = wait_for_completion_timeout(&spi_imx->xfer_done,
+						IMX_DMA_TIMEOUT(transfer->len));
+			if (!ret) {
+				pr_warn("%s %s: I/O Error in RX tail\n",
+					dev_driver_string(&master->dev),
+					dev_name(&master->dev));
+			}
+		}
+	}
+
+	if (!ret)
+		ret = -ETIMEDOUT;
+	else if (ret > 0)
+		ret = transfer->len;
+
+	return ret;
+
+no_dma:
+	pr_warn_once("%s %s: DMA not available, falling back to PIO\n",
+		     dev_driver_string(&master->dev),
+		     dev_name(&master->dev));
+	return -EAGAIN;
+}
+
+static int spi_imx_pio_transfer(struct spi_device *spi,
 				struct spi_transfer *transfer)
 {
 	struct spi_imx_data *spi_imx = spi_master_get_devdata(spi->master);
@@ -741,7 +1044,7 @@ static int spi_imx_transfer(struct spi_device *spi,
 	spi_imx->count = transfer->len;
 	spi_imx->txfifo = 0;
 
-	init_completion(&spi_imx->xfer_done);
+	reinit_completion(&spi_imx->xfer_done);
 
 	spi_imx_push(spi_imx);
 
@@ -750,6 +1053,25 @@ static int spi_imx_transfer(struct spi_device *spi,
 	wait_for_completion(&spi_imx->xfer_done);
 
 	return transfer->len;
+}
+
+static int spi_imx_transfer(struct spi_device *spi,
+				struct spi_transfer *transfer)
+{
+	int ret;
+	struct spi_imx_data *spi_imx = spi_master_get_devdata(spi->master);
+
+	if (spi_imx->bitbang.master->can_dma &&
+	    spi_imx_can_dma(spi_imx->bitbang.master, spi, transfer)) {
+		spi_imx->usedma = true;
+		ret = spi_imx_dma_transfer(spi_imx, transfer);
+		spi_imx->usedma = false; /* clear the dma flag */
+		if (ret != -EAGAIN)
+			return ret;
+	}
+	spi_imx->usedma = false;
+
+	return spi_imx_pio_transfer(spi, transfer);
 }
 
 static int spi_imx_setup(struct spi_device *spi)
@@ -778,13 +1100,13 @@ spi_imx_prepare_message(struct spi_master *master, struct spi_message *msg)
 	struct spi_imx_data *spi_imx = spi_master_get_devdata(master);
 	int ret;
 
-	ret = clk_enable(spi_imx->clk_per);
+	ret = clk_prepare_enable(spi_imx->clk_per);
 	if (ret)
 		return ret;
 
-	ret = clk_enable(spi_imx->clk_ipg);
+	ret = clk_prepare_enable(spi_imx->clk_ipg);
 	if (ret) {
-		clk_disable(spi_imx->clk_per);
+		clk_disable_unprepare(spi_imx->clk_per);
 		return ret;
 	}
 
@@ -796,8 +1118,8 @@ spi_imx_unprepare_message(struct spi_master *master, struct spi_message *msg)
 {
 	struct spi_imx_data *spi_imx = spi_master_get_devdata(master);
 
-	clk_disable(spi_imx->clk_ipg);
-	clk_disable(spi_imx->clk_per);
+	clk_disable_unprepare(spi_imx->clk_ipg);
+	clk_disable_unprepare(spi_imx->clk_per);
 	return 0;
 }
 
@@ -880,12 +1202,12 @@ static int spi_imx_probe(struct platform_device *pdev)
 
 	spi_imx->irq = platform_get_irq(pdev, 0);
 	if (spi_imx->irq < 0) {
-		ret = -EINVAL;
+		ret = spi_imx->irq;
 		goto out_master_put;
 	}
 
 	ret = devm_request_irq(&pdev->dev, spi_imx->irq, spi_imx_isr, 0,
-			       DRIVER_NAME, spi_imx);
+			       dev_name(&pdev->dev), spi_imx);
 	if (ret) {
 		dev_err(&pdev->dev, "can't get irq%d: %d\n", spi_imx->irq, ret);
 		goto out_master_put;
@@ -912,6 +1234,13 @@ static int spi_imx_probe(struct platform_device *pdev)
 		goto out_put_per;
 
 	spi_imx->spi_clk = clk_get_rate(spi_imx->clk_per);
+	/*
+	 * Only validated on i.mx6 now, can remove the constrain if validated on
+	 * other chips.
+	 */
+	if (spi_imx->devtype_data == &imx51_ecspi_devtype_data
+	    && spi_imx_sdma_init(&pdev->dev, spi_imx, master, res))
+		dev_err(&pdev->dev, "dma setup error,use pio instead\n");
 
 	spi_imx->devtype_data->reset(spi_imx);
 
@@ -926,8 +1255,8 @@ static int spi_imx_probe(struct platform_device *pdev)
 
 	dev_info(&pdev->dev, "probed\n");
 
-	clk_disable(spi_imx->clk_ipg);
-	clk_disable(spi_imx->clk_per);
+	clk_disable_unprepare(spi_imx->clk_ipg);
+	clk_disable_unprepare(spi_imx->clk_per);
 	return ret;
 
 out_clk_put:
@@ -950,17 +1279,38 @@ static int spi_imx_remove(struct platform_device *pdev)
 	writel(0, spi_imx->base + MXC_CSPICTRL);
 	clk_unprepare(spi_imx->clk_ipg);
 	clk_unprepare(spi_imx->clk_per);
+	spi_imx_sdma_exit(spi_imx);
 	spi_master_put(master);
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_SLEEP
+static int spi_imx_suspend(struct device *dev)
+{
+	pinctrl_pm_select_sleep_state(dev);
+	return 0;
+}
+
+static int spi_imx_resume(struct device *dev)
+{
+	pinctrl_pm_select_default_state(dev);
+	return 0;
+}
+
+static SIMPLE_DEV_PM_OPS(imx_spi_pm, spi_imx_suspend, spi_imx_resume);
+#define IMX_SPI_PM       (&imx_spi_pm)
+#else
+#define IMX_SPI_PM       NULL
+#endif
 
 static struct platform_driver spi_imx_driver = {
 	.driver = {
 		   .name = DRIVER_NAME,
 		   .owner = THIS_MODULE,
 		   .of_match_table = spi_imx_dt_ids,
-		   },
+		   .pm = IMX_SPI_PM,
+	},
 	.id_table = spi_imx_devtype,
 	.probe = spi_imx_probe,
 	.remove = spi_imx_remove,
