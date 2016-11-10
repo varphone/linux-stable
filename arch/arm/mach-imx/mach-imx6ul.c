@@ -67,6 +67,8 @@ static inline void imx6ul_enet_init(void)
 static void __init imx6ul_init_machine(void)
 {
 	struct device *parent;
+	void __iomem *iomux;
+    struct device_node *np;
 
 	mxc_arch_reset_init_dt();
 
@@ -80,6 +82,9 @@ static void __init imx6ul_init_machine(void)
 	imx6ul_enet_init();
 	imx_anatop_init();
 	imx6ul_pm_init();
+	np = of_find_compatible_node(NULL,NULL,"fsl,imx6ul-iomuxc");
+	iomux = of_iomap(np, 0);
+	writel_relaxed(0x2, iomux + 0x650);
 }
 
 static void __init imx6ul_init_irq(void)

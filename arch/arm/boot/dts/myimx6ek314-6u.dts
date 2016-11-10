@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include "imx6dl.dtsi"
-#include "myimx6ek200-6qu.dtsi"
+#include "myimx6ek314-6qu.dtsi"
 
 / {
 	model = "MYZR i.MX6 Evaluation Kit (MY-IMX6-EK314-6U)";

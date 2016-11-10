@@ -92,7 +92,7 @@ struct ov5642_mode_info {
  * Maintains the information on the current state of the sesor.
  */
 static struct sensor_data ov5642_data;
-static int pwn_gpio, rst_gpio;
+static int pwn_gpio;
 
 static struct reg_value ov5642_rot_none_VGA[] = {
 	{0x3818, 0xc1, 0x00, 0x00}, {0x3621, 0x87, 0x00, 0x00},
@@ -3030,20 +3030,11 @@ static void ov5642_standby(s32 enable)
 
 static void ov5642_reset(void)
 {
-	/* camera reset */
-	gpio_set_value(rst_gpio, 1);
-
 	/* camera power down */
 	gpio_set_value(pwn_gpio, 1);
 	msleep(5);
 
 	gpio_set_value(pwn_gpio, 0);
-	msleep(5);
-
-	gpio_set_value(rst_gpio, 0);
-	msleep(1);
-
-	gpio_set_value(rst_gpio, 1);
 	msleep(5);
 
 	gpio_set_value(pwn_gpio, 1);
@@ -4100,17 +4091,6 @@ static int ov5642_probe(struct i2c_client *client,
 	}
 	retval = devm_gpio_request_one(dev, pwn_gpio, GPIOF_OUT_INIT_HIGH,
 					"ov5642_pwdn");
-	if (retval < 0)
-		return retval;
-
-	/* request reset pin */
-	rst_gpio = of_get_named_gpio(dev->of_node, "rst-gpios", 0);
-	if (!gpio_is_valid(rst_gpio)) {
-		dev_warn(dev, "no sensor reset pin available");
-		return -EINVAL;
-	}
-	retval = devm_gpio_request_one(dev, rst_gpio, GPIOF_OUT_INIT_HIGH,
-					"ov5642_reset");
 	if (retval < 0)
 		return retval;
 

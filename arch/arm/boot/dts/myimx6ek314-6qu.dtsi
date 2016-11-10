@@ -133,6 +133,7 @@
 		mux-int-port = <2>;
 		mux-ext-port = <3>;
 		hp-det-gpios = <&gpio1 5 1>;
+		mic-det-gpios = <&gpio1 24 1>;
 	};
 
 	sound-hdmi {
@@ -236,6 +237,7 @@
 	myimx6ek314-6qu {
 		pinctrl_hog: hoggrp {
 			fsl,pins = <
+				MX6QDL_PAD_GPIO_9__WDOG1_B			0x80000000
 				MX6QDL_PAD_GPIO_0__CCM_CLKO1    	0x130b0
 				/* J23 */
 				MX6QDL_PAD_GPIO_2__GPIO1_IO02		0x80000000
@@ -580,7 +582,7 @@
 
 &gpc {
 	fsl,ldo-bypass = <1>;
-	fsl,wdog-reset = <2>;
+	fsl,wdog-reset = <1>;
 };
 
 &audmux {
@@ -596,7 +598,7 @@
 
 &ecspi1 {
 	fsl,spi-num-chipselects = <1>;
-	cs-gpios = <&gpio3 19 0>;
+	cs-gpios = <&gpio2 30 0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi1 &pinctrl_ecspi1_cs>;
 	status = "okay";
