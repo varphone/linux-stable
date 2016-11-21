@@ -160,8 +160,8 @@
 		v_channel_id = <3>;
 	};
 
-	isl79985_mipi: isl79985_mipi@44 {
-		compatible = "intersil,isl79985_mipi";
+	isl7998x_mipi: isl7998x_mipi@44 {
+		compatible = "intersil,isl7998x_mipi";
 		reg = <0x44>;
 		clocks = <&clks 201>;
 		clock-names = "csi_mclk";

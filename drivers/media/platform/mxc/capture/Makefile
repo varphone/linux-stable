@@ -20,8 +20,8 @@ obj-$(CONFIG_MXC_CAMERA_OV5640_MIPI) += ov5640_camera_mipi.o
 adv7180_tvin-objs := adv7180.o
 obj-$(CONFIG_MXC_TVIN_ADV7180) += adv7180_tvin.o
 
-isl79985_tvin_mipi-objs := isl79985_mipi.o
-obj-$(CONFIG_MXC_TVIN_ISL79985_MIPI) += isl79985_tvin_mipi.o
+isl7998x_tvin_mipi-objs := isl7998x_mipi.o
+obj-$(CONFIG_MXC_TVIN_ISL7998X_MIPI) += isl7998x_tvin_mipi.o
 
 mxc_vadc_tvin-objs := mxc_vadc.o
 obj-$(CONFIG_MXC_VADC) += mxc_vadc_tvin.o
