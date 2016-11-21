@@ -210,6 +210,7 @@ typedef struct _cam_data {
 	unsigned int csi;
 	unsigned int mipi_v_channel;
 	bool is_mipi_cam;
+	bool is_mipi_cam_interlaced;
 	u8 mclk_source;
 	bool mclk_on[2];	/* two mclk sources at most now */
 	int current_input;
@@ -263,6 +264,7 @@ struct sensor_data {
 	int csi;
 	int v_channel;
 	bool is_mipi;
+	bool is_mipi_interlaced;
 
 	void (*io_init)(void);
 };
