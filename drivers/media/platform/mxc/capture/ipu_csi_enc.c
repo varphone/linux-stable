@@ -157,6 +157,9 @@ static int csi_enc_setup(cam_data *cam)
 			params.csi_mem.mipi_vc = 0;
 			params.csi_mem.mipi_id = 0;
 		}
+
+		if (cam->is_mipi_cam && cam->is_mipi_cam_interlaced)
+			params.csi_mem.interlaced = true;
 	}
 #endif
 
