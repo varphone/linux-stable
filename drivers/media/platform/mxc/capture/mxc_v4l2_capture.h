@@ -207,6 +207,8 @@ typedef struct _cam_data {
 	wait_queue_head_t power_queue;
 	unsigned int ipu_id;
 	unsigned int csi;
+	unsigned int mipi_v_channel;
+	bool is_mipi_cam;
 	u8 mclk_source;
 	bool mclk_on[2];	/* two mclk sources at most now */
 	int current_input;
@@ -253,7 +255,10 @@ struct sensor_data {
 	u32 mclk;
 	u8 mclk_source;
 	struct clk *sensor_clk;
+	int ipu_id;
 	int csi;
+	int v_channel;
+	bool is_mipi;
 
 	void (*io_init)(void);
 };
