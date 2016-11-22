@@ -40,16 +40,16 @@ config VIDEOBUF_GEN
 	tristate
 
 config VIDEOBUF_DMA_SG
-	tristate
+	tristate "Helper functions for SG DMA video4linux capture buffers"
 	depends on HAS_DMA
 	select VIDEOBUF_GEN
 
 config VIDEOBUF_VMALLOC
-	tristate
+	tristate "Helper functions for vmalloc video4linux capture buffers"
 	select VIDEOBUF_GEN
 
 config VIDEOBUF_DMA_CONTIG
-	tristate
+	tristate 
 	depends on HAS_DMA
 	select VIDEOBUF_GEN
 

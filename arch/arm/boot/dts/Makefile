@@ -256,7 +256,9 @@ dtb-$(CONFIG_ARCH_MXC) += \
 	myimx6ek314-v10-6u.dtb \
 	myimx6ek336-6q.dtb \
 	myimx6ek140-6g.dtb \
+	myimx6ek140p-6g.dtb \
 	myimx6ek140-6g-512m.dtb \
+	myimx6ek140p-6g-512m.dtb \
 	myimx6aco-6q.dtb \
 	myimx6lef-6q.dtb \
 	myimx6qjh-6q.dtb \

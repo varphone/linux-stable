@@ -213,6 +213,19 @@
 		compatible = "fsl,imx6-hdmi-i2c";
 		reg = <0x50>;
 	};
+
+	ov564x: ov564x@3c {
+		compatible = "ovti,ov564x";
+		reg = <0x3c>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_csi0>;
+		clocks = <&clks IMX6QDL_CLK_CKO>;
+		clock-names = "csi_mclk";
+		pwn-gpios = <&gpio5 20 1>;
+		csi_id = <0>;
+		mclk = <24000000>;
+		mclk_source = <0>;
+	};
 };
 
 &i2c3 {

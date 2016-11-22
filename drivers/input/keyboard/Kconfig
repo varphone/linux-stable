@@ -238,15 +238,6 @@ config KEYBOARD_TCA8418
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called tca8418_keypad.
-	  
-config KEYBOARD_ZLG7290
-	tristate "MYZR for ZLG7290 Keypad & Leds Support"
-	depends on I2C
-	help
-	  MYZR for ZLG7290 Keypad & Leds Support
-	  
-	  This driver implements basic keypad functionality
-	  for keys connected through ZLG7290 keypad decoder.
 
 config KEYBOARD_MATRIX
 	tristate "GPIO driven matrix keypad support"
