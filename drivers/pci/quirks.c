@@ -2885,14 +2885,20 @@ static void fixup_ti816x_class(struct pci_dev *dev)
 DECLARE_PCI_FIXUP_CLASS_EARLY(PCI_VENDOR_ID_TI, 0xb800,
 			      PCI_CLASS_NOT_DEFINED, 0, fixup_ti816x_class);
 
-/* TW6869 Frame grabber has same problem as ti816x */
-static void fixup_tw6869_class(struct pci_dev* dev)
+/* TW686X Frame grabber has same problem as ti816x */
+static void fixup_tw686x_class(struct pci_dev* dev)
 {
-	dev_info(&dev->dev, "Setting PCI class for tw6869 PCIe device\n");
+	dev_info(&dev->dev, "Setting PCI class for tw686x PCIe device\n");
 	dev->class = PCI_CLASS_MULTIMEDIA_VIDEO << 8;
 }
+DECLARE_PCI_FIXUP_CLASS_EARLY(0x1797, 0x6864,
+			      PCI_CLASS_NOT_DEFINED, 0, fixup_tw686x_class);
+DECLARE_PCI_FIXUP_CLASS_EARLY(0x1797, 0x6865,
+			      PCI_CLASS_NOT_DEFINED, 0, fixup_tw686x_class);
+DECLARE_PCI_FIXUP_CLASS_EARLY(0x1797, 0x6868,
+			      PCI_CLASS_NOT_DEFINED, 0, fixup_tw686x_class);
 DECLARE_PCI_FIXUP_CLASS_EARLY(0x1797, 0x6869,
-			      PCI_CLASS_NOT_DEFINED, 0, fixup_tw6869_class);
+			      PCI_CLASS_NOT_DEFINED, 0, fixup_tw686x_class);
 
 /* Some PCIe devices do not work reliably with the claimed maximum
  * payload size supported.

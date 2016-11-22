@@ -47,11 +47,11 @@
 
 #define FSL_G_CHIP_IDENT
 #define FSL_QUERYBUF
-#define TW_DEFAULT_V4L2_STD        V4L2_STD_NTSC /* V4L2_STD_PAL */
+#define TW_DEFAULT_V4L2_STD        V4L2_STD_PAL /* V4L2_STD_NTSC */
 
-#define TW_DMA_ERR_MAX             30
+#define TW_DMA_ERR_MAX             50
 #define TW_APAGE_MAX               16
-#define TW_VBUF_ALLOC              6
+#define TW_VBUF_ALLOC              16
 
 #define TW_DEBUG                   1
 
