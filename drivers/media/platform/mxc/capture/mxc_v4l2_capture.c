@@ -3034,6 +3034,7 @@ static int mxc_v4l2_master_attach(struct v4l2_int_device *slave)
 	cam->sensor = slave;
 	cam->mipi_v_channel = sdata->v_channel;
 	cam->is_mipi_cam = sdata->is_mipi;
+	cam->is_mipi_cam_interlaced = sdata->is_mipi_interlaced;
 
 	if (cam->sensor_index < MXC_SENSOR_NUM) {
 		cam->all_sensors[cam->sensor_index] = slave;
