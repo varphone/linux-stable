@@ -10,6 +10,7 @@
  */
 
 #include <linux/clk-private.h>
+#include <linux/clk/clk-conf.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/spinlock.h>
@@ -490,7 +491,7 @@ static void clk_unprepare_unused_subtree(struct clk *clk)
 /* caller must hold prepare_lock */
 static void clk_disable_unused_subtree(struct clk *clk)
 {
-	struct clk *child;
+	struct clk *child, *parent = NULL;
 	unsigned long flags;
 
 	if (!clk)
@@ -498,6 +499,12 @@ static void clk_disable_unused_subtree(struct clk *clk)
 
 	hlist_for_each_entry(child, &clk->children, child_node)
 		clk_disable_unused_subtree(child);
+
+	if (clk->flags & CLK_SET_PARENT_ON) {
+		parent = clk_get_parent(clk);
+		WARN(!parent, "%s no parent found but has CLK_SET_PARENT_ON claimed\n", clk->name);
+		clk_prepare_enable(parent);
+	}
 
 	flags = clk_enable_lock();
 
@@ -521,7 +528,8 @@ static void clk_disable_unused_subtree(struct clk *clk)
 
 unlock_out:
 	clk_enable_unlock(flags);
-
+	if (clk->flags & CLK_SET_PARENT_ON)
+		clk_disable_unprepare(parent);
 out:
 	return;
 }
@@ -1231,7 +1239,7 @@ static struct clk *__clk_set_parent_before(struct clk *clk, struct clk *parent)
 	struct clk *old_parent = clk->parent;
 
 	/*
-	 * Migrate prepare state between parents and prevent race with
+	 * 1. Migrate prepare state between parents and prevent race with
 	 * clk_enable().
 	 *
 	 * If the clock is not prepared, then a race with
@@ -1246,11 +1254,19 @@ static struct clk *__clk_set_parent_before(struct clk *clk, struct clk *parent)
 	 * hardware and software states.
 	 *
 	 * See also: Comment for clk_set_parent() below.
+	 *
+	 * 2. enable two parents clock for .set_parent() operation if finding
+	 * flag CLK_SET_PARENT_ON
 	 */
-	if (clk->prepare_count) {
+	if (clk->prepare_count || clk->flags & CLK_SET_PARENT_ON) {
 		__clk_prepare(parent);
 		clk_enable(parent);
-		clk_enable(clk);
+		if (clk->prepare_count) {
+			clk_enable(clk);
+		} else {
+			__clk_prepare(old_parent);
+			clk_enable(old_parent);
+		}
 	}
 
 	/* update the clk tree topology */
@@ -1268,10 +1284,15 @@ static void __clk_set_parent_after(struct clk *clk, struct clk *parent,
 	 * Finish the migration of prepare state and undo the changes done
 	 * for preventing a race with clk_enable().
 	 */
-	if (clk->prepare_count) {
-		clk_disable(clk);
+	if (clk->prepare_count || clk->flags & CLK_SET_PARENT_ON) {
 		clk_disable(old_parent);
 		__clk_unprepare(old_parent);
+		if (clk->prepare_count) {
+			clk_disable(clk);
+		} else {
+			clk_disable(parent);
+			__clk_unprepare(parent);
+		}
 	}
 
 	/* update debugfs with new clk tree topology */
@@ -1295,11 +1316,17 @@ static int __clk_set_parent(struct clk *clk, struct clk *parent, u8 p_index)
 		clk_reparent(clk, old_parent);
 		clk_enable_unlock(flags);
 
-		if (clk->prepare_count) {
-			clk_disable(clk);
+		if (clk->prepare_count || clk->flags & CLK_SET_PARENT_ON) {
 			clk_disable(parent);
 			__clk_unprepare(parent);
+			if (clk->prepare_count) {
+				clk_disable(clk);
+			} else {
+				clk_disable(old_parent);
+				__clk_unprepare(old_parent);
+			}
 		}
+
 		return ret;
 	}
 
@@ -1492,13 +1519,17 @@ static void clk_change_rate(struct clk *clk)
 	unsigned long best_parent_rate = 0;
 	bool skip_set_rate = false;
 	struct clk *old_parent;
+	struct clk *parent = NULL;
 
 	old_rate = clk->rate;
 
-	if (clk->new_parent)
+	if (clk->new_parent) {
+		parent = clk->new_parent;
 		best_parent_rate = clk->new_parent->rate;
-	else if (clk->parent)
+	} else if (clk->parent) {
+		parent = clk->parent;
 		best_parent_rate = clk->parent->rate;
+	}
 
 	if (clk->new_parent && clk->new_parent != clk->parent) {
 		old_parent = __clk_set_parent_before(clk, clk->new_parent);
@@ -1515,6 +1546,11 @@ static void clk_change_rate(struct clk *clk)
 		__clk_set_parent_after(clk, clk->new_parent, old_parent);
 	}
 
+	if (clk->flags & CLK_SET_PARENT_ON && parent) {
+		__clk_prepare(parent);
+		clk_enable(parent);
+	}
+
 	if (!skip_set_rate && clk->ops->set_rate)
 		clk->ops->set_rate(clk->hw, clk->new_rate, best_parent_rate);
 
@@ -1522,6 +1558,11 @@ static void clk_change_rate(struct clk *clk)
 		clk->rate = clk->ops->recalc_rate(clk->hw, best_parent_rate);
 	else
 		clk->rate = best_parent_rate;
+
+	if (clk->flags & CLK_SET_PARENT_ON && parent) {
+		clk_disable(parent);
+		__clk_unprepare(parent);
+	}
 
 	if (clk->notifier_count && old_rate != clk->rate)
 		__clk_notify(clk, POST_RATE_CHANGE, old_rate, clk->rate);
@@ -1707,6 +1748,7 @@ void __clk_reparent(struct clk *clk, struct clk *new_parent)
  */
 int clk_set_parent(struct clk *clk, struct clk *parent)
 {
+	struct clk *child;
 	int ret = 0;
 	int p_index = 0;
 	unsigned long p_rate = 0;
@@ -1731,6 +1773,18 @@ int clk_set_parent(struct clk *clk, struct clk *parent)
 	if ((clk->flags & CLK_SET_PARENT_GATE) && clk->prepare_count) {
 		ret = -EBUSY;
 		goto out;
+	}
+
+	/* check two consecutive basic mux clocks */
+	if (clk->flags & CLK_IS_BASIC_MUX) {
+		hlist_for_each_entry(child, &clk->children, child_node) {
+			if (child->flags & CLK_IS_BASIC_MUX) {
+				pr_err("%s: failed to switch parent of %s due to child mux %s\n",
+					__func__, clk->name, child->name);
+				ret = -EBUSY;
+				goto out;
+			}
+		}
 	}
 
 	/* try finding the new parent index */
@@ -2429,6 +2483,7 @@ int of_clk_add_provider(struct device_node *np,
 			void *data)
 {
 	struct of_clk_provider *cp;
+	int ret;
 
 	cp = kzalloc(sizeof(struct of_clk_provider), GFP_KERNEL);
 	if (!cp)
@@ -2443,7 +2498,11 @@ int of_clk_add_provider(struct device_node *np,
 	mutex_unlock(&of_clk_mutex);
 	pr_debug("Added clock from %s\n", np->full_name);
 
-	return 0;
+	ret = of_clk_set_defaults(np, true);
+	if (ret < 0)
+		of_clk_del_provider(np);
+
+	return ret;
 }
 EXPORT_SYMBOL_GPL(of_clk_add_provider);
 
@@ -2543,6 +2602,7 @@ void __init of_clk_init(const struct of_device_id *matches)
 	for_each_matching_node_and_match(np, matches, &match) {
 		of_clk_init_cb_t clk_init_cb = match->data;
 		clk_init_cb(np);
+		of_clk_set_defaults(np, true);
 	}
 }
 #endif

@@ -73,6 +73,16 @@ static void quirk_passive_release(struct pci_dev *dev)
 DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_INTEL,	PCI_DEVICE_ID_INTEL_82441,	quirk_passive_release);
 DECLARE_PCI_FIXUP_RESUME(PCI_VENDOR_ID_INTEL,	PCI_DEVICE_ID_INTEL_82441,	quirk_passive_release);
 
+static void fixup_tw6869_class(struct pci_dev *dev)
+{
+	/* devices do not have class code set when in PCIe boot mode */
+	if (dev->class == PCI_CLASS_NOT_DEFINED) {
+		dev_info(&dev->dev, "Setting PCI class for tw6868 PCIe device\n");
+		dev->class = PCI_CLASS_MULTIMEDIA_VIDEO;
+		}
+}
+DECLARE_PCI_FIXUP_EARLY(0x1797, 0x6869, fixup_tw6869_class);
+
 /*  The VIA VP2/VP3/MVP3 seem to have some 'features'. There may be a workaround
     but VIA don't answer queries. If you happen to have good contacts at VIA
     ask them for me please -- Alan

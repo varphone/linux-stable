@@ -428,6 +428,8 @@ int usb_gadget_unregister_driver(struct usb_gadget_driver *driver)
 	list_for_each_entry(udc, &udc_list, list)
 		if (udc->driver == driver) {
 			usb_gadget_remove_driver(udc);
+			usb_gadget_set_state(udc->gadget,
+					USB_STATE_NOTATTACHED);
 			ret = 0;
 			break;
 		}
@@ -515,6 +517,7 @@ static USB_UDC_ATTR(is_a_peripheral);
 static USB_UDC_ATTR(b_hnp_enable);
 static USB_UDC_ATTR(a_hnp_support);
 static USB_UDC_ATTR(a_alt_hnp_support);
+static USB_UDC_ATTR(is_selfpowered);
 
 static struct attribute *usb_udc_attrs[] = {
 	&dev_attr_srp.attr,
@@ -528,6 +531,7 @@ static struct attribute *usb_udc_attrs[] = {
 	&dev_attr_b_hnp_enable.attr,
 	&dev_attr_a_hnp_support.attr,
 	&dev_attr_a_alt_hnp_support.attr,
+	&dev_attr_is_selfpowered.attr,
 	NULL,
 };
 

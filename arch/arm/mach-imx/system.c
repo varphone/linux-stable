@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 1999 ARM Limited
  * Copyright (C) 2000 Deep Blue Solutions Ltd
- * Copyright 2006-2007 Freescale Semiconductor, Inc. All Rights Reserved.
+ * Copyright 2006-2015 Freescale Semiconductor, Inc.
  * Copyright 2008 Juergen Beisert, kernel@pengutronix.de
  * Copyright 2009 Ilya Yanok, Emcraft Systems Ltd, yanok@emcraft.com
  *
@@ -34,6 +34,7 @@
 
 static void __iomem *wdog_base;
 static struct clk *wdog_clk;
+static u32 wdog_source = 1; /* use WDOG1 default */
 
 /*
  * Reset the system. It is called by machine_restart().
@@ -47,6 +48,18 @@ void mxc_restart(enum reboot_mode mode, const char *cmd)
 
 	if (cpu_is_mx1())
 		wcr_enable = (1 << 0);
+	/*
+	 * Some i.MX6 boards use WDOG2 to reset external pmic in bypass mode,
+	 * so do WDOG2 reset here. Do not set SRS, since we will
+	 * trigger external POR later. Use WDOG1 to reset in ldo-enable
+	 * mode. You can set it by "fsl,wdog-reset" in dts.
+	 * For i.MX6SX we have to trigger wdog-reset to reset QSPI-NOR flash to
+	 * workaround qspi-nor reboot issue whatever ldo-bypass or not.
+	 */
+	else if ((wdog_source == 2 && (cpu_is_imx6q() || cpu_is_imx6dl() ||
+			cpu_is_imx6sl())) || cpu_is_imx6sx() || cpu_is_imx7d()
+			|| cpu_is_imx6ul())
+		wcr_enable = 0x14;
 	else
 		wcr_enable = (1 << 2);
 
@@ -90,11 +103,28 @@ void __init mxc_arch_reset_init(void __iomem *base)
 
 void __init mxc_arch_reset_init_dt(void)
 {
-	struct device_node *np;
+	struct device_node *np = NULL;
+
+	if (cpu_is_imx6q() || cpu_is_imx6dl())
+		np = of_find_compatible_node(NULL, NULL, "fsl,imx6q-gpc");
+	else if (cpu_is_imx6sl())
+		np = of_find_compatible_node(NULL, NULL, "fsl,imx6sl-gpc");
+
+	if (np)
+		of_property_read_u32(np, "fsl,wdog-reset", &wdog_source);
+	pr_info("Use WDOG%d as reset source\n", wdog_source);
 
 	np = of_find_compatible_node(NULL, NULL, "fsl,imx21-wdt");
 	wdog_base = of_iomap(np, 0);
 	WARN_ON(!wdog_base);
+
+	/* Some i.MX6 boards use WDOG2 to reset board in ldo-bypass mode */
+	if (wdog_source == 2 && (cpu_is_imx6q() || cpu_is_imx6dl() ||
+		cpu_is_imx6sl())) {
+		np = of_find_compatible_node(np, NULL, "fsl,imx21-wdt");
+		wdog_base = of_iomap(np, 0);
+		WARN_ON(!wdog_base);
+	}
 
 	wdog_clk = of_clk_get(np, 0);
 	if (IS_ERR(wdog_clk)) {
@@ -111,7 +141,7 @@ void __init imx_init_l2cache(void)
 {
 	void __iomem *l2x0_base;
 	struct device_node *np;
-	unsigned int val;
+	unsigned int val, cache_id;
 
 	np = of_find_compatible_node(NULL, NULL, "arm,pl310-cache");
 	if (!np)
@@ -124,19 +154,23 @@ void __init imx_init_l2cache(void)
 	}
 
 	/* Configure the L2 PREFETCH and POWER registers */
+	/* Set prefetch offset with any value except 23 as per errata 765569 */
 	val = readl_relaxed(l2x0_base + L2X0_PREFETCH_CTRL);
-	val |= 0x70800000;
+	val |= 0x7000000f;
 	/*
 	 * The L2 cache controller(PL310) version on the i.MX6D/Q is r3p1-50rel0
-	 * The L2 cache controller(PL310) version on the i.MX6DL/SOLO/SL is r3p2
+	 * The L2 cache controller(PL310) version on the i.MX6DL/SOLO/SL/SX/DQP
+	 * is r3p2.
 	 * But according to ARM PL310 errata: 752271
 	 * ID: 752271: Double linefill feature can cause data corruption
 	 * Fault Status: Present in: r3p0, r3p1, r3p1-50rel0. Fixed in r3p2
 	 * Workaround: The only workaround to this erratum is to disable the
 	 * double linefill feature. This is the default behavior.
 	 */
-	if (cpu_is_imx6q())
-		val &= ~(1 << 30 | 1 << 23);
+	cache_id = readl_relaxed(l2x0_base + L2X0_CACHE_ID);
+	if (((cache_id & L2X0_CACHE_ID_PART_MASK) == L2X0_CACHE_ID_PART_L310)
+	    && ((cache_id & L2X0_CACHE_ID_RTL_MASK) < L2X0_CACHE_ID_RTL_R3P2))
+		val &= ~(1 << 30);
 	writel_relaxed(val, l2x0_base + L2X0_PREFETCH_CTRL);
 	val = L2X0_DYNAMIC_CLK_GATING_EN | L2X0_STNDBY_MODE_EN;
 	writel_relaxed(val, l2x0_base + L2X0_POWER_CTRL);

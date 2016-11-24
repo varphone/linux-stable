@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 Freescale Semiconductor, Inc.
+ * Copyright 2011-2015 Freescale Semiconductor, Inc.
  * Copyright 2011 Linaro Ltd.
  *
  * The code contained herein is licensed under the GNU General Public
@@ -23,7 +23,7 @@
 #define SCU_STANDBY_ENABLE	(1 << 5)
 
 u32 g_diag_reg;
-static void __iomem *scu_base;
+void __iomem *imx_scu_base;
 
 static struct map_desc scu_io_desc __initdata = {
 	/* .virtual and .pfn are run-time assigned */
@@ -42,18 +42,18 @@ void __init imx_scu_map_io(void)
 	scu_io_desc.pfn = __phys_to_pfn(base);
 	iotable_init(&scu_io_desc, 1);
 
-	scu_base = IMX_IO_ADDRESS(base);
+	imx_scu_base = IMX_IO_ADDRESS(base);
 }
 
 void imx_scu_standby_enable(void)
 {
-	u32 val = readl_relaxed(scu_base);
+	u32 val = readl_relaxed(imx_scu_base);
 
 	val |= SCU_STANDBY_ENABLE;
-	writel_relaxed(val, scu_base);
+	writel_relaxed(val, imx_scu_base);
 }
 
-static int imx_boot_secondary(unsigned int cpu, struct task_struct *idle)
+static int __cpuinit imx_boot_secondary(unsigned int cpu, struct task_struct *idle)
 {
 	imx_set_cpu_jump(cpu, v7_secondary_startup);
 	imx_enable_cpu(cpu, true);
@@ -67,20 +67,55 @@ static int imx_boot_secondary(unsigned int cpu, struct task_struct *idle)
 static void __init imx_smp_init_cpus(void)
 {
 	int i, ncores;
+	u32 me = smp_processor_id();
+	unsigned long arch_type;
 
-	ncores = scu_get_core_count(scu_base);
+	asm volatile(
+		".align 4\n"
+		"mrc p15, 0, %0, c0, c0, 0\n"
+		: "=r" (arch_type)
+	);
+	/* MIDR[15:4] defines ARCH type */
+	mxc_set_arch_type((arch_type >> 4) & 0xfff);
+
+	if (arm_is_ca7()) {
+		unsigned long val;
+
+		/* CA7 core number, [25:24] of CP15 L2CTLR */
+		asm volatile("mrc p15, 1, %0, c9, c0, 2" : "=r" (val));
+		ncores = ((val >> 24) & 0x3) + 1;
+	} else {
+		ncores = scu_get_core_count(imx_scu_base);
+	}
+
+	if (setup_max_cpus < ncores)
+		ncores = (setup_max_cpus) ? setup_max_cpus : 1;
 
 	for (i = ncores; i < NR_CPUS; i++)
 		set_cpu_possible(i, false);
+
+	if (!arm_is_ca7()) {
+		/* Set the SCU CPU Power status for each inactive core. */
+		for (i = 0; i < NR_CPUS;  i++) {
+			if (i != me)
+				__raw_writeb(SCU_PM_POWEROFF,
+					imx_scu_base + 0x08 + i);
+		}
+	}
 }
 
 void imx_smp_prepare(void)
 {
-	scu_enable(scu_base);
+	scu_enable(imx_scu_base);
+	/* Need to enable SCU standby for entering WAIT mode */
+	imx_scu_standby_enable();
 }
 
 static void __init imx_smp_prepare_cpus(unsigned int max_cpus)
 {
+	if (arm_is_ca7())
+		return;
+
 	imx_smp_prepare();
 
 	/*
@@ -92,7 +127,8 @@ static void __init imx_smp_prepare_cpus(unsigned int max_cpus)
 	 * secondary cores when booting them.
 	 */
 	asm("mrc p15, 0, %0, c15, c0, 1" : "=r" (g_diag_reg) : : "cc");
-	sync_cache_w(&g_diag_reg);
+	__cpuc_flush_dcache_area(&g_diag_reg, sizeof(g_diag_reg));
+	outer_clean_range(__pa(&g_diag_reg), __pa(&g_diag_reg + 1));
 }
 
 struct smp_operations  imx_smp_ops __initdata = {
