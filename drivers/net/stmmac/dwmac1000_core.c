@@ -29,6 +29,7 @@
 #include <linux/crc32.h>
 #include <linux/slab.h>
 #include "dwmac1000.h"
+#include "tnkhw.h"
 
 static void dwmac1000_core_init(void __iomem *ioaddr)
 {
@@ -39,10 +40,15 @@ static void dwmac1000_core_init(void __iomem *ioaddr)
 	/* STBus Bridge Configuration */
 	/*writel(0xc5608, ioaddr + 0x00007000);*/
 
-	/* Freeze MMC counters */
-	writel(0x8, ioaddr + GMAC_MMC_CTRL);
+	/* Disable MMC interrupts */
+	writel(0xFFFFFFFF, ioaddr + GMAC_MMC_RX_INTR_MASK);
+	writel(0xFFFFFFFF, ioaddr + GMAC_MMC_TX_INTR_MASK);
+	writel(0xFFFFFFFF, ioaddr + GMAC_MMC_RX_CSUM_OFFLOAD_MASK);
+	/* Enable MMC counters (clear the freeze bit) */
+	writel(0, ioaddr + GMAC_MMC_CTRL);
+
 	/* Mask GMAC interrupts */
-	writel(0x207, ioaddr + GMAC_INT_MASK);
+	writel(0x60f, ioaddr + GMAC_INT_MASK);
 
 #ifdef STMMAC_VLAN_TAG_USED
 	/* Tag detection without filtering */
@@ -147,8 +153,8 @@ static void dwmac1000_set_filter(struct net_device *dev)
 	writel(value, ioaddr + GMAC_FRAME_FILTER);
 
 	CHIP_DBG(KERN_INFO "\tFrame Filter reg: 0x%08x\n\tHash regs: "
-	    "HI 0x%08x, LO 0x%08x\n", readl(ioaddr + GMAC_FRAME_FILTER),
-	    readl(ioaddr + GMAC_HASH_HIGH), readl(ioaddr + GMAC_HASH_LOW));
+		 "HI 0x%08x, LO 0x%08x\n", readl(ioaddr + GMAC_FRAME_FILTER),
+		 readl(ioaddr + GMAC_HASH_HIGH), readl(ioaddr + GMAC_HASH_LOW));
 }
 
 static void dwmac1000_flow_ctrl(void __iomem *ioaddr, unsigned int duplex,
@@ -178,11 +184,10 @@ static void dwmac1000_pmt(void __iomem *ioaddr, unsigned long mode)
 {
 	unsigned int pmt = 0;
 
-	if (mode & WAKE_MAGIC) {
+	if (mode == WAKE_MAGIC) {
 		CHIP_DBG(KERN_DEBUG "GMAC: WOL Magic frame\n");
 		pmt |= power_down | magic_pkt_en;
-	}
-	if (mode & WAKE_UCAST) {
+	} else if (mode == WAKE_UCAST) {
 		CHIP_DBG(KERN_DEBUG "GMAC: WOL on global unicast\n");
 		pmt |= global_unicast;
 	}

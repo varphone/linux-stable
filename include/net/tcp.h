@@ -1404,6 +1404,8 @@ extern struct sk_buff **tcp4_gro_receive(struct sk_buff **head,
 extern int tcp_gro_complete(struct sk_buff *skb);
 extern int tcp4_gro_complete(struct sk_buff *skb);
 
+extern int tcp_nuke_addr(struct net *net, struct sockaddr *addr);
+
 #ifdef CONFIG_PROC_FS
 extern int tcp4_proc_init(void);
 extern void tcp4_proc_exit(void);
@@ -1528,5 +1530,7 @@ static inline struct tcp_extend_values *tcp_xv(struct request_values *rvp)
 
 extern void tcp_v4_init(void);
 extern void tcp_init(void);
+
+extern void tcp_valid_rtt_meas(struct sock *sk, u32 seq_rtt);
 
 #endif	/* _TCP_H */

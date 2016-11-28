@@ -40,6 +40,10 @@
 #include <linux/gfp.h>
 #include <linux/module.h>
 
+#ifdef CONFIG_TNK
+#include <net/tnkdrv.h>
+#endif
+
 /* People can turn this off for buggy TCP's found in printers etc. */
 int sysctl_tcp_retrans_collapse __read_mostly = 1;
 
@@ -63,6 +67,9 @@ int sysctl_tcp_slow_start_after_idle __read_mostly = 1;
 int sysctl_tcp_cookie_size __read_mostly = 0; /* TCP_COOKIE_MAX */
 EXPORT_SYMBOL_GPL(sysctl_tcp_cookie_size);
 
+#ifdef CONFIG_TNK
+extern struct tnkfuncs *tnk;
+#endif
 
 /* Account for new data that has been sent to the network. */
 static void tcp_event_new_data_sent(struct sock *sk, struct sk_buff *skb)
@@ -1278,7 +1285,9 @@ unsigned int tcp_current_mss(struct sock *sk)
 
 	return mss_now;
 }
-
+#ifdef CONFIG_TNK
+EXPORT_SYMBOL(tcp_current_mss);
+#endif
 /* Congestion window validation. (RFC2861) */
 static void tcp_cwnd_validate(struct sock *sk)
 {
@@ -2310,6 +2319,12 @@ void tcp_send_fin(struct sock *sk)
 	struct sk_buff *skb = tcp_write_queue_tail(sk);
 	int mss_now;
 
+#ifdef CONFIG_TNK
+    /*  tnk is active.  Call tnk_tcp_close */
+    if (tnk)
+        tnk->tcp_close (sk, 1);
+#endif
+
 	/* Optimization, tack on the FIN if we have a queue of
 	 * unsent frames.  But be careful about outgoing SACKS
 	 * and IP options.
@@ -2348,6 +2363,12 @@ void tcp_send_fin(struct sock *sk)
 void tcp_send_active_reset(struct sock *sk, gfp_t priority)
 {
 	struct sk_buff *skb;
+
+#ifdef CONFIG_TNK
+        /*  tnk is active.  Call tnk_tcp_close.*/
+        if (tnk)
+        	tnk->tcp_close (sk, 0);
+#endif
 
 	/* NOTE: No TCP options attached and we never retransmit this. */
 	skb = alloc_skb(MAX_TCP_HEADER, priority);
