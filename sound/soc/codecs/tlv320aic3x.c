@@ -813,6 +813,7 @@ static int aic3x_hw_params(struct snd_pcm_substream *substream,
 			   struct snd_pcm_hw_params *params,
 			   struct snd_soc_dai *dai)
 {
+    printk("in aic3x_hw_params.................\n");
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_codec *codec =rtd->codec;
 	struct aic3x_priv *aic3x = snd_soc_codec_get_drvdata(codec);
@@ -821,6 +822,7 @@ static int aic3x_hw_params(struct snd_pcm_substream *substream,
 	u16 d, pll_d = 1;
 	u8 reg;
 	int clk;
+    int i;
 
 	/* select data word length */
 	data = snd_soc_read(codec, AIC3X_ASD_INTF_CTRLB) & (~(0x3 << 4));
@@ -851,13 +853,13 @@ static int aic3x_hw_params(struct snd_pcm_substream *substream,
 		}
 
 	if (bypass_pll) {
+        printk("pll_q = %d\n", pll_q);
 		pll_q &= 0xf;
 		snd_soc_write(codec, AIC3X_PLL_PROGA_REG, pll_q << PLLQ_SHIFT);
 		snd_soc_write(codec, AIC3X_GPIOB_REG, CODEC_CLKIN_CLKDIV);
 		/* disable PLL if it is bypassed */
 		reg = snd_soc_read(codec, AIC3X_PLL_PROGA_REG);
 		snd_soc_write(codec, AIC3X_PLL_PROGA_REG, reg & ~PLL_ENABLE);
-
 	} else {
 		snd_soc_write(codec, AIC3X_GPIOB_REG, CODEC_CLKIN_PLLDIV);
 		/* enable PLL when it is used */
@@ -869,6 +871,7 @@ static int aic3x_hw_params(struct snd_pcm_substream *substream,
 	 * right DAC to right channel input */
 	data = (LDAC2LCH | RDAC2RCH);
 	data |= (fsref == 44100) ? FSREF_44100 : FSREF_48000;
+    printk("params_rate(params) = %d\n", params_rate(params));
 	if (params_rate(params) >= 64000)
 		data |= DUAL_RATE_MODE;
 	snd_soc_write(codec, AIC3X_CODEC_DATAPATH_REG, data);
@@ -880,10 +883,15 @@ static int aic3x_hw_params(struct snd_pcm_substream *substream,
 	data /= 5;
 	data -= 2;
 	data |= (data << 4);
+    printk("data=0x%02x\n", data);
 	snd_soc_write(codec, AIC3X_SAMPLE_RATE_SEL_REG, data);
-
-	if (bypass_pll)
+	if (bypass_pll) {
+        printk("========================================bypass_pll = 1\n");
+        for(i=0; i< 103; i++) {
+            printk("register:[%d] = 0x%02x\n", i, snd_soc_read(codec, i));
+        }
 		return 0;
+    }
 
 	/* Use PLL, compute appropriate setup for j, d, r and p, the closest
 	 * one wins the game. Try with d==0 first, next with d!=0.
@@ -947,7 +955,6 @@ static int aic3x_hw_params(struct snd_pcm_substream *substream,
 		printk(KERN_ERR "%s(): unable to setup PLL\n", __func__);
 		return -EINVAL;
 	}
-
 found:
 	data = snd_soc_read(codec, AIC3X_PLL_PROGA_REG);
 	snd_soc_write(codec, AIC3X_PLL_PROGA_REG,
@@ -1036,7 +1043,7 @@ static int aic3x_set_dai_fmt(struct snd_soc_dai *codec_dai,
 	default:
 		return -EINVAL;
 	}
-
+    iface_breg |= 0x7; //by lwx
 	/* set iface */
 	snd_soc_write(codec, AIC3X_ASD_INTF_CTRLA, iface_areg);
 	snd_soc_write(codec, AIC3X_ASD_INTF_CTRLB, iface_breg);
@@ -1284,6 +1291,7 @@ static int aic3x_init(struct snd_soc_codec *codec)
 
 	snd_soc_write(codec, AIC3X_PAGE_SELECT, PAGE0_SELECT);
 	snd_soc_write(codec, AIC3X_RESET, SOFT_RESET);
+    mdelay(10);  //by lwx
 
 	/* DAC default volume and mute */
 	snd_soc_write(codec, LDAC_VOL, DEFAULT_VOL | MUTE_ON);
@@ -1323,6 +1331,13 @@ static int aic3x_init(struct snd_soc_codec *codec)
 	/* By default route Line1 to ADC PGA mixer */
 	snd_soc_write(codec, LINE1L_2_LADC_CTRL, 0x0);
 	snd_soc_write(codec, LINE1R_2_RADC_CTRL, 0x0);
+
+#if 1
+    snd_soc_write(codec, MIC3LR_2_LADC_CTRL, 0x0);
+    snd_soc_write(codec, MIC3LR_2_RADC_CTRL, 0x0);
+    snd_soc_write(codec, LINE2L_2_LADC_CTRL, 0x0);
+    snd_soc_write(codec, LINE2R_2_RADC_CTRL, 0x0);
+#endif
 
 	/* PGA to HP Bypass default volume, disconnect from Output Mixer */
 	snd_soc_write(codec, PGAL_2_HPLOUT_VOL, DEFAULT_VOL);

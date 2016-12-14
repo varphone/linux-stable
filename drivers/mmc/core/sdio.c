@@ -638,6 +638,9 @@ static int mmc_sdio_suspend(struct mmc_host *host)
 		mmc_release_host(host);
 	}
 
+	if (!err)
+		mmc_claim_host(host);
+
 	return err;
 }
 
@@ -648,11 +651,8 @@ static int mmc_sdio_resume(struct mmc_host *host)
 	BUG_ON(!host);
 	BUG_ON(!host->card);
 
-	/* Basic card reinitialization. */
-	mmc_claim_host(host);
-
 	/* No need to reinitialize powered-resumed nonremovable cards */
-	if (mmc_card_is_removable(host) || !mmc_card_keep_power(host))
+	if (mmc_card_is_removable(host) && !mmc_card_keep_power(host))
 		err = mmc_sdio_init_card(host, host->ocr, host->card,
 					mmc_card_keep_power(host));
 	else if (mmc_card_keep_power(host) && mmc_card_wake_sdio_irq(host)) {
@@ -882,3 +882,77 @@ err:
 	return err;
 }
 
+int sdio_reset_comm(struct mmc_card *card)
+{
+	struct mmc_host *host = card->host;
+	u32 ocr;
+	int err;
+
+	printk(KERN_ERR "%s():\n", __func__);
+	mmc_claim_host(host);
+
+	mmc_go_idle(host);
+
+	mmc_set_clock(host, host->f_min);
+
+	err = mmc_send_io_op_cond(host, 0, &ocr);
+	if (err)
+		goto err;
+
+	host->ocr = mmc_select_voltage(host, ocr);
+	if (!host->ocr) {
+		err = -EINVAL;
+		goto err;
+	}
+
+	err = mmc_send_io_op_cond(host, host->ocr, &ocr);
+	if (err)
+		goto err;
+
+	if (mmc_host_is_spi(host)) {
+		err = mmc_spi_set_crc(host, use_spi_crc);
+		if (err)
+			goto err;
+	}
+
+	if (!mmc_host_is_spi(host)) {
+		err = mmc_send_relative_addr(host, &card->rca);
+		if (err)
+			goto err;
+		mmc_set_bus_mode(host, MMC_BUSMODE_PUSHPULL);
+	}
+	if (!mmc_host_is_spi(host)) {
+		err = mmc_select_card(card);
+		if (err)
+			goto err;
+	}
+
+	/*
+	 * Switch to high-speed (if supported).
+	 */
+	err = sdio_enable_hs(card);
+	if (err > 0)
+		mmc_sd_go_highspeed(card);
+	else if (err)
+		goto err;
+
+	/*
+	 * Change to the card's maximum speed.
+	 */
+	mmc_set_clock(host, mmc_sdio_get_max_clock(card));
+
+	err = sdio_enable_4bit_bus(card);
+	if (err > 0)
+		mmc_set_bus_width(host, MMC_BUS_WIDTH_4);
+	else if (err)
+		goto err;
+
+	mmc_release_host(host);
+	return 0;
+err:
+	printk(KERN_ERR "%s: Error resetting SDIO communications (%d)\n",
+	       mmc_hostname(host), err);
+	mmc_release_host(host);
+	return err;
+}
+EXPORT_SYMBOL(sdio_reset_comm);

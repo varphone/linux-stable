@@ -153,7 +153,11 @@ static const struct mt9m111_datafmt mt9m111_colour_fmts[] = {
 	{V4L2_MBUS_FMT_UYVY8_2X8, V4L2_COLORSPACE_JPEG},
 	{V4L2_MBUS_FMT_VYUY8_2X8, V4L2_COLORSPACE_JPEG},
 	{V4L2_MBUS_FMT_RGB555_2X8_PADHI_LE, V4L2_COLORSPACE_SRGB},
+	{V4L2_MBUS_FMT_RGB555_2X8_PADHI_BE, V4L2_COLORSPACE_SRGB},
 	{V4L2_MBUS_FMT_RGB565_2X8_LE, V4L2_COLORSPACE_SRGB},
+	{V4L2_MBUS_FMT_RGB565_2X8_BE, V4L2_COLORSPACE_SRGB},
+	{V4L2_MBUS_FMT_BGR565_2X8_LE, V4L2_COLORSPACE_SRGB},
+	{V4L2_MBUS_FMT_BGR565_2X8_BE, V4L2_COLORSPACE_SRGB},
 	{V4L2_MBUS_FMT_SBGGR8_1X8, V4L2_COLORSPACE_SRGB},
 	{V4L2_MBUS_FMT_SBGGR10_2X8_PADHI_LE, V4L2_COLORSPACE_SRGB},
 };
@@ -285,6 +289,11 @@ static int mt9m111_setup_rect(struct i2c_client *client,
 	if (!ret)
 		ret = reg_write(ROW_START, rect->top);
 
+	if (!ret) /* set default skip0 context B */
+		ret = reg_clear(READ_MODE_B, 0x0030);
+	if (!ret) /* set default context B */
+		ret = reg_set(CONTEXT_CONTROL, 0x170b);
+
 	if (is_raw_format) {
 		if (!ret)
 			ret = reg_write(WINDOW_WIDTH, width);
@@ -307,6 +316,47 @@ static int mt9m111_setup_rect(struct i2c_client *client,
 			ret = reg_write(REDUCER_XSIZE_A, width);
 		if (!ret)
 			ret = reg_write(REDUCER_YSIZE_A, height);
+
+		if ((width == 640 && height == 512) ||
+				(width == 320 && height == 256)) {
+
+			if (!ret)
+				ret = reg_write(REDUCER_XSIZE_B,
+						MT9M111_MAX_WIDTH);
+			if (!ret)
+				ret = reg_write(REDUCER_YSIZE_B,
+						MT9M111_MAX_HEIGHT);
+			if (!ret)
+				ret = reg_write(REDUCER_XSIZE_A,
+						(MT9M111_MAX_WIDTH/2));
+			if (!ret)
+				ret = reg_write(REDUCER_YSIZE_A,
+						(MT9M111_MAX_HEIGHT/2));
+			if (!ret)
+				ret = reg_write(WINDOW_WIDTH,
+						MT9M111_MAX_WIDTH);
+			if (!ret)
+				ret = reg_write(WINDOW_HEIGHT,
+						MT9M111_MAX_HEIGHT);
+
+			if (width == 640 && height == 512) {
+				if (!ret) /* set skip2 context A */
+					ret = reg_set(READ_MODE_A, 0x000c);
+				if (!ret) /* set full power mode */
+					ret = reg_clear(READ_MODE_A, 0x0400);
+				if (!ret) /* set context A */
+					ret = reg_clear(CONTEXT_CONTROL,
+								0x170b);
+
+			} else if (width == 320 && height == 256) {
+				if (!ret) /* set skip4 context B*/
+					ret = reg_set(READ_MODE_B, 0x0030);
+				if (!ret) /* set full power mode */
+					ret = reg_clear(READ_MODE_B, 0x0400);
+				if (!ret) /* set context B */
+					ret = reg_set(CONTEXT_CONTROL, 0x170b);
+			}
+		}
 	}
 
 	return ret;
@@ -522,9 +572,33 @@ static int mt9m111_set_pixfmt(struct i2c_client *client,
 		ret = mt9m111_setfmt_bayer10(client);
 		break;
 	case V4L2_MBUS_FMT_RGB555_2X8_PADHI_LE:
+		mt9m111->swap_rgb_even_odd = 1;
+		mt9m111->swap_rgb_red_blue = 0;
+		ret = mt9m111_setfmt_rgb555(client);
+		break;
+	case V4L2_MBUS_FMT_RGB555_2X8_PADHI_BE:
+		mt9m111->swap_rgb_even_odd = 0;
+		mt9m111->swap_rgb_red_blue = 0;
 		ret = mt9m111_setfmt_rgb555(client);
 		break;
 	case V4L2_MBUS_FMT_RGB565_2X8_LE:
+		mt9m111->swap_rgb_even_odd = 1;
+		mt9m111->swap_rgb_red_blue = 0;
+		ret = mt9m111_setfmt_rgb565(client);
+		break;
+	case V4L2_MBUS_FMT_RGB565_2X8_BE:
+		mt9m111->swap_rgb_even_odd = 0;
+		mt9m111->swap_rgb_red_blue = 0;
+		ret = mt9m111_setfmt_rgb565(client);
+		break;
+	case V4L2_MBUS_FMT_BGR565_2X8_LE:
+		mt9m111->swap_rgb_even_odd = 1;
+		mt9m111->swap_rgb_red_blue = 1;
+		ret = mt9m111_setfmt_rgb565(client);
+		break;
+	case V4L2_MBUS_FMT_BGR565_2X8_BE:
+		mt9m111->swap_rgb_even_odd = 0;
+		mt9m111->swap_rgb_red_blue = 1;
 		ret = mt9m111_setfmt_rgb565(client);
 		break;
 	case V4L2_MBUS_FMT_UYVY8_2X8:
@@ -982,8 +1056,8 @@ static int mt9m111_video_probe(struct soc_camera_device *icd,
 	mt9m111->autoexposure = 1;
 	mt9m111->autowhitebalance = 1;
 
-	mt9m111->swap_rgb_even_odd = 1;
-	mt9m111->swap_rgb_red_blue = 1;
+	mt9m111->swap_rgb_even_odd = 0;
+	mt9m111->swap_rgb_red_blue = 0;
 
 	data = reg_read(CHIP_VERSION);
 

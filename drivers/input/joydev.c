@@ -792,6 +792,11 @@ static bool joydev_match(struct input_handler *handler, struct input_dev *dev)
 	if (test_bit(EV_KEY, dev->evbit) && test_bit(BTN_DIGI, dev->keybit))
 		return false;
 
+    /* Avoid EETI virtual devices */
+    #define VID_EETI 0x0EEF
+    if (( BUS_VIRTUAL == dev->id.bustype) && (VID_EETI == dev->id.vendor))
+        return false;
+
 	return true;
 }
 
@@ -957,6 +962,7 @@ static const struct input_device_id joydev_ids[] = {
 
 MODULE_DEVICE_TABLE(input, joydev_ids);
 
+
 static struct input_handler joydev_handler = {
 	.event		= joydev_event,
 	.match		= joydev_match,
@@ -965,8 +971,8 @@ static struct input_handler joydev_handler = {
 	.fops		= &joydev_fops,
 	.minor		= JOYDEV_MINOR_BASE,
 	.name		= "joydev",
-	.id_table	= joydev_ids,
-};
+	.id_table	= joydev_ids,   
+ };
 
 static int __init joydev_init(void)
 {

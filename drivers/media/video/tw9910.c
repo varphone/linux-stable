@@ -555,9 +555,27 @@ static int tw9910_s_std(struct v4l2_subdev *sd, v4l2_std_id norm)
 static int tw9910_enum_input(struct soc_camera_device *icd,
 			     struct v4l2_input *inp)
 {
-	inp->type = V4L2_INPUT_TYPE_TUNER;
-	inp->std  = V4L2_STD_UNKNOWN;
-	strcpy(inp->name, "Video");
+	struct i2c_client *client = to_i2c_client(to_soc_camera_control(icd));
+
+	switch (inp->index) {
+	case 0:
+		strcpy(inp->name, "Video Input 1");
+		break;
+	case 1:
+		strcpy(inp->name, "Video Input 2");
+		break;
+	case 2:
+		strcpy(inp->name, "Video Input 3");
+		break;
+	case 3:
+		strcpy(inp->name, "Video Input 4");
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	inp->type = V4L2_INPUT_TYPE_CAMERA;
+	inp->std = V4L2_STD_625_50 | V4L2_STD_525_60;
 
 	return 0;
 }
@@ -791,9 +809,6 @@ static int tw9910_s_fmt(struct v4l2_subdev *sd,
 	};
 	int ret;
 
-	WARN_ON(mf->field != V4L2_FIELD_ANY &&
-		mf->field != V4L2_FIELD_INTERLACED_BT);
-
 	/*
 	 * check color format
 	 */
@@ -817,10 +832,15 @@ static int tw9910_try_fmt(struct v4l2_subdev *sd,
 	struct soc_camera_device *icd = client->dev.platform_data;
 	const struct tw9910_scale_ctrl *scale;
 
-	if (V4L2_FIELD_ANY == mf->field) {
+	switch (mf->field) {
+	case V4L2_FIELD_ANY:
+	case V4L2_FIELD_NONE:
+	case V4L2_FIELD_INTERLACED:
 		mf->field = V4L2_FIELD_INTERLACED_BT;
-	} else if (V4L2_FIELD_INTERLACED_BT != mf->field) {
-		dev_err(&client->dev, "Field type %d invalid.\n", mf->field);
+		break;
+	case V4L2_FIELD_INTERLACED_BT:
+		break;
+	default:
 		return -EINVAL;
 	}
 
@@ -888,10 +908,38 @@ static int tw9910_video_probe(struct soc_camera_device *icd,
 	return 0;
 }
 
+static int tw9910_g_input(struct soc_camera_device *icd, unsigned int *i)
+{
+	struct i2c_client *client = to_i2c_client(to_soc_camera_control(icd));
+
+	*i = (i2c_smbus_read_byte_data(client, INFORM) & 0x0C) >> 2;
+
+	if (*i < 0)
+		return -EINVAL;
+
+	return 0;
+}
+
+static int tw9910_s_input(struct soc_camera_device *icd, unsigned int i)
+{
+	struct i2c_client *client = to_i2c_client(to_soc_camera_control(icd));
+	struct tw9910_priv *priv = to_tw9910(client);
+
+	if (tw9910_mask_set(client, INFORM, 0X0C, i << 2))
+		return -EINVAL;
+
+	if (priv->info->switch_input)
+		priv->info->switch_input(i);
+
+	return 0;
+}
+
 static struct soc_camera_ops tw9910_ops = {
 	.set_bus_param		= tw9910_set_bus_param,
 	.query_bus_param	= tw9910_query_bus_param,
 	.enum_input		= tw9910_enum_input,
+	.g_input			= tw9910_g_input,
+	.s_input			= tw9910_s_input,
 };
 
 static struct v4l2_subdev_core_ops tw9910_subdev_core_ops = {
@@ -943,6 +991,7 @@ static int tw9910_probe(struct i2c_client *client,
 	struct i2c_adapter             *adapter =
 		to_i2c_adapter(client->dev.parent);
 	struct soc_camera_link         *icl;
+	int                             input;
 	int                             ret;
 
 	if (!icd) {
@@ -979,6 +1028,11 @@ static int tw9910_probe(struct i2c_client *client,
 		icd->ops = NULL;
 		kfree(priv);
 	}
+
+	input = (i2c_smbus_read_byte_data(client, INFORM) & 0x0C) >> 2;
+
+	if (priv->info->switch_input)
+		priv->info->switch_input(input);
 
 	return ret;
 }

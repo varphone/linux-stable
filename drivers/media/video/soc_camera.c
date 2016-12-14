@@ -151,7 +151,7 @@ static int soc_camera_try_fmt(struct soc_camera_device *icd,
 	struct v4l2_pix_format *pix = &f->fmt.pix;
 	int ret;
 
-	dev_dbg(&icd->dev, "TRY_FMT(%c%c%c%c, %ux%u)\n",
+	dev_err(&icd->dev, "TRY_FMT(%c%c%c%c, %ux%u)\n",
 		pixfmtstr(pix->pixelformat), pix->width, pix->height);
 
 	pix->bytesperline = 0;
@@ -202,11 +202,10 @@ static int soc_camera_enum_input(struct file *file, void *priv,
 	struct soc_camera_device *icd = file->private_data;
 	int ret = 0;
 
-	if (inp->index != 0)
-		return -EINVAL;
-
 	if (icd->ops->enum_input)
 		ret = icd->ops->enum_input(icd, inp);
+	else if (inp->index != 0)
+		return -EINVAL;
 	else {
 		/* default is camera */
 		inp->type = V4L2_INPUT_TYPE_CAMERA;
@@ -219,17 +218,28 @@ static int soc_camera_enum_input(struct file *file, void *priv,
 
 static int soc_camera_g_input(struct file *file, void *priv, unsigned int *i)
 {
-	*i = 0;
+	struct soc_camera_device *icd = file->private_data;
+	int ret = 0;
 
-	return 0;
+	if (icd->ops->g_input)
+		ret = icd->ops->g_input(icd, i);
+	else
+		*i = 0;
+
+	return ret;
 }
 
 static int soc_camera_s_input(struct file *file, void *priv, unsigned int i)
 {
-	if (i > 0)
+	struct soc_camera_device *icd = file->private_data;
+	int ret = 0;
+
+	if (icd->ops->s_input)
+		ret = icd->ops->s_input(icd, i);
+	else if (i > 0)
 		return -EINVAL;
 
-	return 0;
+	return ret;
 }
 
 static int soc_camera_s_std(struct file *file, void *priv, v4l2_std_id *a)
@@ -413,7 +423,7 @@ static int soc_camera_set_fmt(struct soc_camera_device *icd,
 	struct v4l2_pix_format *pix = &f->fmt.pix;
 	int ret;
 
-	dev_dbg(&icd->dev, "S_FMT(%c%c%c%c, %ux%u)\n",
+	dev_err(&icd->dev, "S_FMT(%c%c%c%c, %ux%u)\n",
 		pixfmtstr(pix->pixelformat), pix->width, pix->height);
 
 	/* We always call try_fmt() before set_fmt() or set_crop() */
@@ -440,7 +450,7 @@ static int soc_camera_set_fmt(struct soc_camera_device *icd,
 	if (ici->ops->init_videobuf)
 		icd->vb_vidq.field = pix->field;
 
-	dev_dbg(&icd->dev, "set width: %d height: %d\n",
+	dev_err(&icd->dev, "set width: %d height: %d\n",
 		icd->user_width, icd->user_height);
 
 	/* set physical bus parameters */
@@ -467,7 +477,6 @@ static int soc_camera_open(struct file *file)
 		dev_err(&icd->dev, "Couldn't lock capture bus driver.\n");
 		return -EINVAL;
 	}
-
 	icd->use_count++;
 
 	/* Now we really have to activate the camera */
@@ -952,7 +961,6 @@ static int soc_camera_g_chip_ident(struct file *file, void *fh,
 {
 	struct soc_camera_device *icd = file->private_data;
 	struct v4l2_subdev *sd = soc_camera_to_subdev(icd);
-
 	return v4l2_subdev_call(sd, core, g_chip_ident, id);
 }
 
@@ -1009,21 +1017,20 @@ static int soc_camera_init_i2c(struct soc_camera_device *icd,
 	struct soc_camera_host *ici = to_soc_camera_host(icd->dev.parent);
 	struct i2c_adapter *adap = i2c_get_adapter(icl->i2c_adapter_id);
 	struct v4l2_subdev *subdev;
-
 	if (!adap) {
 		dev_err(&icd->dev, "Cannot get I2C adapter #%d. No driver?\n",
 			icl->i2c_adapter_id);
 		goto ei2cga;
 	}
-
+    printk(KERN_ERR "icl->i2c_adapter_id=0x%x\n", icl->i2c_adapter_id);
 	icl->board_info->platform_data = icd;
-
 	subdev = v4l2_i2c_new_subdev_board(&ici->v4l2_dev, adap,
 				icl->board_info, NULL);
 	if (!subdev)
 		goto ei2cnd;
 
 	client = v4l2_get_subdevdata(subdev);
+
 
 	/* Use to_i2c_client(dev) to recover the i2c client */
 	dev_set_drvdata(&icd->dev, &client->dev);
@@ -1494,6 +1501,7 @@ static int video_dev_create(struct soc_camera_device *icd)
 		return -ENOMEM;
 
 	strlcpy(vdev->name, ici->drv_name, sizeof(vdev->name));
+	
 
 	vdev->parent		= &icd->dev;
 	vdev->current_norm	= V4L2_STD_UNKNOWN;

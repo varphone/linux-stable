@@ -163,6 +163,7 @@ static void audmux_debugfs_init(void)
 static inline void audmux_debugfs_init(void)
 {
 }
+
 #endif
 
 int mxc_audmux_v2_configure_port(unsigned int port, unsigned int ptcr,
@@ -177,6 +178,10 @@ int mxc_audmux_v2_configure_port(unsigned int port, unsigned int ptcr,
 	writel(ptcr, audmux_base + MXC_AUDMUX_V2_PTCR(port));
 	writel(pdcr, audmux_base + MXC_AUDMUX_V2_PDCR(port));
 
+	ptcr = readl(audmux_base + MXC_AUDMUX_V2_PTCR(port));
+	pdcr = readl(audmux_base + MXC_AUDMUX_V2_PDCR(port));
+    printk("port=%d, ptcr=0x%08X, pdcr=0x%08X\n",port, ptcr, pdcr);
+
 	if (audmux_clk)
 		clk_disable(audmux_clk);
 
@@ -186,7 +191,12 @@ EXPORT_SYMBOL_GPL(mxc_audmux_v2_configure_port);
 
 static int mxc_audmux_v2_init(void)
 {
-	int ret;
+	int ret = -1;
+
+#if defined(CONFIG_ARCH_MX6)
+	audmux_base = MX6_IO_ADDRESS(MX6Q_AUDMUX_BASE_ADDR);
+	ret = 0;
+#endif
 #if defined(CONFIG_ARCH_MX5)
 	if (cpu_is_mx51()) {
 		audmux_base = MX51_IO_ADDRESS(MX51_AUDMUX_BASE_ADDR);

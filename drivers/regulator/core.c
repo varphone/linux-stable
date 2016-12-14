@@ -275,7 +275,23 @@ static ssize_t regulator_uV_show(struct device *dev,
 
 	return ret;
 }
-static DEVICE_ATTR(microvolts, 0444, regulator_uV_show, NULL);
+static ssize_t regulator_uV_store(struct device *dev,
+				struct device_attribute *attr, const char *buf,
+				size_t count)
+{
+	struct regulator_dev *rdev = dev_get_drvdata(dev);
+	ssize_t ret;
+	int uV;
+	uV = simple_strtoul(buf, NULL, 10);
+	mutex_lock(&rdev->mutex);
+	ret = _regulator_do_set_voltage(rdev, uV, uV);
+	if (ret)
+		rdev_err(rdev, "failed to set microvolts!!\n");
+	mutex_unlock(&rdev->mutex);
+
+	return count;
+}
+static DEVICE_ATTR(microvolts, 0666, regulator_uV_show, regulator_uV_store);
 
 static ssize_t regulator_uA_show(struct device *dev,
 				struct device_attribute *attr, char *buf)
@@ -1747,8 +1763,15 @@ static int _regulator_do_set_voltage(struct regulator_dev *rdev,
  */
 int regulator_set_voltage(struct regulator *regulator, int min_uV, int max_uV)
 {
-	struct regulator_dev *rdev = regulator->rdev;
+	struct regulator_dev *rdev = NULL;
 	int ret = 0;
+
+	if (NULL == regulator) {
+		printk(KERN_ERR "%s: regulator is NULL\n", __func__); 
+		return 0;
+	}
+
+	rdev = regulator->rdev;
 
 	mutex_lock(&rdev->mutex);
 

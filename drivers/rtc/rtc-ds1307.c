@@ -630,10 +630,12 @@ static int __devinit ds1307_probe(struct i2c_client *client,
 	ds1307->offset	= 0;
 
 	buf = ds1307->regs;
-	if (i2c_check_functionality(adapter, I2C_FUNC_SMBUS_I2C_BLOCK)) {
+	if (i2c_check_functionality(adapter, I2C_FUNC_SMBUS_I2C_BLOCK)) { // ! add by lwx
+		pr_err("i2c_smbus_read_i2c_block_data\n");
 		ds1307->read_block_data = i2c_smbus_read_i2c_block_data;
 		ds1307->write_block_data = i2c_smbus_write_i2c_block_data;
 	} else {
+		pr_err("ds1307_read_block_data\n");
 		ds1307->read_block_data = ds1307_read_block_data;
 		ds1307->write_block_data = ds1307_write_block_data;
 	}
@@ -641,21 +643,23 @@ static int __devinit ds1307_probe(struct i2c_client *client,
 	switch (ds1307->type) {
 	case ds_1337:
 	case ds_1339:
+		pr_err("ds1339 RTC chip probed.[%d]..\n",ds1307->type);
 	case ds_3231:
 		/* has IRQ? */
 		if (ds1307->client->irq > 0 && chip->alarm) {
 			INIT_WORK(&ds1307->work, ds1307_work);
 			want_irq = true;
 		}
+		pr_err("__%s__:%d\n", __FILE__, __LINE__);
 		/* get registers that the "rtc" read below won't read... */
 		tmp = ds1307->read_block_data(ds1307->client,
 				DS1337_REG_CONTROL, 2, buf);
 		if (tmp != 2) {
-			pr_debug("read error %d\n", tmp);
+			pr_err("read error %d\n", tmp);
 			err = -EIO;
 			goto exit_free;
 		}
-
+		pr_err("__%s__:%d\n", __FILE__, __LINE__);
 		/* oscillator off?  turn it on, so clock can tick. */
 		if (ds1307->regs[0] & DS1337_BIT_nEOSC)
 			ds1307->regs[0] &= ~DS1337_BIT_nEOSC;
@@ -669,23 +673,24 @@ static int __devinit ds1307_probe(struct i2c_client *client,
 					| bbsqi_bitpos[ds1307->type];
 			ds1307->regs[0] &= ~(DS1337_BIT_A2IE | DS1337_BIT_A1IE);
 		}
-
+		pr_err("__%s__:%d\n", __FILE__, __LINE__);
 		i2c_smbus_write_byte_data(client, DS1337_REG_CONTROL,
 							ds1307->regs[0]);
-
+		pr_err("__%s__:%d\n", __FILE__, __LINE__);
 		/* oscillator fault?  clear flag, and warn */
 		if (ds1307->regs[1] & DS1337_BIT_OSF) {
 			i2c_smbus_write_byte_data(client, DS1337_REG_STATUS,
 				ds1307->regs[1] & ~DS1337_BIT_OSF);
 			dev_warn(&client->dev, "SET TIME!\n");
 		}
+		pr_err("__%s__:%d\n", __FILE__, __LINE__);
 		break;
 
 	case rx_8025:
 		tmp = i2c_smbus_read_i2c_block_data(ds1307->client,
 				RX8025_REG_CTRL1 << 4 | 0x08, 2, buf);
 		if (tmp != 2) {
-			pr_debug("read error %d\n", tmp);
+			pr_err("read error %d\n", tmp);
 			err = -EIO;
 			goto exit_free;
 		}
@@ -752,12 +757,13 @@ static int __devinit ds1307_probe(struct i2c_client *client,
 	default:
 		break;
 	}
-
+	pr_err("kernel line 756\n");
+	pr_err("__%s__:%d\n", __FILE__, __LINE__);
 read_rtc:
 	/* read RTC registers */
 	tmp = ds1307->read_block_data(ds1307->client, ds1307->offset, 8, buf);
 	if (tmp != 8) {
-		pr_debug("read error %d\n", tmp);
+		pr_err("read error %d\n", tmp);
 		err = -EIO;
 		goto exit_free;
 	}

@@ -72,8 +72,12 @@ obj-$(CONFIG_VIDEO_NOON010PC30)	+= noon010pc30.o
 obj-$(CONFIG_VIDEO_M5MOLS)	+= m5mols/
 
 obj-$(CONFIG_SOC_CAMERA_IMX074)		+= imx074.o
+obj-$(CONFIG_SOC_CAMERA_SPARTAN)	+= spartan.o
+obj-$(CONFIG_SOC_CAMERA_ADV7842VGA) += adv7842vga.o
+obj-$(CONFIG_SOC_CAMERA_ADV7842PAL) += adv7842pal.o
 obj-$(CONFIG_SOC_CAMERA_MT9M001)	+= mt9m001.o
 obj-$(CONFIG_SOC_CAMERA_MT9M111)	+= mt9m111.o
+obj-$(CONFIG_SOC_CAMERA_MT9P031) 	+= mt9p031.o
 obj-$(CONFIG_SOC_CAMERA_MT9T031)	+= mt9t031.o
 obj-$(CONFIG_SOC_CAMERA_MT9T112)	+= mt9t112.o
 obj-$(CONFIG_SOC_CAMERA_MT9V022)	+= mt9v022.o
@@ -87,6 +91,15 @@ obj-$(CONFIG_SOC_CAMERA_TW9910)		+= tw9910.o
 
 # And now the v4l2 drivers:
 
+obj-$(CONFIG_VIDEO_MXC_IPU_CAMERA) += mxc/capture/
+obj-$(CONFIG_VIDEO_MXC_CSI_CAMERA) += mxc/capture/
+obj-$(CONFIG_VIDEO_MXC_IPU_OUTPUT) += mxc/output/
+obj-$(CONFIG_VIDEO_MXC_IPUV1_WVGA_OUTPUT) += mxc/output/
+obj-$(CONFIG_VIDEO_MXC_EMMA_OUTPUT) += mxc/output/
+obj-$(CONFIG_VIDEO_MXC_PXP_V4L2) += mxc/output/
+obj-$(CONFIG_VIDEO_MXC_OPL) += mxc/opl/
+obj-$(CONFIG_VIDEO_PXP) += pxp.o
+obj-$(CONFIG_VIDEO_MXS_PXP)     += mxs_pxp.o
 obj-$(CONFIG_VIDEO_BT848) += bt8xx/
 obj-$(CONFIG_VIDEO_ZORAN) += zoran/
 obj-$(CONFIG_VIDEO_CQCAM) += c-qcam.o
@@ -162,6 +175,8 @@ obj-$(CONFIG_SOC_CAMERA_PLATFORM)	+= soc_camera_platform.o
 obj-$(CONFIG_VIDEO_MX1)			+= mx1_camera.o
 obj-$(CONFIG_VIDEO_MX2)			+= mx2_camera.o
 obj-$(CONFIG_VIDEO_MX3)			+= mx3_camera.o
+obj-$(CONFIG_VIDEO_MXC)			+= mxc_camera.o
+obj-$(CONFIG_VIDEO_MXC_IPU_CSI_ENC)	+= mxc_ipu_csi_enc.o
 obj-$(CONFIG_VIDEO_PXA27x)		+= pxa_camera.o
 obj-$(CONFIG_VIDEO_SH_MOBILE_CSI2)	+= sh_mobile_csi2.o
 obj-$(CONFIG_VIDEO_SH_MOBILE_CEU)	+= sh_mobile_ceu_camera.o

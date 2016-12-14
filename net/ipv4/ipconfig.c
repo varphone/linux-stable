@@ -1410,6 +1410,7 @@ static int __init ip_auto_config(void)
 		if (ic_dynamic() < 0) {
 			ic_close_devs();
 
+
 			/*
 			 * I don't know why, but sometimes the
 			 * eepro100 driver (at least) gets upset and
@@ -1465,6 +1466,7 @@ static int __init ip_auto_config(void)
 	/*
 	 * Close all network devices except the device we've
 	 * autoconfigured and set up routes.
+printk("%s:%d\n",__FILE__, __LINE__);
 	 */
 	ic_close_devs();
 	if (ic_setup_if() < 0 || ic_setup_routes() < 0)

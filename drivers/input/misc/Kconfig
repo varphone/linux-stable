@@ -364,6 +364,15 @@ config INPUT_RB532_BUTTON
 	  To compile this driver as a module, choose M here: the
 	  module will be called rb532_button.
 
+config INPUT_DA9063_ONKEY
+	tristate "Dialog DA9063 OnKey"
+	depends on MFD_DA9063
+	help
+	  Support the ONKEY of Dialog DA9063 Power Management IC as an 
+	  input device reporting power button statue.
+
+	  To compile this driver as a module, choose M here
+
 config INPUT_DM355EVM
 	tristate "TI DaVinci DM355 EVM Keypad and IR Remote"
 	depends on MFD_DM355EVM_MSP
@@ -477,5 +486,40 @@ config INPUT_XEN_KBDDEV_FRONTEND
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called xen-kbdfront.
+
+config INPUT_DA9052_ONKEY
+	tristate "Dialog DA9052 Onkey"
+	depends on PMIC_DIALOG
+	help
+	  Support the ONKEY of Dialog DA9052 PMICs as an input device
+	  reporting power button status.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called da9052_onkey.
+
+config INPUT_ISL29023
+	tristate "Intersil ISL29023 ambient light sensor"
+	depends on I2C && SYSFS
+	help
+	  If you say yes here you get support for the Intersil ISL29023
+	  ambient light sensor.
+
+	  This driver can also be built as a module.  If so, the module
+	  will be called isl29023.
+
+
+config INPUT_ATMEGA
+	tristate "ATMEGA SOC"
+	depends on I2C
+	help
+	  Say Y here to get support for ATMEGA PWM lcd backlight.
+
+	  If unsure, say N.
+
+	  To compile this driver as a module, choose M here: the module will be
+	  called lcd backlight..
+
+	  This driver can also be built as a module.  If so, the module
+	  will be called atmega.
 
 endif

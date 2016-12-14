@@ -1,8 +1,13 @@
 /*
  * imx-ssi.c  --  ALSA Soc Audio Layer
  *
+ * Copyright 2010-2013 Freescale Semiconductor, Inc. All Rights Reserved.
+ *
  * Copyright 2009 Sascha Hauer <s.hauer@pengutronix.de>
  *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
  * This code is based on code copyrighted by Freescale,
  * Liam Girdwood, Javier Martin and probably others.
  *
@@ -48,11 +53,19 @@
 #include <sound/soc.h>
 
 #include <mach/ssi.h>
+#include <mach/iram.h>
 #include <mach/hardware.h>
 
 #include "imx-ssi.h"
+#include "imx-pcm.h"
 
 #define SSI_SACNT_DEFAULT (SSI_SACNT_AC97EN | SSI_SACNT_FV)
+#define IMX_SSI_FORMATS \
+	(SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE | \
+	SNDRV_PCM_FMTBIT_S24_LE)
+#ifdef CONFIG_SND_MXC_SOC_IRAM
+static int UseIRAM;
+#endif
 
 /*
  * SSI Network Mode or TDM slots configuration.
@@ -73,10 +86,10 @@ static int imx_ssi_set_dai_tdm_slot(struct snd_soc_dai *cpu_dai,
 	sccr &= ~SSI_STCCR_DC_MASK;
 	sccr |= SSI_STCCR_DC(slots - 1);
 	writel(sccr, ssi->base + SSI_SRCCR);
-
+#if 0 // only used in master mode
 	writel(tx_mask, ssi->base + SSI_STMSK);
 	writel(rx_mask, ssi->base + SSI_SRMSK);
-
+#endif
 	return 0;
 }
 
@@ -89,18 +102,17 @@ static int imx_ssi_set_dai_fmt(struct snd_soc_dai *cpu_dai, unsigned int fmt)
 	struct imx_ssi *ssi = snd_soc_dai_get_drvdata(cpu_dai);
 	u32 strcr = 0, scr;
 
-	scr = readl(ssi->base + SSI_SCR) & ~(SSI_SCR_SYN | SSI_SCR_NET);
+	scr = readl(ssi->base + SSI_SCR) & ~SSI_SCR_SYN;
 
 	/* DAI mode */
 	switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
 	case SND_SOC_DAIFMT_I2S:
+#if 0
 		/* data on rising edge of bclk, frame low 1clk before data */
 		strcr |= SSI_STCR_TFSI | SSI_STCR_TEFS | SSI_STCR_TXBIT0;
-		scr |= SSI_SCR_NET;
-		if (ssi->flags & IMX_SSI_USE_I2S_SLAVE) {
-			scr &= ~SSI_I2S_MODE_MASK;
-			scr |= SSI_SCR_I2S_MODE_SLAVE;
-		}
+#else
+        strcr |=  SSI_STCR_TFSL | SSI_STCR_TFSI | SSI_STCR_TEFS | SSI_STCR_TXBIT0;       
+#endif
 		break;
 	case SND_SOC_DAIFMT_LEFT_J:
 		/* data on rising edge of bclk, frame high with data */
@@ -129,28 +141,46 @@ static int imx_ssi_set_dai_fmt(struct snd_soc_dai *cpu_dai, unsigned int fmt)
 		strcr |= SSI_STCR_TFSI | SSI_STCR_TSCKP;
 		break;
 	case SND_SOC_DAIFMT_NB_NF:
+#if 0
 		strcr &= ~SSI_STCR_TFSI;
+#endif
 		strcr |= SSI_STCR_TSCKP;
 		break;
 	}
 
 	/* DAI clock master masks */
 	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
+	case SND_SOC_DAIFMT_CBS_CFS:
+		strcr |= SSI_STCR_TFDIR | SSI_STCR_TXDIR;
+		if ((fmt & SND_SOC_DAIFMT_FORMAT_MASK) == SND_SOC_DAIFMT_I2S) {
+			scr &= ~SSI_I2S_MODE_MASK;
+			scr |= SSI_SCR_I2S_MODE_MSTR;
+		}
+		break;
 	case SND_SOC_DAIFMT_CBM_CFM:
+		strcr &= ~(SSI_STCR_TFDIR | SSI_STCR_TXDIR);
+		if ((fmt & SND_SOC_DAIFMT_FORMAT_MASK) == SND_SOC_DAIFMT_I2S) {
+			scr &= ~SSI_I2S_MODE_MASK;
+			scr |= SSI_SCR_I2S_MODE_SLAVE;
+		}
 		break;
 	default:
-		/* Master mode not implemented, needs handling of clocks. */
 		return -EINVAL;
 	}
 
 	strcr |= SSI_STCR_TFEN0;
 
-	if (ssi->flags & IMX_SSI_NET)
-		scr |= SSI_SCR_NET;
 	if (ssi->flags & IMX_SSI_SYN)
 		scr |= SSI_SCR_SYN;
 
+	/* Dual-FIFO support */
+	strcr |= SSI_STCR_TFEN1;
+	scr |= SSI_SCR_TCH_EN;
+
 	writel(strcr, ssi->base + SSI_STCR);
+	if ((fmt & SND_SOC_DAIFMT_MASTER_MASK) == SND_SOC_DAIFMT_CBS_CFS)
+		strcr &= ~(SSI_STCR_TFDIR | SSI_STCR_TXDIR);
+    printk("strcr = 0x%x", strcr);
 	writel(strcr, ssi->base + SSI_SRCR);
 	writel(scr, ssi->base + SSI_SCR);
 
@@ -181,7 +211,6 @@ static int imx_ssi_set_dai_sysclk(struct snd_soc_dai *cpu_dai,
 	}
 
 	writel(scr, ssi->base + SSI_SCR);
-
 	return 0;
 }
 
@@ -200,28 +229,40 @@ static int imx_ssi_set_dai_clkdiv(struct snd_soc_dai *cpu_dai,
 
 	switch (div_id) {
 	case IMX_SSI_TX_DIV_2:
+		if (div & (~SSI_STCCR_DIV2))
+			return EINVAL;
 		stccr &= ~SSI_STCCR_DIV2;
 		stccr |= div;
 		break;
 	case IMX_SSI_TX_DIV_PSR:
+		if (div & (~SSI_STCCR_PSR))
+			return EINVAL;
 		stccr &= ~SSI_STCCR_PSR;
 		stccr |= div;
 		break;
 	case IMX_SSI_TX_DIV_PM:
-		stccr &= ~0xff;
+		if (div & (~SSI_STCCR_PM_MASK))
+			return EINVAL;
+		stccr &= ~SSI_STCCR_PM_MASK;
 		stccr |= SSI_STCCR_PM(div);
 		break;
 	case IMX_SSI_RX_DIV_2:
-		stccr &= ~SSI_STCCR_DIV2;
-		stccr |= div;
+		if (div & (~SSI_SRCCR_DIV2))
+			return EINVAL;
+		srccr &= ~SSI_SRCCR_DIV2;
+		srccr |= div;
 		break;
 	case IMX_SSI_RX_DIV_PSR:
-		stccr &= ~SSI_STCCR_PSR;
-		stccr |= div;
+		if (div & (~SSI_SRCCR_PSR))
+			return EINVAL;
+		srccr &= ~SSI_SRCCR_PSR;
+		srccr |= div;
 		break;
 	case IMX_SSI_RX_DIV_PM:
-		stccr &= ~0xff;
-		stccr |= SSI_STCCR_PM(div);
+		if (div & (~SSI_SRCCR_PM_MASK))
+			return EINVAL;
+		srccr &= ~SSI_SRCCR_PM_MASK;
+		srccr |= SSI_STCCR_PM(div);
 		break;
 	default:
 		return -EINVAL;
@@ -243,8 +284,9 @@ static int imx_ssi_hw_params(struct snd_pcm_substream *substream,
 {
 	struct imx_ssi *ssi = snd_soc_dai_get_drvdata(cpu_dai);
 	struct imx_pcm_dma_params *dma_data;
-	u32 reg, sccr;
-
+	u32 reg, sccr, scr;
+	unsigned int channels = params_channels(params);
+    printk("imx_ssi_hw_params..............., channels=%d\n", channels);
 	/* Tx/Rx config */
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
 		reg = SSI_STCCR;
@@ -265,17 +307,38 @@ static int imx_ssi_hw_params(struct snd_pcm_substream *substream,
 	switch (params_format(params)) {
 	case SNDRV_PCM_FORMAT_S16_LE:
 		sccr |= SSI_SRCCR_WL(16);
+        printk("1666666666666666666666\n");
 		break;
 	case SNDRV_PCM_FORMAT_S20_3LE:
+        printk("2000000000000000000000\n");
 		sccr |= SSI_SRCCR_WL(20);
 		break;
 	case SNDRV_PCM_FORMAT_S24_LE:
+        printk("244444444444444444444\n");
 		sccr |= SSI_SRCCR_WL(24);
 		break;
 	}
-
+    printk("sccr = 0x%x, offset=0x%0x\n", sccr, reg);
 	writel(sccr, ssi->base + reg);
+	writel(sccr, ssi->base + SSI_SRCCR); // by lwx
+    printk("ssi->base=0x%p:%x\n", ssi->base, readl(ssi->base + reg));
+	scr = readl(ssi->base + SSI_SCR);
 
+	if (channels == 1) {
+		scr &= ~SSI_SCR_NET;
+		scr &= ~SSI_I2S_MODE_MASK;
+	} else {
+ #if 0       
+		scr |= SSI_SCR_NET;
+#else
+        if((scr & SSI_I2S_MODE_MASK) == SSI_SCR_I2S_MODE_SLAVE)
+    		scr &= ~SSI_SCR_NET;
+        else
+		    scr |= SSI_SCR_NET;
+#endif
+    }
+
+	writel(scr, ssi->base + SSI_SCR);
 	return 0;
 }
 
@@ -289,18 +352,24 @@ static int imx_ssi_trigger(struct snd_pcm_substream *substream, int cmd,
 	scr = readl(ssi->base + SSI_SCR);
 	sier = readl(ssi->base + SSI_SIER);
 
+    printk("imx_ssi_trigger...........sier=0x%x\n",sier);
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
 		if (ssi->flags & IMX_SSI_DMA)
 			sier_bits = SSI_SIER_TDMAE;
 		else
 			sier_bits = SSI_SIER_TIE | SSI_SIER_TFE0_EN;
 	} else {
-		if (ssi->flags & IMX_SSI_DMA)
+        printk("capture................\n");
+		if (ssi->flags & IMX_SSI_DMA) {
+			printk("we in DMA mode\n");
 			sier_bits = SSI_SIER_RDMAE;
-		else
+		}
+		else {
+			printk("not dma mode");
 			sier_bits = SSI_SIER_RIE | SSI_SIER_RFF0_EN;
+		}
 	}
-
+    printk("cmd = %d, ssi->enabled=%d\n", cmd, ssi->enabled);
 	switch (cmd) {
 	case SNDRV_PCM_TRIGGER_START:
 	case SNDRV_PCM_TRIGGER_RESUME:
@@ -333,13 +402,38 @@ static int imx_ssi_trigger(struct snd_pcm_substream *substream, int cmd,
 		return -EINVAL;
 	}
 
-	if (!(ssi->flags & IMX_SSI_USE_AC97))
+	if (!(ssi->flags & IMX_SSI_USE_AC97)) 
 		/* rx/tx are always enabled to access ac97 registers */
 		writel(scr, ssi->base + SSI_SCR);
 
 	writel(sier, ssi->base + SSI_SIER);
 
 	return 0;
+}
+
+static int imx_ssi_startup(struct snd_pcm_substream *substream,
+			   struct snd_soc_dai *cpu_dai)
+{
+	struct imx_ssi *ssi = snd_soc_dai_get_drvdata(cpu_dai);
+
+	if (cpu_dai->playback_active || cpu_dai->capture_active)
+		return 0;
+
+	clk_enable(ssi->clk);
+
+	return 0;
+}
+
+static void imx_ssi_shutdown(struct snd_pcm_substream *substream,
+			     struct snd_soc_dai *cpu_dai)
+{
+	struct imx_ssi *ssi = snd_soc_dai_get_drvdata(cpu_dai);
+
+	/* shutdown SSI if neither Tx or Rx is active */
+	if (cpu_dai->playback_active || cpu_dai->capture_active)
+		return;
+
+	clk_disable(ssi->clk);
 }
 
 static struct snd_soc_dai_ops imx_ssi_pcm_dai_ops = {
@@ -349,7 +443,45 @@ static struct snd_soc_dai_ops imx_ssi_pcm_dai_ops = {
 	.set_sysclk	= imx_ssi_set_dai_sysclk,
 	.set_tdm_slot	= imx_ssi_set_dai_tdm_slot,
 	.trigger	= imx_ssi_trigger,
+	.startup	= imx_ssi_startup,
+	.shutdown	= imx_ssi_shutdown,
 };
+
+#ifdef CONFIG_SND_MXC_SOC_IRAM
+
+static struct vm_operations_struct snd_mxc_audio_playback_vm_ops = {
+	.open = snd_pcm_mmap_data_open,
+	.close = snd_pcm_mmap_data_close,
+};
+
+/*
+	enable user space access to iram buffer
+*/
+static int imx_iram_audio_playback_mmap(struct snd_pcm_substream *substream,
+					struct vm_area_struct *area)
+{
+	struct snd_dma_buffer *buf = &substream->dma_buffer;
+	unsigned long off;
+	unsigned long phys;
+	unsigned long size;
+	int ret = 0;
+
+	area->vm_ops = &snd_mxc_audio_playback_vm_ops;
+	area->vm_private_data = substream;
+
+	off = area->vm_pgoff << PAGE_SHIFT;
+	phys = buf->addr + off;
+	size = area->vm_end - area->vm_start;
+
+	area->vm_page_prot = pgprot_writecombine(area->vm_page_prot);
+	area->vm_flags |= VM_IO;
+	ret =
+	    remap_pfn_range(area, area->vm_start, phys >> PAGE_SHIFT,
+			    size, area->vm_page_prot);
+
+	return ret;
+}
+#endif
 
 int snd_imx_pcm_mmap(struct snd_pcm_substream *substream,
 		struct vm_area_struct *vma)
@@ -357,9 +489,19 @@ int snd_imx_pcm_mmap(struct snd_pcm_substream *substream,
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	int ret;
 
+#ifdef CONFIG_SND_MXC_SOC_IRAM
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+
+	if ((!strncmp(rtd->cpu_dai->name, "imx-ssi", strlen("imx-ssi")))
+			&& (UseIRAM & (1<<substream->stream)))
+		ret = imx_iram_audio_playback_mmap(substream, vma);
+	else
+		ret = dma_mmap_coherent(NULL, vma, runtime->dma_area,
+			runtime->dma_addr, runtime->dma_bytes);
+#else
 	ret = dma_mmap_coherent(NULL, vma, runtime->dma_area,
 			runtime->dma_addr, runtime->dma_bytes);
-
+#endif
 	pr_debug("%s: ret: %d %p 0x%08x 0x%08x\n", __func__, ret,
 			runtime->dma_area,
 			runtime->dma_addr,
@@ -371,17 +513,53 @@ EXPORT_SYMBOL_GPL(snd_imx_pcm_mmap);
 static int imx_pcm_preallocate_dma_buffer(struct snd_pcm *pcm, int stream)
 {
 	struct snd_pcm_substream *substream = pcm->streams[stream].substream;
+	struct snd_soc_pcm_runtime *rtd = pcm->private_data;
 	struct snd_dma_buffer *buf = &substream->dma_buffer;
-	size_t size = IMX_SSI_DMABUF_SIZE;
+	size_t size;
+#ifdef CONFIG_SND_MXC_SOC_IRAM
+	unsigned long buf_paddr;
+#endif
+
+	if (!strncmp(rtd->cpu_dai->name, "imx-ssi", strlen("imx-ssi")))
+		size = IMX_SSI_DMABUF_SIZE;
+	else if (!strncmp(rtd->cpu_dai->name, "imx-esai", strlen("imx-esai")))
+		size = IMX_ESAI_DMABUF_SIZE;
+	else if (!strncmp(rtd->cpu_dai->name, "imx-spdif", strlen("imx-spdif")))
+		size = IMX_SPDIF_DMABUF_SIZE;
+	else
+		size = IMX_DEFAULT_DMABUF_SIZE;
 
 	buf->dev.type = SNDRV_DMA_TYPE_DEV;
 	buf->dev.dev = pcm->card->dev;
 	buf->private_data = NULL;
+	buf->bytes = size;
+
+#ifdef CONFIG_SND_MXC_SOC_IRAM
+	if (!strncmp(rtd->cpu_dai->name, "imx-ssi", strlen("imx-ssi"))) {
+		buf->area = iram_alloc(size, &buf_paddr);
+		if (!buf->area) {
+			buf->area =
+			    dma_alloc_writecombine(pcm->card->dev, size,
+						   &buf->addr, GFP_KERNEL);
+			if (!buf->area)
+				return -ENOMEM;
+		} else {
+			buf->addr = buf_paddr;
+			UseIRAM |= 1<<substream->stream;
+		}
+	} else {
+		buf->area = dma_alloc_writecombine(pcm->card->dev, size,
+						   &buf->addr, GFP_KERNEL);
+		if (!buf->area)
+			return -ENOMEM;
+
+	}
+#else
 	buf->area = dma_alloc_writecombine(pcm->card->dev, size,
 					   &buf->addr, GFP_KERNEL);
 	if (!buf->area)
 		return -ENOMEM;
-	buf->bytes = size;
+#endif
 
 	return 0;
 }
@@ -422,6 +600,9 @@ void imx_pcm_free(struct snd_pcm *pcm)
 	struct snd_pcm_substream *substream;
 	struct snd_dma_buffer *buf;
 	int stream;
+#ifdef CONFIG_SND_MXC_SOC_IRAM
+	struct snd_soc_pcm_runtime *rtd = pcm->private_data;
+#endif
 
 	for (stream = 0; stream < 2; stream++) {
 		substream = pcm->streams[stream].substream;
@@ -432,8 +613,19 @@ void imx_pcm_free(struct snd_pcm *pcm)
 		if (!buf->area)
 			continue;
 
+#ifdef CONFIG_SND_MXC_SOC_IRAM
+		if ((!strncmp(rtd->cpu_dai->name, "imx-ssi", strlen("imx-ssi")))
+			&& (UseIRAM & (1<<substream->stream))) {
+			iram_free(buf->addr, IMX_SSI_DMABUF_SIZE);
+			UseIRAM &= ~(1<<substream->stream);
+		} else {
+			dma_free_writecombine(pcm->card->dev, buf->bytes,
+				      buf->area, buf->addr);
+		}
+#else
 		dma_free_writecombine(pcm->card->dev, buf->bytes,
 				      buf->area, buf->addr);
+#endif
 		buf->area = NULL;
 	}
 }
@@ -447,25 +639,44 @@ static int imx_ssi_dai_probe(struct snd_soc_dai *dai)
 	snd_soc_dai_set_drvdata(dai, ssi);
 
 	val = SSI_SFCSR_TFWM0(ssi->dma_params_tx.burstsize) |
-		SSI_SFCSR_RFWM0(ssi->dma_params_rx.burstsize);
+		SSI_SFCSR_RFWM0(ssi->dma_params_rx.burstsize) |
+		SSI_SFCSR_TFWM1(ssi->dma_params_tx.burstsize) |
+		SSI_SFCSR_RFWM1(ssi->dma_params_rx.burstsize) ;
 	writel(val, ssi->base + SSI_SFCSR);
 
 	return 0;
 }
 
+#ifdef CONFIG_PM
+static int imx_ssi_dai_suspend(struct snd_soc_dai *dai)
+{
+	return 0;
+}
+
+static int imx_ssi_dai_resume(struct snd_soc_dai *dai)
+{
+	return 0;
+}
+#else
+#define imx_ssi_suspend	NULL
+#define imx_ssi_resume	NULL
+#endif
+
 static struct snd_soc_dai_driver imx_ssi_dai = {
 	.probe = imx_ssi_dai_probe,
+	.suspend = imx_ssi_dai_suspend,
+	.resume = imx_ssi_dai_resume,
 	.playback = {
 		.channels_min = 1,
 		.channels_max = 2,
 		.rates = SNDRV_PCM_RATE_8000_96000,
-		.formats = SNDRV_PCM_FMTBIT_S16_LE,
+		.formats = IMX_SSI_FORMATS,
 	},
 	.capture = {
 		.channels_min = 1,
 		.channels_max = 2,
 		.rates = SNDRV_PCM_RATE_8000_96000,
-		.formats = SNDRV_PCM_FMTBIT_S16_LE,
+		.formats = IMX_SSI_FORMATS,
 	},
 	.ops = &imx_ssi_pcm_dai_ops,
 };
@@ -500,10 +711,10 @@ static void setup_channel_to_ac97(struct imx_ssi *imx_ssi)
 
 	writel(SSI_SCR_SYN | SSI_SCR_NET, base + SSI_SCR);
 
-	writel(SSI_SFCSR_RFWM0(8) |
-		SSI_SFCSR_TFWM0(8) |
-		SSI_SFCSR_RFWM1(8) |
-		SSI_SFCSR_TFWM1(8), base + SSI_SFCSR);
+	writel(SSI_SFCSR_RFWM0(imx_ssi->dma_params_rx.burstsize) |
+		SSI_SFCSR_TFWM0(imx_ssi->dma_params_tx.burstsize) |
+		SSI_SFCSR_RFWM1(imx_ssi->dma_params_rx.burstsize) |
+		SSI_SFCSR_TFWM1(imx_ssi->dma_params_tx.burstsize), base + SSI_SFCSR);
 
 	writel(SSI_STCCR_WL(16) | SSI_STCCR_DC(12), base + SSI_STCCR);
 	writel(SSI_STCCR_WL(16) | SSI_STCCR_DC(12), base + SSI_SRCCR);
@@ -652,12 +863,22 @@ static int imx_ssi_probe(struct platform_device *pdev)
 		dai = &imx_ssi_dai;
 
 	writel(0x0, ssi->base + SSI_SIER);
-
+	
+	/* Next line was committed 
+	because chip hangs at access to SSI register in AC97 mode.*/
+#if 0
+	//clk_disable(ssi->clk);
+#else
+	clk_disable(ssi->clk);
+#endif
 	ssi->dma_params_rx.dma_addr = res->start + SSI_SRX0;
 	ssi->dma_params_tx.dma_addr = res->start + SSI_STX0;
 
-	ssi->dma_params_tx.burstsize = 4;
+	ssi->dma_params_tx.burstsize = 6;
 	ssi->dma_params_rx.burstsize = 4;
+
+	ssi->dma_params_tx.peripheral_type = IMX_DMATYPE_SSI_SP;
+	ssi->dma_params_rx.peripheral_type = IMX_DMATYPE_SSI_SP;
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_DMA, "tx0");
 	if (res)

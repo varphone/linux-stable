@@ -212,6 +212,8 @@ struct soc_camera_ops {
 	unsigned long (*query_bus_param)(struct soc_camera_device *);
 	int (*set_bus_param)(struct soc_camera_device *, unsigned long);
 	int (*enum_input)(struct soc_camera_device *, struct v4l2_input *);
+	int (*g_input)(struct soc_camera_device *, unsigned int *);
+	int (*s_input)(struct soc_camera_device *, unsigned int);
 	const struct v4l2_queryctrl *controls;
 	int num_controls;
 };

@@ -965,6 +965,23 @@ static void mixdev_remove_device(struct mousedev *mousedev)
 	put_device(&mousedev->dev);
 }
 
+static bool mousedev_match(struct input_handler *handler, struct input_dev *dev)
+{
+    /* Avoid EETI USB touchscreens */
+    #define VID_EETI 0x0EEF
+    if ((BUS_USB == dev->id.bustype) && (VID_EETI == dev->id.vendor))
+        return false;
+    /* Avoid EETI virtual devices */
+    if ((BUS_VIRTUAL == dev->id.bustype) && (VID_EETI == dev->id.vendor))
+        return false;
+
+	/* DIALOGUE INC PenMount USB */
+	#define VID_DIALOGUE  0x14e1
+    if ((BUS_USB == dev->id.bustype) && (VID_DIALOGUE == dev->id.vendor))
+        return false;
+    return true;
+}
+
 static int mousedev_connect(struct input_handler *handler,
 			    struct input_dev *dev,
 			    const struct input_device_id *id)
@@ -1056,6 +1073,7 @@ MODULE_DEVICE_TABLE(input, mousedev_ids);
 
 static struct input_handler mousedev_handler = {
 	.event =	mousedev_event,
+    .match = mousedev_match, /* Added by EETI */
 	.connect =	mousedev_connect,
 	.disconnect =	mousedev_disconnect,
 	.fops =		&mousedev_fops,

@@ -915,13 +915,13 @@ static int __devinit stmpe_probe(struct i2c_client *i2c,
 	stmpe->dev = &i2c->dev;
 	stmpe->i2c = i2c;
 
-	stmpe->pdata = pdata;
-	stmpe->irq_base = pdata->irq_base;
-
 	stmpe->partnum = id->driver_data;
 	stmpe->variant = stmpe_variant_info[stmpe->partnum];
 	stmpe->regs = stmpe->variant->regs;
 	stmpe->num_gpios = stmpe->variant->num_gpios;
+
+	stmpe->pdata = pdata;
+	stmpe->irq_base = pdata->irq_base + pdata->id * stmpe->variant->num_irqs;
 
 	i2c_set_clientdata(i2c, stmpe);
 

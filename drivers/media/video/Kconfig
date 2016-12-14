@@ -618,6 +618,58 @@ config VIDEO_W9966
 	  Check out <file:Documentation/video4linux/w9966.txt> for more
 	  information.
 
+config VIDEO_MXC_CAMERA
+        tristate "MXC Video For Linux Camera"
+        depends on VIDEO_DEV && ARCH_MXC
+        default y
+        ---help---
+          This is the video4linux2 capture driver based on MXC IPU/eMMA module.
+
+source "drivers/media/video/mxc/capture/Kconfig"
+
+config VIDEO_MXC_OUTPUT
+        tristate "MXC Video For Linux Video Output"
+        depends on VIDEO_DEV && ARCH_MXC
+	select VIDEOBUF_DMA_CONTIG
+        default y
+        ---help---
+          This is the video4linux2 output driver based on MXC IPU/eMMA module.
+
+source "drivers/media/video/mxc/output/Kconfig"
+
+config VIDEO_MXS_PXP
+        tristate "MXS PxP"
+        depends on VIDEO_DEV && VIDEO_V4L2 && ARCH_MXS
+        select VIDEOBUF_DMA_CONTIG
+        ---help---
+          This is a video4linux driver for the Freescale PxP
+          (Pixel Pipeline). This module supports output overlay of
+          the MXS framebuffer on a video stream.
+
+          To compile this driver as a module, choose M here: the
+          module will be called pxp.
+
+config VIDEO_MXC_PXP_V4L2
+        tristate "MXC PxP V4L2 driver"
+        depends on VIDEO_DEV && VIDEO_V4L2 && (ARCH_MX5 || SOC_IMX6SL)
+        select FB_MXC_ELCDIF_FB
+        select VIDEOBUF_DMA_CONTIG
+        ---help---
+          This is a video4linux driver for the Freescale PxP
+          (Pixel Pipeline). This module supports output overlay of
+          the MXC framebuffer on a video stream.
+
+          To compile this driver as a module, choose M here.
+
+config VIDEO_MXC_OPL
+        tristate
+        depends on VIDEO_DEV && ARCH_MXC
+        default n
+        ---help---
+          This is the ARM9-optimized OPL (Open Primitives Library) software
+          rotation/mirroring implementation. It may be used by eMMA video
+          capture or output device.
+
 source "drivers/media/video/cpia2/Kconfig"
 
 config VIDEO_VINO
@@ -788,6 +840,24 @@ config SOC_CAMERA_IMX074
 	help
 	  This driver supports IMX074 cameras from Sony
 
+config SOC_CAMERA_SPARTAN
+	tristate "FPGA video support"
+	depends on SOC_CAMERA && I2C
+	help
+	  This driver supports fpga cameras from Xilinx
+
+config SOC_CAMERA_ADV7842VGA
+	tristate "ADV7842 VGA video support"
+	depends on SOC_CAMERA && I2C
+	help
+	  This driver supports adv7842 vga
+
+config SOC_CAMERA_ADV7842PAL
+	tristate "ADV7842 PAL video support"
+	depends on SOC_CAMERA && I2C
+	help
+	  This driver supports adv7842 pal
+
 config SOC_CAMERA_MT9M001
 	tristate "mt9m001 support"
 	depends on SOC_CAMERA && I2C
@@ -802,6 +872,12 @@ config SOC_CAMERA_MT9M111
 	help
 	  This driver supports MT9M111, MT9M112 and MT9M131 cameras from
 	  Micron/Aptina
+
+config SOC_CAMERA_MT9P031
+	tristate "mt9p031 support"
+	depends on SOC_CAMERA && I2C
+	help
+	  This driver supports MT9P031 camera from Micron/Aptina
 
 config SOC_CAMERA_MT9T031
 	tristate "mt9t031 support"
@@ -892,6 +968,24 @@ config VIDEO_MX3
 	select MX3_VIDEO
 	---help---
 	  This is a v4l2 driver for the i.MX3x Camera Sensor Interface
+
+
+config VIDEO_MXC
+	tristate "MXC Camera Sensor Interface driver based on FSL IPU driver"
+	depends on VIDEO_DEV && MXC_IPU && SOC_CAMERA
+	select VIDEOBUF2_DMA_CONTIG
+	select VIDEO_MXC_IPU_CSI_ENC
+	---help---
+	  This is a v4l2 driver for the MXC Camera Sensor Interface
+
+config VIDEO_MXC_IPU_CSI_ENC
+	tristate "IPU CSI Encoder library"
+	depends on VIDEO_MXC
+	default y
+	---help---
+	  Use case IPU_CSI_ENC:
+		Get raw image with CSI from smart sensor for encoder.
+		CSI -> MEM
 
 config VIDEO_PXA27x
 	tristate "PXA27x Quick Capture Interface driver"
