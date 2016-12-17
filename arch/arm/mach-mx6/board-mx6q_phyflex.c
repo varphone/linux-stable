@@ -1206,7 +1206,11 @@ static struct fsl_mxc_camera_platform_data camera_datas[] = {
     },
 
     [1]={
+#if defined(CONFIG_MXC_CAMERA_ADV7842PAL_M)
+	    .mclk		= 27000000,
+#else
 	    .mclk		= 75000000, //720P@75Mhz
+#endif
 	    .mclk_source	= 1,
 	    .csi		= 1,
 	    .io_init	=mx6_csi1_io_init,
@@ -1237,7 +1241,11 @@ static struct i2c_board_info camera_i2c2[] = {
 /* VGA 7842 CSI 1  in I2C-1*/
 static struct i2c_board_info camera_i2c1[] = {
 	{
+#if defined(CONFIG_MXC_CAMERA_ADV7842PAL_M)
+		I2C_BOARD_INFO("adv7842pal", 0x20),
+#else
 		I2C_BOARD_INFO("adv7842vga", 0x20),
+#endif
 //		.platform_data = (void *)&camera_datas[1],
 		.platform_data = (void *)&tvin_datas[1],  
 	},

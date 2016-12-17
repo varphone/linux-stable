@@ -12,9 +12,9 @@
  */
 
 /*!
- * @file adv7842camera.c
+ * @file adv7842pal.c
  *
- * @brief adv7842camera camera driver functions
+ * @brief adv7842pal camera driver functions
  *
  * @ingroup Camera
  */
@@ -56,7 +56,7 @@ struct sensor {
 	struct i2c_client *i2c_edid;   //0x6c
 	struct i2c_client *i2c_infoframe; //0x7c
 	struct i2c_client *i2c_cec;  //0x80
-} adv7842_data;
+} adv7842_pal;
 
 /*! List of input video formats supported. The video formats is corresponding
  * with v4l2 id in video_fmt_t
@@ -120,18 +120,18 @@ extern void gpio_sensor_inactive(void);
 
 static DEFINE_MUTEX(mutex);
 
-#define IF_NAME                    "adv7842camera"
+#define IF_NAME                    "adv7842pal"
 
 /*
  * Function definitions
  */
 
-static struct sensor *to_adv7842camera(const struct i2c_client *client)
+static struct sensor *to_adv7842pal(const struct i2c_client *client)
 {
 	return i2c_get_clientdata(client);
 }
 
-static struct sensor *v4l2_to_adv7842camera(const struct v4l2_int_device *dev)
+static struct sensor *v4l2_to_adv7842pal(const struct v4l2_int_device *dev)
 {
 	return dev->priv;
 }
@@ -309,7 +309,7 @@ static inline int io_write_and_or(struct i2c_client *client, u8 reg, u8 mask, u8
 
 static inline int sdp_read(struct i2c_client *client, u8 reg)
 {
-    struct sensor *data = to_adv7842camera(client);
+    struct sensor *data = to_adv7842pal(client);
 
 	return adv_smbus_read_byte_data(data->i2c_sdp, reg);
 }
@@ -317,28 +317,28 @@ static inline int sdp_read(struct i2c_client *client, u8 reg)
 //0x90
 static inline int sdp_write(struct i2c_client *client, u8 reg, u8 val)
 {
-    struct sensor *data = to_adv7842camera(client);
+    struct sensor *data = to_adv7842pal(client);
 
 	return adv_smbus_write_byte_data(data->i2c_sdp, reg, val);
 }
 
 static inline int sdpio_read(struct i2c_client *client, u8 reg)
 {
-    struct sensor *data = to_adv7842camera(client);
+    struct sensor *data = to_adv7842pal(client);
 
 	return adv_smbus_read_byte_data(data->i2c_sdp_io, reg);
 }
 // 0x94
 static inline int sdpio_write(struct i2c_client *client, u8 reg, u8 val)
 {
-    struct sensor *data = to_adv7842camera(client);
+    struct sensor *data = to_adv7842pal(client);
 
 	return adv_smbus_write_byte_data(data->i2c_sdp_io, reg, val);
 }
 
 static inline int afe_read(struct i2c_client *client, u8 reg)
 {
-    struct sensor *data = to_adv7842camera(client);
+    struct sensor *data = to_adv7842pal(client);
 
 	return adv_smbus_read_byte_data(data->i2c_afe, reg);
 }
@@ -346,7 +346,7 @@ static inline int afe_read(struct i2c_client *client, u8 reg)
 // 0x4c
 static inline int afe_write(struct i2c_client *client, u8 reg, u8 val)
 {
-    struct sensor *data = to_adv7842camera(client);
+    struct sensor *data = to_adv7842pal(client);
 
 	return adv_smbus_write_byte_data(data->i2c_afe, reg, val);
 }
@@ -358,14 +358,14 @@ static inline int afe_write_and_or(struct i2c_client *client, u8 reg, u8 mask, u
 
 static inline int cp_read(struct i2c_client *client, u8 reg)
 {
-    struct sensor *data = to_adv7842camera(client);
+    struct sensor *data = to_adv7842pal(client);
 
 	return adv_smbus_read_byte_data(data->i2c_cp, reg);
 }
 // 0x44
 static inline int cp_write(struct i2c_client *client, u8 reg, u8 val)
 {
-    struct sensor *data = to_adv7842camera(client);
+    struct sensor *data = to_adv7842pal(client);
 
 	return adv_smbus_write_byte_data(data->i2c_cp, reg, val);
 }
@@ -376,7 +376,7 @@ static inline int cp_write_and_or(struct i2c_client *client, u8 reg, u8 mask, u8
 }
 
 
-static void adv7842camera_reset(struct i2c_client *client)
+static void adv7842pal_reset(struct i2c_client *client)
 {
 /* 40 FF 80 ; I2C reset */
 	io_write(client, 0xff, 0x80);
@@ -384,9 +384,9 @@ static void adv7842camera_reset(struct i2c_client *client)
 }
 
 
-static void adv7842camera_unregister_clients(struct i2c_client *client)
+static void adv7842pal_unregister_clients(struct i2c_client *client)
 {
-	struct sensor *data = to_adv7842camera(client);
+	struct sensor *data = to_adv7842pal(client);
 
 	if (data->i2c_avlink)
 		i2c_unregister_device(data->i2c_avlink);
@@ -425,7 +425,7 @@ static void adv7842camera_unregister_clients(struct i2c_client *client)
 }
 
 
-static struct i2c_client *adv7842camera_dummy_client(struct i2c_client *client , const char *desc, u8 addr, u8 io_reg)
+static struct i2c_client *adv7842pal_dummy_client(struct i2c_client *client , const char *desc, u8 addr, u8 io_reg)
 {
 	struct i2c_client *cp;
 	if (addr == 0) {
@@ -441,21 +441,21 @@ static struct i2c_client *adv7842camera_dummy_client(struct i2c_client *client ,
 	return cp;
 }
 
-static int adv7842camera_register_clients(struct i2c_client *client)
+static int adv7842pal_register_clients(struct i2c_client *client)
 {
-	struct sensor *data = to_adv7842camera(client);
+	struct sensor *data = to_adv7842pal(client);
 
-	data->i2c_sdp = adv7842camera_dummy_client(client, "sdp", 0x90, 0xf1);
-	data->i2c_sdp_io = adv7842camera_dummy_client(client, "sdp_io", 0x94, 0xf2);
-	data->i2c_avlink = adv7842camera_dummy_client(client, "avlink", 0x84, 0xf3);
-	data->i2c_cec = adv7842camera_dummy_client(client, "cec", 0x80, 0xf4);
-	data->i2c_infoframe = adv7842camera_dummy_client(client, "infoframe", 0x7c, 0xf5);
-	data->i2c_afe = adv7842camera_dummy_client(client, "afe", 0x4c, 0xf8);
-	data->i2c_ksv = adv7842camera_dummy_client(client, "ksv", 0x64, 0xf9);
-	data->i2c_edid = adv7842camera_dummy_client(client, "edid", 0x6c, 0xfa);
-	data->i2c_hdmi = adv7842camera_dummy_client(client, "hdmi", 0x68, 0xfb);
-	data->i2c_cp = adv7842camera_dummy_client(client, "cp", 0x44, 0xfd);
-	data->i2c_vdp = adv7842camera_dummy_client(client, "vdp", 0x48, 0xfe);
+	data->i2c_sdp = adv7842pal_dummy_client(client, "sdp", 0x90, 0xf1);
+	data->i2c_sdp_io = adv7842pal_dummy_client(client, "sdp_io", 0x94, 0xf2);
+	data->i2c_avlink = adv7842pal_dummy_client(client, "avlink", 0x84, 0xf3);
+	data->i2c_cec = adv7842pal_dummy_client(client, "cec", 0x80, 0xf4);
+	data->i2c_infoframe = adv7842pal_dummy_client(client, "infoframe", 0x7c, 0xf5);
+	data->i2c_afe = adv7842pal_dummy_client(client, "afe", 0x4c, 0xf8);
+	data->i2c_ksv = adv7842pal_dummy_client(client, "ksv", 0x64, 0xf9);
+	data->i2c_edid = adv7842pal_dummy_client(client, "edid", 0x6c, 0xfa);
+	data->i2c_hdmi = adv7842pal_dummy_client(client, "hdmi", 0x68, 0xfb);
+	data->i2c_cp = adv7842pal_dummy_client(client, "cp", 0x44, 0xfd);
+	data->i2c_vdp = adv7842pal_dummy_client(client, "vdp", 0x48, 0xfe);
 
 	if (!data->i2c_avlink ||
 	    !data->i2c_cec ||
@@ -559,11 +559,11 @@ static void adv7842_get_std(v4l2_std_id *std)
 	idx = ADV7842_PAL;    
 
 	/* This assumes autodetect which this device uses. */
-	if (*std != adv7842_data.std_id) {
+	if (*std != adv7842_pal.std_id) {
 		video_idx = idx;
-		adv7842_data.std_id = *std;
-		adv7842_data.sen.pix.width = video_fmts[video_idx].raw_width;
-		adv7842_data.sen.pix.height = video_fmts[video_idx].raw_height;
+		adv7842_pal.std_id = *std;
+		adv7842_pal.sen.pix.width = video_fmts[video_idx].raw_width;
+		adv7842_pal.sen.pix.height = video_fmts[video_idx].raw_height;
 	}
 }
 
@@ -589,9 +589,9 @@ static void adv7842_get_std(v4l2_std_id *std)
  */
 static int ioctl_g_ifparm(struct v4l2_int_device *s, struct v4l2_ifparm *p)
 {
-//	struct sensor *sensor = v4l2_to_adv7842camera(s);
+//	struct sensor *sensor = v4l2_to_adv7842pal(s);
 
-	pr_debug("In adv7842camera:ioctl_g_ifparm\n");
+	pr_debug("In adv7842pal:ioctl_g_ifparm\n");
 
 	if (s == NULL) {
         printk("::: ioctl_g_ifparm (END, error)\n");
@@ -623,7 +623,7 @@ static int ioctl_s_power(struct v4l2_int_device *s, int on)
 {
 	struct sensor *sensor = s->priv;
 
-	pr_debug("In adv7842camera:ioctl_s_power\n");
+	pr_debug("In adv7842pal:ioctl_s_power\n");
 
 #if 0
 	if (on)
@@ -646,12 +646,12 @@ static int ioctl_s_power(struct v4l2_int_device *s, int on)
 static int ioctl_g_parm(struct v4l2_int_device *s, struct v4l2_streamparm *a)
 {
 	int ret = 0;
-	struct sensor *sensor = v4l2_to_adv7842camera(s);
+	struct sensor *sensor = v4l2_to_adv7842pal(s);
 	struct v4l2_captureparm *cparm = &a->parm.capture;
 
-	/* s->priv points to adv7842camera_data */
+	/* s->priv points to adv7842pal_data */
 
-	pr_debug("In adv7842camera:ioctl_g_parm\n");
+	pr_debug("In adv7842pal:ioctl_g_parm\n");
 
 	switch (a->type) {
 	/* This is the only case currently handled. */
@@ -727,7 +727,7 @@ static int ioctl_s_parm(struct v4l2_int_device *s, struct v4l2_streamparm *a)
 static int ioctl_g_fmt_cap(struct v4l2_int_device *s, struct v4l2_format *f)
 {
 
-	/* s->priv points to adv7842camera_data */
+	/* s->priv points to adv7842pal_data */
 	struct sensor *sensor = s->priv;
 
 	switch (f->type) {
@@ -763,7 +763,7 @@ static int ioctl_g_fmt_cap(struct v4l2_int_device *s, struct v4l2_format *f)
  */
 static int ioctl_queryctrl(struct v4l2_int_device *s, struct v4l2_queryctrl *qc)
 {
-	pr_debug("In adv7842camera:ioctl_queryctrl\n");
+	pr_debug("In adv7842pal:ioctl_queryctrl\n");
 
 	return 0;
 }
@@ -779,7 +779,7 @@ static int ioctl_queryctrl(struct v4l2_int_device *s, struct v4l2_queryctrl *qc)
  */
 static int ioctl_g_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
 {
-	struct sensor *sensor = v4l2_to_adv7842camera(s);
+	struct sensor *sensor = v4l2_to_adv7842pal(s);
 	struct i2c_client *client = sensor->sen.i2c_client;
 	int value = 0;
 	s8 tmp;
@@ -875,13 +875,13 @@ static int ioctl_g_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
  */
 static int ioctl_s_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
 {
-	struct sensor *sensor = v4l2_to_adv7842camera(s);
+	struct sensor *sensor = v4l2_to_adv7842pal(s);
 	struct i2c_client *client = sensor->sen.i2c_client;
 	int retval = 0;
 	int value = 0;
 	s8 tmp;
 
-	pr_debug("In adv7842camera:ioctl_s_ctrl %d\n", vc->id);
+	pr_debug("In adv7842pal:ioctl_s_ctrl %d\n", vc->id);
 	switch (vc->id) {
 	case V4L2_CID_BRIGHTNESS:
 		value = (vc->value - 50)*0x1ff/50;
@@ -967,7 +967,7 @@ static int ioctl_s_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
 static int ioctl_enum_fmt_cap(struct v4l2_int_device *s,
 			      struct v4l2_fmtdesc *fmt)
 {
-	struct sensor *sensor = v4l2_to_adv7842camera(s);
+	struct sensor *sensor = v4l2_to_adv7842pal(s);
 
 	if (fmt->index > 1)
 		return -EINVAL;
@@ -1010,7 +1010,7 @@ static int ioctl_g_chip_ident(struct v4l2_int_device *s, int *id)
 {
 	((struct v4l2_dbg_chip_ident *)id)->match.type =
 					V4L2_CHIP_MATCH_I2C_DRIVER;
-	strcpy(((struct v4l2_dbg_chip_ident *)id)->match.name, "adv7842camera_decoder");
+	strcpy(((struct v4l2_dbg_chip_ident *)id)->match.name, "adv7842pal_decoder");
 	return 0;
 }
 
@@ -1033,7 +1033,7 @@ static int ioctl_init(struct v4l2_int_device *s)
 static int ioctl_dev_init(struct v4l2_int_device *s)
 {
 
-	struct sensor *sensor = v4l2_to_adv7842camera(s);
+	struct sensor *sensor = v4l2_to_adv7842pal(s);
 	struct i2c_client *client = sensor->sen.i2c_client;
 
 	pr_err("caeram ioctl_dev_init...\n");
@@ -1044,7 +1044,7 @@ static int ioctl_dev_init(struct v4l2_int_device *s)
 /*!
  * This structure defines all the ioctls for this module.
  */
-static struct v4l2_int_ioctl_desc adv7842camera_ioctl_desc[] = {
+static struct v4l2_int_ioctl_desc adv7842pal_ioctl_desc[] = {
 
 	{vidioc_int_dev_init_num, (v4l2_int_ioctl_func*)ioctl_dev_init},
 
@@ -1093,28 +1093,28 @@ static struct v4l2_int_ioctl_desc adv7842camera_ioctl_desc[] = {
 	{vidioc_int_g_chip_ident_num, (v4l2_int_ioctl_func *)ioctl_g_chip_ident},
 };
 
-static struct v4l2_int_slave adv7842camera_slave= {
-	.ioctls = adv7842camera_ioctl_desc,
-	.num_ioctls = ARRAY_SIZE(adv7842camera_ioctl_desc),
+static struct v4l2_int_slave adv7842pal_slave= {
+	.ioctls = adv7842pal_ioctl_desc,
+	.num_ioctls = ARRAY_SIZE(adv7842pal_ioctl_desc),
 };
 
-static struct v4l2_int_device adv7842camera_int_device = {
+static struct v4l2_int_device adv7842pal_int_device = {
 	.module = THIS_MODULE,
-	.name = "adv7842camera",
+	.name = "adv7842pal",
 	.type = v4l2_int_type_slave,
 	.u = {
-		.slave = &adv7842camera_slave,
+		.slave = &adv7842pal_slave,
 		},
 };
 
 /*!
- * adv7842camera I2C probe function
+ * adv7842pal I2C probe function
  * Function set in i2c_driver struct.
- * Called by insmod adv7842camera_camera.ko.
+ * Called by insmod adv7842pal_camera.ko.
  *
  * @return  Error code indicating success or failure
  */
-static int adv7842camera_probe(struct i2c_client *client,
+static int adv7842pal_probe(struct i2c_client *client,
 			 const struct i2c_device_id *id)
 {
 
@@ -1123,7 +1123,7 @@ static int adv7842camera_probe(struct i2c_client *client,
 	int ret = 0;
 	tvin_plat = client->dev.platform_data;
 
-	pr_debug("In adv7842_probe\n");
+	pr_err("In adv7842pal_probe\n");
 
 	if (tvin_plat->dvddio_reg) {
 		dvddio_regulator =
@@ -1177,37 +1177,39 @@ static int adv7842camera_probe(struct i2c_client *client,
 	msleep(1);
 
 	/* Set initial values for the sensor struct. */
-	memset(&adv7842_data, 0, sizeof(adv7842_data));
-	adv7842_data.sen.i2c_client = client;
-    i2c_set_clientdata(client, &adv7842_data);
-	adv7842_data.sen.streamcap.timeperframe.denominator = 25;
-	adv7842_data.sen.streamcap.timeperframe.numerator = 1;
-	adv7842_data.std_id = V4L2_STD_ALL;
+	memset(&adv7842_pal, 0, sizeof(adv7842_pal));
+	adv7842_pal.sen.i2c_client = client;
+    i2c_set_clientdata(client, &adv7842_pal);
+	adv7842_pal.sen.streamcap.timeperframe.denominator = 25;
+	adv7842_pal.sen.streamcap.timeperframe.numerator = 1;
+	adv7842_pal.std_id = V4L2_STD_ALL;
 	video_idx = ADV7842_NOT_LOCKED;
-	adv7842_data.sen.pix.width = video_fmts[video_idx].raw_width;
-	adv7842_data.sen.pix.height = video_fmts[video_idx].raw_height;
-	adv7842_data.sen.pix.pixelformat = V4L2_PIX_FMT_UYVY;  /* YUV422 */
-	adv7842_data.sen.pix.priv = 1;  /* 1 is used to indicate TV in */
-	adv7842_data.sen.on = true;
-	adv7842_data.sen.csi = 0;
-	adv7842_data.sen.mclk_source = 0;
+	adv7842_pal.sen.pix.width = video_fmts[video_idx].raw_width;
+	adv7842_pal.sen.pix.height = video_fmts[video_idx].raw_height;
+	adv7842_pal.sen.pix.pixelformat = V4L2_PIX_FMT_UYVY;  /* YUV422 */
+	adv7842_pal.sen.pix.priv = 1;  /* 1 is used to indicate TV in */
+	adv7842_pal.sen.on = true;
+	adv7842_pal.sen.csi = 1;
+	adv7842_pal.sen.mclk_source = 1;
 
-//	gpio_sensor_active();
+	/*
+	gpio_sensor_active();
+	**/
 
-	dev_err(&adv7842_data.sen.i2c_client->dev, "%s:adv7842 probe i2c address is 0x%02X\n", __func__, adv7842_data.sen.i2c_client->addr);
+	dev_err(&adv7842_pal.sen.i2c_client->dev, "%s:adv7842 probe i2c address is 0x%02X\n", __func__, adv7842_pal.sen.i2c_client->addr);
 
-    adv7842camera_reset(client);  // 复位adv7842camera
+    adv7842pal_reset(client);  // 复位adv7842pal
 	/* i2c access to adv7842? */
 	rev = adv_smbus_read_byte_data_check(client, 0xea, false) << 8 |
 		adv_smbus_read_byte_data_check(client, 0xeb, false);
 
 	if (rev != 0x2012) {
-		dev_err(&adv7842_data.sen.i2c_client->dev, "not an adv7842camera on address 0x%x (rev=0x%04x)\n",  client->addr, rev);
+		dev_err(&adv7842_pal.sen.i2c_client->dev, "not an adv7842pal on address 0x%x (rev=0x%04x)\n",  client->addr, rev);
 		return -ENODEV;
 	}
-	dev_err(&adv7842_data.sen.i2c_client->dev, "find adv7842camera on address 0x%x (rev=0x%04x)\n",  client->addr, rev);
+	dev_err(&adv7842_pal.sen.i2c_client->dev, "find adv7842pal on address 0x%x (rev=0x%04x)\n",  client->addr, rev);
 
-    if (adv7842camera_register_clients(client) < 0) {
+    if (adv7842pal_register_clients(client) < 0) {
 		printk(KERN_ERR "failed to create all i2c clients\n");
         return -ENOMEM;
 	}
@@ -1215,42 +1217,42 @@ static int adv7842camera_probe(struct i2c_client *client,
 	/* This function attaches this structure to the /dev/video0 device.
 	 * The pointer in priv points to the mt9v111_data structure here.*/
 
-	adv7842camera_int_device.priv = &adv7842_data;
-	ret = v4l2_int_device_register(&adv7842camera_int_device);
+	adv7842pal_int_device.priv = &adv7842_pal;
+	ret = v4l2_int_device_register(&adv7842pal_int_device);
 
 	return ret;
 #else
 	int retval;
-	pr_debug("In adv7842camera_probe  device id is %s\n", id->name);
+	pr_debug("In adv7842pal_probe  device id is %s\n", id->name);
 
 
 	/* Set initial values for the sensor struct. */
-	adv7842_data.sen.i2c_client = client;
-	i2c_set_clientdata(client, adv7842camera);
-	adv7842camera->platform_data = client->dev.platform_data;
-	adv7842camera->csi = adv7842camera->platform_data->csi;
-	adv7842camera->io_init = adv7842camera->platform_data->io_init;
+	adv7842_pal.sen.i2c_client = client;
+	i2c_set_clientdata(client, adv7842pal);
+	adv7842pal->platform_data = client->dev.platform_data;
+	adv7842pal->csi = adv7842pal->platform_data->csi;
+	adv7842pal->io_init = adv7842pal->platform_data->io_init;
 
 	pr_debug("client name is %s\n", client->name);
-	adv7842camera->pix.pixelformat = V4L2_PIX_FMT_UYVY;
-	adv7842camera->pix.width = adv7842camera_MAX_WIDTH;
-	adv7842camera->pix.height = adv7842camera_MAX_HEIGHT;
-	adv7842camera->streamcap.capability = 0; /* No higher resolution or frame
+	adv7842pal->pix.pixelformat = V4L2_PIX_FMT_UYVY;
+	adv7842pal->pix.width = adv7842pal_MAX_WIDTH;
+	adv7842pal->pix.height = adv7842pal_MAX_HEIGHT;
+	adv7842pal->streamcap.capability = 0; /* No higher resolution or frame
 						* frame rate changes supported.
 						*/
-	adv7842camera->streamcap.timeperframe.denominator = 25;
-	adv7842camera->streamcap.timeperframe.numerator = 1;
+	adv7842pal->streamcap.timeperframe.denominator = 25;
+	adv7842pal->streamcap.timeperframe.numerator = 1;
 
 
-	adv7842camera_int_device.priv = adv7842camera;
+	adv7842pal_int_device.priv = adv7842pal;
 
 	pr_debug("   type is %d (expect %d)\n",
-			adv7842camera_int_device.type, v4l2_int_type_slave);
+			adv7842pal_int_device.type, v4l2_int_type_slave);
 	pr_debug("   num ioctls is %d\n",
-			adv7842camera_int_device.u.slave->num_ioctls);
+			adv7842pal_int_device.u.slave->num_ioctls);
 
 
-    adv7842camera_reset(client);
+    adv7842pal_reset(client);
 
 	/* i2c access to adv7842? */
 	rev = adv_smbus_read_byte_data_check(client, 0xea, false) << 8 |
@@ -1265,19 +1267,19 @@ static int adv7842camera_probe(struct i2c_client *client,
 		dev_err(&client->dev, "not an adv7842 on address 0x%x (rev=0x%04x)\n",  client->addr, rev);
 		return -ENODEV;
 	}
-    dev_err(&client->dev, "find adv7842camera on address 0x%x (rev=0x%04x)\n",  client->addr, rev);
+    dev_err(&client->dev, "find adv7842pal on address 0x%x (rev=0x%04x)\n",  client->addr, rev);
 
-	if (adv7842camera_register_clients(client) < 0) {
+	if (adv7842pal_register_clients(client) < 0) {
 		printk(KERN_ERR "failed to create all i2c clients\n");
         return -ENOMEM;
 	}
 
 	/* This function attaches this structure to the /dev/video0 device.
-	 * The pointer in priv points to the adv7842camera_data structure here.*/
-	retval = v4l2_int_device_register(&adv7842camera_int_device);
+	 * The pointer in priv points to the adv7842pal_data structure here.*/
+	retval = v4l2_int_device_register(&adv7842pal_int_device);
 
-	if (adv7842camera->io_init)
-		adv7842camera->io_init();
+	if (adv7842pal->io_init)
+		adv7842pal->io_init();
 
 	return retval;
 #endif
@@ -1285,48 +1287,48 @@ static int adv7842camera_probe(struct i2c_client *client,
 
 /*!
  * Function set in i2c_driver struct.
- * Called on rmmod adv7842camera_camera.ko
+ * Called on rmmod adv7842pal_camera.ko
  */
-static int adv7842camera_remove(struct i2c_client *client)
+static int adv7842pal_remove(struct i2c_client *client)
 {
-	pr_debug("In adv7842camera_remove\n");
+	pr_debug("In adv7842pal_remove\n");
 
-	v4l2_int_device_unregister(&adv7842camera_int_device);
+	v4l2_int_device_unregister(&adv7842pal_int_device);
 
 	return 0;
 }
 
-static const struct i2c_device_id adv7842camera_id[] = {
-	{"adv7842camera", 0},
+static const struct i2c_device_id adv7842pal_id[] = {
+	{"adv7842pal", 0},
 	{},
 };
 
-MODULE_DEVICE_TABLE(i2c, adv7842camera_id);
+MODULE_DEVICE_TABLE(i2c, adv7842pal_id);
 
-static struct i2c_driver adv7842camera_i2c_driver = {
+static struct i2c_driver adv7842pal_i2c_driver = {
 	.driver = {
 		   .owner = THIS_MODULE,
-		   .name = "adv7842camera",
+		   .name = "adv7842pal",
 		   },
-	.probe = adv7842camera_probe,
-	.remove = adv7842camera_remove,
-	.id_table = adv7842camera_id,
+	.probe = adv7842pal_probe,
+	.remove = adv7842pal_remove,
+	.id_table = adv7842pal_id,
 /* To add power management add .suspend and .resume functions */
 };
 
 
 /*!
- * adv7842camera init function.
- * Called by insmod adv7842camera_camera.ko.
+ * adv7842pal init function.
+ * Called by insmod adv7842pal_camera.ko.
  *
  * @return  Error code indicating success or failure
  */
-static __init int adv7842camera_init(void)
+static __init int adv7842pal_init(void)
 {
 	u8 err;
 
 	/* Tells the i2c driver what functions to call for this driver. */
-	err = i2c_add_driver(&adv7842camera_i2c_driver);
+	err = i2c_add_driver(&adv7842pal_i2c_driver);
 	if (err != 0)
 		pr_err("%s: driver registration failed, error=%d \n", __func__, err);
 
@@ -1334,20 +1336,20 @@ static __init int adv7842camera_init(void)
 }
 
 /*!
- * adv7842camera cleanup function.
- * Called on rmmod adv7842camera_camera.ko
+ * adv7842pal cleanup function.
+ * Called on rmmod adv7842pal_camera.ko
  *
  * @return  Error code indicating success or failure
  */
-static void __exit adv7842camera_clean(void)
+static void __exit adv7842pal_clean(void)
 {
-    adv7842camera_unregister_clients(adv7842_data.sen.i2c_client);
-	i2c_del_driver(&adv7842camera_i2c_driver);
+    adv7842pal_unregister_clients(adv7842_pal.sen.i2c_client);
+	i2c_del_driver(&adv7842pal_i2c_driver);
 	gpio_sensor_inactive();
 }
 
-module_init(adv7842camera_init);
-module_exit(adv7842camera_clean);
+module_init(adv7842pal_init);
+module_exit(adv7842pal_clean);
 
 MODULE_AUTHOR("lwx wooshang@126.com");
 MODULE_DESCRIPTION("ADV7842 Camera Driver");

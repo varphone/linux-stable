@@ -196,30 +196,30 @@ static video_fmt_t video_fmts2[] = {
 	{			/*! NTSC */
 	 .v4l2_id = V4L2_STD_NTSC,
 	 .name = "NTSC",
-	 .raw_width = 1280,		/* SENS_FRM_WIDTH */
-	 .raw_height = 1024,		/* SENS_FRM_HEIGHT */
-	 .active_width = 1280,		/* ACT_FRM_WIDTH */
-	 .active_height = 1024,		/* ACT_FRM_HEIGHT */
-	 .active_top = 0,
+	 .raw_width = 720,		/* SENS_FRM_WIDTH */
+	 .raw_height = 525,		/* SENS_FRM_HEIGHT */
+	 .active_width = 720,		/* ACT_FRM_WIDTH */
+	 .active_height = 480,		/* ACT_FRM_HEIGHT */
+	 .active_top = 13,
 	 .active_left = 0,
 	 },
 	{			/*! (B, G, H, I, N) PAL */
 	 .v4l2_id = V4L2_STD_PAL,
 	 .name = "PAL",
-	 .raw_width = 1280,
-	 .raw_height = 1024,
-	 .active_width = 1280,
-	 .active_height = 1024,
+	 .raw_width = 720,
+	 .raw_height = 625,
+	 .active_width = 720,
+	 .active_height = 576,
 	 .active_top = 0,
 	 .active_left = 0,
 	 },
 	{			/*! Unlocked standard */
 	 .v4l2_id = V4L2_STD_ALL,
 	 .name = "Autodetect",
-	 .raw_width = 1280,
-	 .raw_height = 1024,
-	 .active_width = 1280,
-	 .active_height = 1024,
+	 .raw_width = 720,
+	 .raw_height = 625,
+	 .active_width = 720,
+	 .active_height = 576,
 	 .active_top = 0,
 	 .active_left = 0,
 	 },
