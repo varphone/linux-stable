@@ -535,10 +535,10 @@ static int imx6_pcie_init_phy(struct pcie_port *pp)
 
 static int imx6_pcie_wait_for_link(struct pcie_port *pp)
 {
-	int count = 2000;
+	int count = 200;
 
 	while (!dw_pcie_link_up(pp)) {
-		udelay(100);
+		usleep_range(100, 1000);
 		if (--count)
 			continue;
 
