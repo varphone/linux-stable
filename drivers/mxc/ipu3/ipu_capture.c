@@ -225,6 +225,46 @@ int32_t ipu_csi_get_sensor_protocol(struct ipu_soc *ipu, uint32_t csi)
 EXPORT_SYMBOL(ipu_csi_get_sensor_protocol);
 
 /*!
+ * ipu_csi_get_sensor_data_format
+ *
+ * @param	ipu		ipu handler
+ * @param	csi         csi 0 or csi 1
+ *
+ * @return	Returns sensor protocol
+ */
+int32_t ipu_csi_get_sensor_data_format(struct ipu_soc *ipu, uint32_t csi)
+{
+	int ret;
+	_ipu_get(ipu);
+	ret = (ipu_csi_read(ipu, csi, CSI_SENS_CONF) &
+		CSI_SENS_CONF_DATA_FMT_MASK) >>
+		CSI_SENS_CONF_DATA_FMT_SHIFT;
+	_ipu_put(ipu);
+	return ret;
+}
+EXPORT_SYMBOL(ipu_csi_get_sensor_data_format);
+
+/*!
+ * ipu_csi_get_sensor_data_width
+ *
+ * @param	ipu		ipu handler
+ * @param	csi         csi 0 or csi 1
+ *
+ * @return	Returns sensor protocol
+ */
+int32_t ipu_csi_get_sensor_data_width(struct ipu_soc *ipu, uint32_t csi)
+{
+	int ret;
+	_ipu_get(ipu);
+	ret = (ipu_csi_read(ipu, csi, CSI_SENS_CONF) &
+		CSI_SENS_CONF_DATA_WIDTH_MASK) >>
+		CSI_SENS_CONF_DATA_WIDTH_SHIFT;
+	_ipu_put(ipu);
+	return ret;
+}
+EXPORT_SYMBOL(ipu_csi_get_sensor_data_width);
+
+/*!
  * ipu_csi_enable_mclk
  *
  * @param	ipu		ipu handler

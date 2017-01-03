@@ -714,6 +714,10 @@ int32_t ipu_csi_init_interface(struct ipu_soc *ipu, uint16_t width, uint16_t hei
 
 int32_t ipu_csi_get_sensor_protocol(struct ipu_soc *ipu, uint32_t csi);
 
+int32_t ipu_csi_get_sensor_data_format(struct ipu_soc *ipu, uint32_t csi);
+
+int32_t ipu_csi_get_sensor_data_width(struct ipu_soc *ipu, uint32_t csi);
+
 int32_t ipu_csi_enable_mclk(struct ipu_soc *ipu, int src, bool flag, bool wait);
 
 static inline int32_t ipu_csi_enable_mclk_if(struct ipu_soc *ipu, int src, uint32_t csi,

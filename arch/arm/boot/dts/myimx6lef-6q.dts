@@ -6,11 +6,11 @@
 
 /dts-v1/;
 #include "imx6q.dtsi"
-#include "myimx6lef-6qu.dtsi"
+#include "myimx6lef.dtsi"
 
 / {
 	model = "MYZR i.MX6 Platform (MY-IMX6-LEF-6Q)";
-	compatible = "myzr,myimx6", "myzr,myimx6ek314", "myzr,myimx6ek314-6q", "fsl,imx6q";
+	compatible = "myzr,myimx6", "myzr,myimx6q", "myzr,myimx6ek314", "fsl,imx6q";
 };
 
 &ldb {

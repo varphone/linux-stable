@@ -117,6 +117,17 @@ config INPUT_PM8XXX_VIBRATOR
 	  To compile this driver as module, choose M here: the
 	  module will be called pm8xxx-vibrator.
 
+config INPUT_RICOH568
+	tristate "RN5T568 power key support"
+	depends on MFD_RICOH568
+	help
+	  Say Y here if you want support for the RICOH568 power key.
+
+	  If unsure, say N.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called ricoh568-pwrkey.
+
 config INPUT_PMIC8XXX_PWRKEY
 	tristate "PMIC8XXX power key support"
 	depends on MFD_PM8XXX

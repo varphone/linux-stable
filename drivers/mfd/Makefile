@@ -168,3 +168,4 @@ obj-$(CONFIG_MFD_AS3711)	+= as3711.o
 obj-$(CONFIG_MFD_AS3722)	+= as3722.o
 obj-$(CONFIG_MFD_STW481X)	+= stw481x.o
 obj-$(CONFIG_MFD_MXC_HDMI)	+= mxc-hdmi-core.o
+obj-$(CONFIG_MFD_RICOH568)	+= ricoh568.o ricoh568-irq.o

@@ -410,6 +410,16 @@ config REGULATOR_PFUZE100
 	  Say y here to support the regulators found on the Freescale
 	  PFUZE100/PFUZE200 PMIC.
 
+config REGULATOR_RICOH568
+	tristate "RICOH RN5T568 Power regulators"
+	depends on MFD_RICOH568
+	help
+	  Select this option to enable the power regulator of RICOH
+	  PMIC RN5T568.
+	  This driver supports the control of different power rails of device
+	  through regulator interface. The device supports multiple DCDC/LDO
+	  outputs which can be controlled by i2c communication.
+
 config REGULATOR_RC5T583
 	tristate "RICOH RC5T583 Power regulators"
 	depends on MFD_RC5T583

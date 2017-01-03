@@ -240,6 +240,9 @@ struct sensor_data {
 	struct v4l2_captureparm streamcap;
 	bool on;
 
+	int vsync_blank;
+	int hsync_blank;
+
 	/* control settings */
 	int brightness;
 	int hue;

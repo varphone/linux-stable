@@ -6,11 +6,11 @@
 
 /dts-v1/;
 #include "imx6dl.dtsi"
-#include "myimx6ek314-6qu.dtsi"
+#include "myimx6ek314.dtsi"
 
 / {
 	model = "MYZR i.MX6 Evaluation Kit (MY-IMX6-EK314-6U)";
-	compatible = "myzr,myimx6", "myzr,myimx6ek314", "myzr,myimx6ek314-6u", "fsl,imx6dl";
+	compatible = "myzr,myimx6", "myzr,myimx6u", "myzr,myimx6cb314", "myzr,myimx6ek314", "fsl,imx6dl";
 };
 
 &ldb {

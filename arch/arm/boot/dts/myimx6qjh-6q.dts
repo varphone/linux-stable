@@ -6,11 +6,11 @@
 
 /dts-v1/;
 #include "imx6q.dtsi"
-#include "myimx6qjh-6qu.dtsi"
+#include "myimx6qjh.dtsi"
 
 / {
 	model = "MYZR i.MX6 custom board (MY-IMX6-QJH)";
-	compatible = "myzr,myimx6", "fsl,imx6q";
+	compatible = "myzr,myimx6", "myzr,myimx6q", "myzr,myimx6cb336", "myzr,myimx6qjh", "fsl,imx6q";
 };
 
 &mxcfb1 {

@@ -1,0 +1,358 @@
+/*
+ * Copyright (C) 2016 Ricoh Electronic Devices Co., Ltd. - http://www.rioch.com/LSI
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+/*
+ * Integrated Power Management Chip
+ * http://www.ricoh.com/LSI/product_pmic/multiple-pmu/rn5t568/
+ */
+/*
+&ricoh568
+{
+	compatible = "ricoh,ricoh568";
+	interrupt-controller;
+  gpios = <&gpio7 13 0>, <&gpio7 12 0>;
+	#interrupt-cells = <0>;
+
+	pwrkey: pwrkey@0 {
+		compatible = "ricoh,ricoh568-pwrkey";
+		ricoh,pwrkey-delay-ms = <20>;
+	};
+
+	regulators {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ricoh568_dcdc1_reg: regulator@0 {
+			reg = <0>;
+			regulator-compatible = "ricoh568_dc1";
+			regulator-always-on;
+			regulator-boot-on;
+		};
+		ricoh568_dcdc2_reg: regulator@1 {
+			reg = <1>;
+			regulator-compatible = "ricoh568_dc2";
+			regulator-always-on;
+			regulator-boot-on;
+		};
+		ricoh568_dcdc3_reg: regulator@2 {
+			reg = <2>;
+			regulator-compatible = "ricoh568_dc3";
+			//regulator-always-on;//
+			regulator-boot-on;
+		};
+		ricoh568_dcdc4_reg: regulator@3 {
+			reg = <3>;
+			regulator-compatible = "ricoh568_dc4";
+			regulator-always-on;
+			regulator-boot-on;
+		};
+		ricoh568_ldo1_reg: regulator@4  {
+			reg = <4>;
+			regulator-compatible = "ricoh568_ldo1";
+			regulator-always-on;
+			regulator-boot-on;
+		};
+		ricoh568_ldo2_reg: regulator@5  {
+			reg = <5>;
+			regulator-compatible = "ricoh568_ldo2";
+			regulator-always-on;
+			regulator-boot-on;
+		};
+		ricoh568_ldo3_reg: regulator@6  {
+			reg = <6>;
+			regulator-compatible = "ricoh568_ldo3";
+			regulator-always-on;
+			regulator-boot-on;
+		};
+		ricoh568_ldo4_reg: regulator@7  {
+			reg = <7>;
+			regulator-compatible = "ricoh568_ldo4";
+			regulator-always-on;
+			regulator-boot-on;
+		};
+		ricoh568_ldo5_reg: regulator@8  {
+			reg = <8>;
+			regulator-compatible = "ricoh568_ldo5";
+			regulator-always-on;
+			regulator-boot-on;
+		};
+	};
+};
+
+&ricoh568 {
+	gpios = <&gpio7 13 0>, <&gpio7 12 0>;
+	ricoh568,system-power-controller;
+
+	regulators {
+		ricoh568_dcdc1_reg: regulator@0 {
+			regulator-name = "ricoh568_dcdc1";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-initial-mode = <0x2>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-mode = <0x2>;
+				regulator-state-enabled;
+				regulator-state-uv = <3300000>;
+			};
+		};
+		ricoh568_dcdc2_reg: regulator@1 {
+			regulator-name = "ricoh568_dcdc2";
+			regulator-min-microvolt = <2000000>;
+			regulator-max-microvolt = <2000000>;
+			regulator-initial-mode = <0x2>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-mode = <0x2>;
+				regulator-state-enabled;
+				regulator-state-uv = <2000000>;
+			};
+		};
+		ricoh568_dcdc3_reg: regulator@2 {
+			regulator-name = "ricoh568_dcdc3";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-initial-mode = <0x2>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-mode = <0x2>;
+				regulator-state-disabled;
+				regulator-state-uv = <3300000>;
+			};
+		};
+		ricoh568_dcdc4_reg: regulator@3 {
+			regulator-name = "ricoh568_dcdc4";
+			regulator-min-microvolt = <700000>;
+			regulator-max-microvolt = <1500000>;
+			regulator-initial-mode = <0x2>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-mode = <0x2>;
+				regulator-state-enabled;
+				regulator-state-uv = <900000>;
+			};
+		};
+		ricoh568_ldo1_reg: regulator@4  {
+			regulator-name = "ricoh568_ldo1";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-enabled;
+				regulator-state-uv = <3300000>;
+			};
+		};
+		ricoh568_ldo2_reg: regulator@5  {
+			regulator-name = "ricoh568_ldo2";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-enabled;
+				regulator-state-uv = <3300000>;
+			};
+		};
+		ricoh568_ldo3_reg: regulator@6  {
+			regulator-name = "ricoh568_ldo3";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-enabled;
+				regulator-state-uv = <3300000>;
+			};
+		};
+		ricoh568_ldo4_reg: regulator@7  {
+			regulator-name = "ricoh568_ldo4";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-enabled;
+				regulator-state-uv = <3300000>;
+			};
+		};
+		ricoh568_ldo5_reg: regulator@8  {
+			regulator-name = "ricoh568_ldo5";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-enabled;
+				regulator-state-uv = <1800000>;
+			};
+		};
+//		ricoh568_aldo_reg: regulator@9  {
+//			regulator-name = "ricoh568_aldo1";
+//			regulator-min-microvolt = < 3300000>;
+//			regulator-max-microvolt = <3300000>;
+//		};
+//		ricoh568_aldo2_reg: regulator@10  {
+//			regulator-name = "ricoh568_aldo2";
+//			regulator-min-microvolt = < 3300000>;
+//			regulator-max-microvolt = <3300000>;
+//		};
+//
+	};
+};
+*/
+
+&ricoh568
+{
+	compatible = "ricoh, ricoh568";
+
+	//gpios =<&gpio0 GPIO_A4 GPIO_ACTIVE_HIGH>,<&gpio0 GPIO_A0 GPIO_ACTIVE_LOW>;
+	ricoh568,system-power-controller;
+	interrupt-controller;
+	#interrupt-cells = <0>;
+
+	pwrkey: pwrkey@0 {
+		compatible = "ricoh, ricoh568-pwrkey";
+		ricoh,pwrkey-delay-ms = <20>;
+	};
+
+	regulators {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ricoh568_dcdc1_reg: regulator@0 {
+			reg = <0>;
+			//regulator-compatible = "ricoh568_dc1";
+			regulator-name = "ricoh568_dc1";
+			regulator-min-microvolt = <600000>;
+			regulator-max-microvolt = <3500000>;
+			regulator-initial-mode = <0x2>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-mode = <0x2>;
+				regulator-state-enabled;
+				regulator-state-uv = <1400000>;
+			};
+			//regulator-always-on;
+			//regulator-boot-on;
+		};
+		ricoh568_dcdc2_reg: regulator@1 {
+			reg = <1>;
+			//regulator-compatible = "ricoh568_dc2";
+			regulator-name = "ricoh568_dc2";
+			regulator-min-microvolt = <600000>;
+			regulator-max-microvolt = <3500000>;
+			regulator-initial-mode = <0x2>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-mode = <0x2>;
+				regulator-state-enabled;
+				regulator-state-uv = <1400000>;
+			};
+			//regulator-always-on;
+			//regulator-boot-on;
+		};
+		ricoh568_dcdc3_reg: regulator@2 {
+			reg = <2>;
+			//regulator-compatible = "ricoh568_dc3";
+			regulator-name = "ricoh568_dc3";
+			regulator-min-microvolt = <600000>;
+			regulator-max-microvolt = <3500000>;
+			regulator-initial-mode = <0x2>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-mode = <0x2>;
+				regulator-state-disabled;
+				regulator-state-uv = <3300000>;
+			};
+			//regulator-always-on;//
+			//regulator-boot-on;
+		};
+		ricoh568_dcdc4_reg: regulator@3 {
+			reg = <3>;
+			//regulator-compatible = "ricoh568_dc4";
+			regulator-name = "ricoh568_dc4";
+			regulator-min-microvolt = <600000>;
+			regulator-max-microvolt = <3500000>;
+			regulator-initial-mode = <0x2>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-mode = <0x2>;
+				regulator-state-enabled;
+				regulator-state-uv = <1200000>;
+			};
+			//regulator-always-on;
+			//regulator-boot-on;
+		};
+		ricoh568_ldo1_reg: regulator@4  {
+			reg = <4>;
+			//regulator-compatible = "ricoh568_ldo1";
+			regulator-name = "ricoh568_ldo1";
+			regulator-min-microvolt = <900000>;
+			regulator-max-microvolt = <3500000>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-enabled;
+				regulator-state-uv = <3000000>;
+			};
+			//regulator-always-on;
+			//regulator-boot-on;
+		};
+		ricoh568_ldo2_reg: regulator@5  {
+			reg = <5>;
+			//regulator-compatible = "ricoh568_ldo2";
+			regulator-name = "ricoh568_ldo2";
+			regulator-min-microvolt = <900000>;
+			regulator-max-microvolt = <3500000>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-enabled;
+				regulator-state-uv = <1800000>;
+			};
+			//regulator-always-on;
+			//regulator-boot-on;
+		};
+		ricoh568_ldo3_reg: regulator@6  {
+			reg = <6>;
+			//regulator-compatible = "ricoh568_ldo3";
+			regulator-name = "ricoh568_ldo3";
+			regulator-min-microvolt = <600000>;
+			regulator-max-microvolt = <3500000>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-enabled;
+				regulator-state-uv = <2500000>;
+			};
+			//regulator-always-on;
+			//regulator-boot-on;
+		};
+		ricoh568_ldo4_reg: regulator@7  {
+			reg = <7>;
+			//regulator-compatible = "ricoh568_ldo4";
+			regulator-name = "ricoh568_ldo4";
+			regulator-min-microvolt = <900000>;
+			regulator-max-microvolt = <3500000>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-enabled;
+				regulator-state-uv = <2800000>;
+			};
+			//regulator-always-on;
+			//regulator-boot-on;
+		};
+		ricoh568_ldo5_reg: regulator@8  {
+			reg = <8>;
+			//regulator-compatible = "ricoh568_ldo5";
+			regulator-name = "ricoh568_ldo5";
+			regulator-min-microvolt = <900000>;
+			regulator-max-microvolt = <3500000>;
+			regulator-initial-state = <3>;
+			regulator-state-mem {
+				regulator-state-enabled;
+				regulator-state-uv = <1800000>;
+			};
+			//regulator-always-on;
+			//regulator-boot-on;
+		};
+	};
+};

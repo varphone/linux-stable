@@ -349,7 +349,7 @@ static int mxc_v4l2_prepare_bufs(cam_data *cam, struct v4l2_buffer *buf)
 	pr_debug("In MVC:mxc_v4l2_prepare_bufs\n");
 
 	if (buf->index < 0 || buf->index >= FRAME_NUM || buf->length <
-			PAGE_ALIGN(cam->v2f.fmt.pix.sizeimage)) {
+			cam->v2f.fmt.pix.sizeimage) {
 		pr_err("ERROR: v4l2 capture: mxc_v4l2_prepare_bufs buffers "
 			"not allocated,index=%d, length=%d\n", buf->index,
 			buf->length);
@@ -1291,6 +1291,7 @@ static int mxc_v4l2_s_param(cam_data *cam, struct v4l2_streamparm *parm)
 	ipu_csi_signal_cfg_t csi_param;
 	u32 current_fps, parm_fps;
 	int err = 0;
+	struct sensor_data *sensor = cam->sensor->priv;
 
 	pr_debug("In mxc_v4l2_s_param\n");
 
@@ -1366,6 +1367,9 @@ static int mxc_v4l2_s_param(cam_data *cam, struct v4l2_streamparm *parm)
 	} else if (ifparm.u.bt656.mode
 				== V4L2_IF_TYPE_BT656_MODE_NOBT_10BIT) {
 		csi_param.data_width = IPU_CSI_DATA_WIDTH_10;
+        } else if (ifparm.u.bt656.mode
+                                == V4L2_IF_TYPE_BT656_MODE_NOBT_16BIT) {
+                csi_param.data_width = IPU_CSI_DATA_WIDTH_16;
 	} else {
 		csi_param.data_width = IPU_CSI_DATA_WIDTH_8;
 	}
@@ -1380,6 +1384,8 @@ static int mxc_v4l2_s_param(cam_data *cam, struct v4l2_streamparm *parm)
 	pr_debug("   g_fmt_cap returns widthxheight of input as %d x %d\n",
 			cam_fmt.fmt.pix.width, cam_fmt.fmt.pix.height);
 
+	if (ifparm.u.bt656.mode == V4L2_IF_TYPE_BT656_MODE_NOBT_16BIT)
+		cam_fmt.fmt.pix.pixelformat = IPU_PIX_FMT_GENERIC_16;
 	csi_param.data_fmt = cam_fmt.fmt.pix.pixelformat;
 
 	cam->crop_bounds.top = cam->crop_bounds.left = 0;
@@ -1393,6 +1399,8 @@ static int mxc_v4l2_s_param(cam_data *cam, struct v4l2_streamparm *parm)
 	if (cam->device_type != 1) {
 		cam->crop_current.width = cam->crop_bounds.width;
 		cam->crop_current.height = cam->crop_bounds.height;
+		cam->crop_bounds.width = cam_fmt.fmt.pix.width + sensor->hsync_blank;
+		cam->crop_bounds.height = cam_fmt.fmt.pix.height + sensor->vsync_blank;
 	}
 
 	/* This essentially loses the data at the left and bottom of the image
@@ -1652,6 +1660,9 @@ static int mxc_v4l_open(struct file *file)
 		else if (ifparm.u.bt656.mode
 				== V4L2_IF_TYPE_BT656_MODE_NOBT_10BIT)
 			csi_param.data_width = IPU_CSI_DATA_WIDTH_10;
+                else if (ifparm.u.bt656.mode
+                                == V4L2_IF_TYPE_BT656_MODE_NOBT_16BIT)
+                        csi_param.data_width = IPU_CSI_DATA_WIDTH_16;
 		else
 			csi_param.data_width = IPU_CSI_DATA_WIDTH_8;
 
@@ -1693,6 +1704,8 @@ static int mxc_v4l_open(struct file *file)
 			__func__,
 			cam->crop_current.width, cam->crop_current.height);
 
+		if (ifparm.u.bt656.mode == V4L2_IF_TYPE_BT656_MODE_NOBT_16BIT)
+			cam_fmt.fmt.pix.pixelformat = IPU_PIX_FMT_GENERIC_16;
 		csi_param.data_fmt = cam_fmt.fmt.pix.pixelformat;
 		pr_debug("On Open: Input to ipu size is %d x %d\n",
 				cam_fmt.fmt.pix.width, cam_fmt.fmt.pix.height);

@@ -4,9 +4,8 @@
  * Tang Bin <tangb@myzr.com.cn>
  */
 
-/* RevB */
 &iomuxc {
-	myimx6qjh-6qu {
+	myimx6qjh {
 		pinctrl_usb_otg: usbotggrp {				/* J1 */
 			fsl,pins = <
 				MX6QDL_PAD_GPIO_1__USB_OTG_ID		0x17059

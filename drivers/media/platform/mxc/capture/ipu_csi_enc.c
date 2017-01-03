@@ -68,6 +68,7 @@ static int csi_enc_setup(cam_data *cam)
 	ipu_channel_params_t params;
 	u32 pixel_fmt;
 	int err = 0, sensor_protocol = 0;
+	int sensor_data_format, sensor_data_width;
 	dma_addr_t dummy = cam->dummy_frame.buffer.m.offset;
 	ipu_channel_t chan = (cam->csi == 0) ? CSI_MEM0 : CSI_MEM1;
 #ifdef CONFIG_MXC_MIPI_CSI2
@@ -129,6 +130,15 @@ static int csi_enc_setup(cam_data *cam)
 	else {
 		printk(KERN_ERR "format not supported\n");
 		return -EINVAL;
+	}
+
+	sensor_data_format = ipu_csi_get_sensor_data_format(cam->ipu, cam->csi);
+	if (sensor_data_format == 3) {  /* CSI_SENS_CONF_DATA_FMT_BAYER */
+		sensor_data_width = ipu_csi_get_sensor_data_width(cam->ipu, cam->csi);
+		if (sensor_data_width <= 0x1)
+			pixel_fmt = IPU_PIX_FMT_GENERIC;
+		else
+			pixel_fmt = IPU_PIX_FMT_GENERIC_16;
 	}
 
 #ifdef CONFIG_MXC_MIPI_CSI2
