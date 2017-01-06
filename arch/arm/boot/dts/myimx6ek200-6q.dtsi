@@ -168,6 +168,7 @@
 		mux-ext-port = <3>;
 		codec-master;
 		hp-det-gpios = <&gpio3 20 1>;
+		mic-det-gpios = <&gpio1 20 1>;
 	};
 
 	sound-hdmi {
@@ -373,7 +374,6 @@
 			0x8014 /* 4:FN_DMICCDAT */
 			0x0000 /* 5:Default */
 		>;
-		amic-mono;
 	};
 
 	isl1208@6f {
@@ -926,6 +926,7 @@
 };
 
 &ssi2 {
+	fsl,mode = "i2s-slave";
 	status = "okay";
 };
 

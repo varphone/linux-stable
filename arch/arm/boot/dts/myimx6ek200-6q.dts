@@ -1,29 +1,16 @@
 /*
- * Copyright 2012=2015 Freescale Semiconductor, Inc.
- * Copyright 2011 Linaro Ltd.
- *
- * The code contained herein is licensed under the GNU General Public
- * License. You may obtain a copy of the GNU General Public License
- * Version 2 or later at the following locations:
- *
- * http://www.opensource.org/licenses/gpl-license.html
- * http://www.gnu.org/copyleft/gpl.html
+ * MYZR Technology Co.,Ltd
+ * http://www.myzr.com.cn
+ * Tang Bin <tangb@myzr.com.cn>
  */
 
 /dts-v1/;
-
 #include "imx6q.dtsi"
-#include "myimx6ek200-6q.dtsi"
+#include "myimx6ek200.dtsi"
 
 / {
-	model = "Freescale i.MX6 Quad SABRE Smart Device Board";
-	compatible = "myzr,myimx6ek200-6q", "myzr,myimx6ek200", "myzr,myimx6", "fsl,imx6q-sabresd", "fsl,imx6q";
-};
-
-&battery {
-	offset-charger = <1900>;
-	offset-discharger = <1694>;
-	offset-usb-charger = <1685>;
+	model = "MYZR i.MX6 Evaluation Kit (MY-IMX6-EK200-6Q)";
+	compatible = "myzr,myimx6", "myzr,myimx6q", "myzr,myimx6cb200", "myzr,myimx6ek200", "fsl,imx6q";
 };
 
 &ldb {
