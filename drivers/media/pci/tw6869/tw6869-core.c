@@ -225,12 +225,10 @@ static int tw6869_probe(struct pci_dev *pdev, const struct pci_device_id *pid)
 	if (!dev)
 		return -ENOMEM;
 
-	printk("VVV %s:%d\n", __FILE__, __LINE__);
 	ret = pcim_enable_device(pdev);
 	if (ret)
 		return ret;
 
-	printk("VVV %s:%d\n", __FILE__, __LINE__);
 	pci_set_master(pdev);
 	ret = pci_set_dma_mask(pdev, DMA_BIT_MASK(32));
 	if (ret) {
@@ -238,12 +236,10 @@ static int tw6869_probe(struct pci_dev *pdev, const struct pci_device_id *pid)
 		return ret;
 	}
 
-	printk("VVV %s:%d\n", __FILE__, __LINE__);
 	ret = pcim_iomap_regions(pdev, BIT(TW_MMIO_BAR), KBUILD_MODNAME);
 	if (ret)
 		return ret;
 
-	printk("VVV %s:%d\n", __FILE__, __LINE__);
 	dev->mmio = pcim_iomap_table(pdev)[TW_MMIO_BAR];
 	dev->vch_max = (pid->device == PCI_DEVICE_ID_6865) ? 4 : TW_CH_MAX;
 	/* SK-TW6869: only 4 audio inputs is available */
