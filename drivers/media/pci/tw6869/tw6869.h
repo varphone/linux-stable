@@ -51,9 +51,9 @@
 
 #define TW_DMA_ERR_MAX             30
 #define TW_APAGE_MAX               16
-#define TW_VBUF_ALLOC              6
+#define TW_VBUF_ALLOC              1
 
-#define TW_DEBUG                   1
+#define TW_DEBUG                   0
 
 #define tw_dbg(twdev, fmt, arg...) \
 	do { if (TW_DEBUG) dev_info(&twdev->pdev->dev, \
