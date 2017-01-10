@@ -248,10 +248,10 @@ static void __init imx6q_csi_mux_init(void)
 	if (!IS_ERR(gpr)) {
 		if (of_machine_is_compatible("fsl,imx6q-sabresd") ||
 			of_machine_is_compatible("fsl,imx6q-sabreauto"))
-			regmap_update_bits(gpr, IOMUXC_GPR1, 1 << 19, 1 << 19);
+			regmap_update_bits(gpr, IOMUXC_GPR1, 3 << 19, 1 << 19);
 		else if (of_machine_is_compatible("fsl,imx6dl-sabresd") ||
 			 of_machine_is_compatible("fsl,imx6dl-sabreauto"))
-			regmap_update_bits(gpr, IOMUXC_GPR13, 0x3F, 0x0C);
+			regmap_update_bits(gpr, IOMUXC_GPR13, 0x3F, 0x1C);
 	} else {
 		pr_err("%s(): failed to find fsl,imx6q-iomux-gpr regmap\n",
 		       __func__);
