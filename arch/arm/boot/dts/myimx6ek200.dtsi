@@ -215,6 +215,22 @@
 		status = "okay";
 	};
 
+	v4l2_cap_2 {
+		compatible = "fsl,imx6q-v4l2-capture";
+		ipu_id = <1>;
+		csi_id = <0>;
+		mclk_source = <0>;
+		status = "okay";
+	};
+
+	v4l2_cap_3 {
+		compatible = "fsl,imx6q-v4l2-capture";
+		ipu_id = <1>;
+		csi_id = <1>;
+		mclk_source = <0>;
+		status = "okay";
+	};
+
 	v4l2_out {
 		compatible = "fsl,mxc_v4l2_output";
 		status = "okay";
@@ -353,6 +369,7 @@
 		clocks = <&clks IMX6QDL_CLK_CKO>;
 		clock-names = "csi_mclk";
 		pwn-gpios = <&gpio1 16 1>;
+		ipu_id = <0>;
 		csi_id = <0>;
 		mclk = <24000000>;
 		mclk_source = <0>;
@@ -382,8 +399,20 @@
 		clock-names = "csi_mclk";
 		pwn-gpios = <&gpio6 15 1>;
 		rst-gpios = <&gpio6 14 0>;
+		ipu_id = <0>
 		csi_id = <1>;
+		v_channel_id = <3>;
 		mclk = <24000000>;
+		mclk_source = <0>;
+	};
+
+	isl7998x_mipi: isl7998x_mipi@44 {
+		compatible = "intersil,isl7998x_mipi";
+		reg = <0x44>;
+		clocks = <&clks 201>;
+		clock-names = "csi_mclk";
+		csi_id = <0>;
+		mclk = <27000000>;
 		mclk_source = <0>;
 	};
 };
@@ -455,10 +484,35 @@
 
 &mipi_csi {
 	status = "okay";
-	ipu_id = <0>;
-	csi_id = <1>;
-	v_channel = <0>;
 	lanes = <2>;
+
+	mipi-csi2-channel@0 {
+		ipu_id = <0>;
+		csi_id = <0>;
+		v_channel = <0>;
+		status = "okay";
+	};
+
+	mipi-csi2-channel@1 {
+		ipu_id = <0>;
+		csi_id = <1>;
+		v_channel = <1>;
+		status = "okay";
+	};
+
+	mipi-csi2-channel@2 {
+		ipu_id = <1>;
+		csi_id = <0>;
+		v_channel = <2>;
+		status = "okay";
+	};
+
+	mipi-csi2-channel@3 {
+		ipu_id = <1>;
+		csi_id = <1>;
+		v_channel = <3>;
+		status = "okay";
+	};
 };
 
 &pwm1 {
