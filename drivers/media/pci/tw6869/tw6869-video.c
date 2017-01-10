@@ -125,7 +125,7 @@ static void tw6869_vch_dma_frame_isr(struct tw6869_dma *dma)
 		done->vb.v4l2_buf.field = V4L2_FIELD_INTERLACED;
 		vb2_buffer_done(&done->vb, VB2_BUF_STATE_DONE);
 	} else {
-		tw_err(dma->dev, "vch%u NOBUF seq=%u dcount=%u\n",
+		tw_dbg(dma->dev, "vch%u NOBUF seq=%u dcount=%u\n",
 			ID2CH(dma->id), vch->sequence, ++vch->dcount);
 	}
 
@@ -156,7 +156,7 @@ static void tw6869_vch_dma_field_isr(struct tw6869_dma *dma)
 		done->vb.v4l2_buf.field = V4L2_FIELD_BOTTOM;
 		vb2_buffer_done(&done->vb, VB2_BUF_STATE_DONE);
 	} else {
-		tw_err(dma->dev, "vch%u NOBUF seq=%u dcount=%u\n",
+		tw_dbg(dma->dev, "vch%u NOBUF seq=%u dcount=%u\n",
 			ID2CH(dma->id), vch->sequence, ++vch->dcount);
 	}
 
