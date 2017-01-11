@@ -658,6 +658,9 @@ ifneq ($(KCFLAGS),)
         KBUILD_CFLAGS += $(KCFLAGS)
 endif
 
+# Disable unaligned access if GCC >= 4.7
+KBUILD_CFLAGS += $(call cc-ifversion, -ge, 0407, -mno-unaligned-access)
+
 # Use --build-id when available.
 LDFLAGS_BUILD_ID = $(patsubst -Wl$(comma)%,%,\
 			      $(call cc-ldoption, -Wl$(comma)--build-id,))
