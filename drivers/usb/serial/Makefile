@@ -60,3 +60,7 @@ obj-$(CONFIG_USB_SERIAL_WHITEHEAT)		+= whiteheat.o
 obj-$(CONFIG_USB_SERIAL_XIRCOM)			+= keyspan_pda.o
 obj-$(CONFIG_USB_SERIAL_VIVOPAY_SERIAL)		+= vivopay-serial.o
 obj-$(CONFIG_USB_SERIAL_ZIO)			+= zio.o
+obj-$(CONFIG_USB_SERIAL_MXUPORT_11X0) 		+= mxu11x0.o
+obj-$(CONFIG_USB_SERIAL_MXUPORT_2000) 		+= mxuport2000.o
+obj-$(CONFIG_USB_SERIAL_MXUPORT)		+= mxuport/
+obj-$(CONFIG_USB_SERIAL_MXUSBSERIAL)		+= mxusbserial/

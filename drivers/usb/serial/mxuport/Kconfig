@@ -1,0 +1,5 @@
+config USB_SERIAL_MXUPORT
+	tristate "MOXA UPort series driver"
+	help
+		MOXA UPort series driver for 1200/1400/1600
+		

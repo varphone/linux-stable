@@ -661,4 +661,19 @@ config USB_SERIAL_DEBUG
 	  To compile this driver as a module, choose M here: the
 	  module will be called usb-debug.
 
+config USB_SERIAL_MXUPORT_11X0
+	tristate "USB Moxa UPort 11x0 Driver"
+	depends on USB_SERIAL
+	help
+	    Say Y here if you need MOXA device support.
+
+config USB_SERIAL_MXUPORT_2000
+	tristate "USB Moxa UPort 2000 4-serials Driver"
+	depends on USB_SERIAL
+	help
+	    Say Y here if you need MOXA device support.
+
+source "drivers/usb/serial/mxuport/Kconfig"
+source "drivers/usb/serial/mxusbserial/Kconfig"
+
 endif # USB_SERIAL

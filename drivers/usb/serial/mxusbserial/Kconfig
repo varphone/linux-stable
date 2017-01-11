@@ -1,0 +1,4 @@
+config USB_SERIAL_MXUSBSERIAL
+	tristate "MOXA USB Serial Bus"
+	help
+		MOXA USB Serial Bus
