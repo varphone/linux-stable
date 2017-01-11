@@ -986,7 +986,13 @@ static int evdev_connect(struct input_handler *handler, struct input_dev *dev,
 	mutex_init(&evdev->mutex);
 	init_waitqueue_head(&evdev->wait);
 
-	dev_set_name(&evdev->dev, "event%d", minor);
+	/*
+	 * For custom usb keyboard, add by lwx
+	 */
+	if (dev->id.vendor == 0x1c4f)
+		dev_set_name(&evdev->dev, "myusbkbd");
+	else
+		dev_set_name(&evdev->dev, "event%d", minor);
 	evdev->exist = true;
 	evdev->minor = minor;
 

@@ -1159,6 +1159,15 @@ static int usbhid_probe(struct usb_interface *intf, const struct usb_device_id *
 	dbg_hid("HID probe called for ifnum %d\n",
 			intf->altsetting->desc.bInterfaceNumber);
 
+	/*
+	 * For custom keyboard, add by lwx
+	 */
+	if (intf->altsetting->desc.bInterfaceNumber > 0) {
+		hid_err(intf, "dev->descriptor.idVendor = %x\n", dev->descriptor.idVendor);
+		hid_err(intf, "force ignore the usb bInterfaceNumbe > 0 Devices\n");
+		return -ENODEV;
+	}
+
 	for (n = 0; n < interface->desc.bNumEndpoints; n++)
 		if (usb_endpoint_is_int_in(&interface->endpoint[n].desc))
 			has_in++;
