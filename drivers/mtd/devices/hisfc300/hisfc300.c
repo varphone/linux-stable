@@ -854,7 +854,7 @@ static int hisfc300_driver_resume(struct platform_device *pltdev)
 #endif /* CONFIG_PM */
 /*****************************************************************************/
 
-static int __devinit hisfc300_driver_probe(struct platform_device * pltdev)
+static int hisfc300_driver_probe(struct platform_device * pltdev)
 {
 	int result = -EIO;
 	unsigned long regval;
@@ -974,7 +974,7 @@ fail:
 }
 /*****************************************************************************/
 
-static int __devexit hisfc300_driver_remove(struct platform_device * pltdev)
+static int hisfc300_driver_remove(struct platform_device * pltdev)
 {
 	struct hisfc_host *host = platform_get_drvdata(pltdev);
 

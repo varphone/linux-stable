@@ -796,7 +796,7 @@ static void hisfc300_set_host_addr_mode(struct hisfc300_host *host, int enable)
 
 
 
-static int __devinit hisfc300_driver_probe(struct platform_device * plat_dev)
+static int hisfc300_driver_probe(struct platform_device * plat_dev)
 {
 	int result = -EIO;
 	struct hisfc300_host *host;
@@ -901,7 +901,7 @@ fail:
 }
 /*****************************************************************************/
 
-static int __devexit hisfc300_driver_remove(struct platform_device * pltdev)
+static int hisfc300_driver_remove(struct platform_device * pltdev)
 {
 	struct hisfc300_host *host = platform_get_drvdata(pltdev);
 
