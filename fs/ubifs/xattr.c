@@ -212,12 +212,12 @@ static int change_xattr(struct ubifs_info *c, struct inode *host,
 	}
 	memcpy(ui->data, value, size);
 	inode->i_size = ui->ui_size = size;
-	ui->data_len = size;
 
 	mutex_lock(&host_ui->ui_mutex);
 	host->i_ctime = ubifs_current_time(host);
 	host_ui->xattr_size -= CALC_XATTR_BYTES(ui->data_len);
 	host_ui->xattr_size += CALC_XATTR_BYTES(size);
+	ui->data_len = size;
 
 	/*
 	 * It is important to write the host inode after the xattr inode
@@ -296,18 +296,16 @@ static struct inode *iget_xattr(struct ubifs_info *c, ino_t inum)
 	return ERR_PTR(-EINVAL);
 }
 
-int ubifs_setxattr(struct dentry *dentry, const char *name,
-		   const void *value, size_t size, int flags)
+static int setxattr(struct inode *host, const char *name, const void *value,
+		    size_t size, int flags)
 {
-	struct inode *inode, *host = dentry->d_inode;
+	struct inode *inode;
 	struct ubifs_info *c = host->i_sb->s_fs_info;
 	struct qstr nm = { .name = name, .len = strlen(name) };
 	struct ubifs_dent_node *xent;
 	union ubifs_key key;
 	int err, type;
 
-	dbg_gen("xattr '%s', host ino %lu ('%.*s'), size %zd", name,
-		host->i_ino, dentry->d_name.len, dentry->d_name.name, size);
 	ubifs_assert(mutex_is_locked(&host->i_mutex));
 
 	if (size > UBIFS_MAX_INO_DATA)
@@ -357,6 +355,15 @@ int ubifs_setxattr(struct dentry *dentry, const char *name,
 out_free:
 	kfree(xent);
 	return err;
+}
+
+int ubifs_setxattr(struct dentry *dentry, const char *name,
+		   const void *value, size_t size, int flags)
+{
+	dbg_gen("xattr '%s', host ino %lu ('%pd'), size %zd",
+		name, dentry->d_inode->i_ino, dentry, size);
+
+	return setxattr(dentry->d_inode, name, value, size, flags);
 }
 
 ssize_t ubifs_getxattr(struct dentry *dentry, const char *name, void *buf,
