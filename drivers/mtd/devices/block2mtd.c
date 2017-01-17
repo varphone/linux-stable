@@ -368,7 +368,8 @@ static inline void kill_final_newline(char *str)
 
 #ifndef MODULE
 static int block2mtd_init_called = 0;
-static char block2mtd_paramline[80 + 12]; /* 80 for device, 12 for erase size */
+static char block2mtd_paramline[(80 + 12) * 8]; /* 80 for device, 12 for erase size, 8 for max devices */
+static int block2mtd_paramline_offset = 0;
 #endif
 
 
@@ -413,6 +414,16 @@ static int block2mtd_setup2(const char *val)
 }
 
 
+static int block2mtd_setup1(const char* line)
+{
+	char *str = (char*)line;
+	char *val = NULL;
+	while ((val = strsep(&str, " ")) != NULL)
+		block2mtd_setup2(val);
+	return 0;
+}
+
+
 static int block2mtd_setup(const char *val, struct kernel_param *kp)
 {
 #ifdef MODULE
@@ -433,7 +444,15 @@ static int block2mtd_setup(const char *val, struct kernel_param *kp)
 	   the device (even kmalloc() fails). Deter that work to
 	   block2mtd_setup2(). */
 
-	strlcpy(block2mtd_paramline, val, sizeof(block2mtd_paramline));
+	if (block2mtd_paramline_offset > 0) {
+		strncat(block2mtd_paramline + block2mtd_paramline_offset, " ",
+			sizeof(block2mtd_paramline) - block2mtd_paramline_offset);
+		block2mtd_paramline_offset += 1;
+	}
+	strncat(block2mtd_paramline + block2mtd_paramline_offset, val,
+		sizeof(block2mtd_paramline) - block2mtd_paramline_offset);
+	block2mtd_paramline_offset += strlen(val);
+	INFO("mtd: [%s] requested.", val);
 
 	return 0;
 #endif
@@ -449,7 +468,7 @@ static int __init block2mtd_init(void)
 
 #ifndef MODULE
 	if (strlen(block2mtd_paramline))
-		ret = block2mtd_setup2(block2mtd_paramline);
+		ret = block2mtd_setup1(block2mtd_paramline);
 	block2mtd_init_called = 1;
 #endif
 
