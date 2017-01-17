@@ -494,7 +494,7 @@ static void __devexit block2mtd_exit(void)
 }
 
 
-module_init(block2mtd_init);
+late_initcall(block2mtd_init);
 module_exit(block2mtd_exit);
 
 MODULE_LICENSE("GPL");
