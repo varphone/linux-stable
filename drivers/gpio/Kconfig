@@ -152,6 +152,12 @@ config GPIO_VX855
 	  additional drivers must be enabled in order to use the
 	  functionality of the device.
 
+config GPIO_HISI
+	tristate "Hisilicon 3XXX Series GPIO"
+	depends on ARCH_GODNET
+	help
+	  Select this option to enable GPIO driver for the Hisilicon 3XXX soc family.
+
 comment "I2C GPIO expanders:"
 
 config GPIO_MAX7300
@@ -453,4 +459,5 @@ config GPIO_TPS65910
 	help
 	  Select this option to enable GPIO driver for the TPS65910
 	  chip family.
+
 endif

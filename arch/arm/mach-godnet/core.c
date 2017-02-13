@@ -360,6 +360,45 @@ static void  uart_clk_init(unsigned long busclk)
 	lookups[1].clk = &uart_clk;
 }
 
+static struct resource hisi_gpio_resources[] = {
+	[0] = {
+		.start = GPIO0_BASE,
+		.end = GPIO0_BASE + 0x40000 - 1,
+		.flags = IORESOURCE_MEM,
+	},
+	[1] = {
+		.start = GPIO4_BASE,
+		.end = GPIO4_BASE + 0x40000 - 1,
+		.flags = IORESOURCE_MEM,
+	},
+	[2] = {
+		.start = GPIO8_BASE,
+		.end = GPIO8_BASE + 0x40000 - 1,
+		.flags = IORESOURCE_MEM,
+	},
+	[3] = {
+		.start = GPIO12_BASE,
+		.end = GPIO12_BASE + 0x40000 - 1,
+		.flags = IORESOURCE_MEM,
+	},
+	[4] = {
+		.start = GPIO16_BASE,
+		.end = GPIO16_BASE + 0x30000 - 1,
+		.flags = IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device hisi_gpio_device = {
+	.name = "hisi-gpio",
+	.id = 0,
+	.num_resources = ARRAY_SIZE(hisi_gpio_resources),
+	.resource = hisi_gpio_resources,
+};
+
+static struct platform_device *godnet_devices[] __initdata = {
+	&hisi_gpio_device,
+};
+
 void __init godnet_init(void)
 {
 	unsigned long i;
@@ -382,6 +421,8 @@ void __init godnet_init(void)
 		edb_trace();
 		amba_device_register(amba_devs[i], &iomem_resource);
 	}
+
+	platform_add_devices(godnet_devices, ARRAY_SIZE(godnet_devices));
 }
 
 MACHINE_START(GODNET, "godnet")
