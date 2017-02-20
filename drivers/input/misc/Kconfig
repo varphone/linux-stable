@@ -506,4 +506,19 @@ config INPUT_ISL29023
 
 	  This driver can also be built as a module.  If so, the module
 	  will be called isl29023.
+
+config INPUT_ATMEGA
+	tristate "ATMEGA SOC"
+	depends on I2C
+	help
+	  Say Y here to get support for ATMEGA PWM lcd backlight.
+
+	  If unsure, say N.
+
+	  To compile this driver as a module, choose M here: the module will be
+	  called lcd backlight..
+
+	  This driver can also be built as a module.  If so, the module
+	  will be called atmega.
+
 endif
