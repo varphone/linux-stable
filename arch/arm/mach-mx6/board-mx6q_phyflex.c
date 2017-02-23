@@ -457,12 +457,23 @@ static void __init mx6_phyflex_init_usb(void)
 	 * or it will affect signal quality at dp.
 	 */
 
+#if 1   /* TODO: Change to 0 if use USB HUB */
+	/* Enable USB OTG power */
 	ret = gpio_request_one(MX6_PHYFLEX_USB_OTG_PWR, GPIOF_OUT_INIT_LOW, "usb-pwr");
 	gpio_request(MX6_PHYFLEX_USB_OTG_PWR, "usb-pwr");
 	if (ret) {
-		pr_err("failed to get GPIO MX6_PHYFLEX_USB_OTG_PWR:%d\n", ret);
+		pr_err("failed to get GPIO MX6_PHYFLEX_USB_OTG_PWR: %d\n", ret);
 		return;
 	}
+#else
+	/* Enable USB HUB power */
+	ret = gpio_request(MX6_PHYFLEX_USB_OTG_PWR, "usb-pwr");
+	if (ret) {
+		pr_err("failed to get GPIO MX6_PHYFLEX_USB_OTG_PWR: %d\n", ret);
+		return;
+	}
+	gpio_direction_output(MX6_PHYFLEX_USB_OTG_PWR, 1); /* Config PWR USB pin */
+#endif
 
 	mxc_iomux_set_gpr_register(1, 13, 1, 1);
 
