@@ -392,6 +392,8 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 		I2C_BOARD_INFO("edt-ft5x06", 0x38),
 		.irq = gpio_to_irq(MX6_PHYFLEX_KAPA_TOUCH_INT0),
 		.platform_data = (void *)&mx6_phyflex_ft5x06_data,
+	}, {
+		I2C_BOARD_INFO("atmega-keypad", 0x7a),
 	},
 };
 
