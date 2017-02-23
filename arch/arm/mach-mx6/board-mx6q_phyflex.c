@@ -613,7 +613,7 @@ static struct imx_asrc_platform_data imx_asrc_data = {
 static struct ipuv3_fb_platform_data phyflex_fb_data[] = {
     {
         .disp_dev		= "ldb",
-        .interface_pix_fmt	= IPU_PIX_FMT_RGB666,
+        .interface_pix_fmt	= IPU_PIX_FMT_RGB24,
         .mode_str		= "LDB-VGA",
         .default_bpp		= 16,
         .int_clk		= false,
@@ -748,6 +748,22 @@ static struct fb_videomode ldb_modedb[] = {
 		.vsync_len    = 2,
 		.upper_margin = 10,
 		.lower_margin = 35,
+		.sync         = 0,
+		.vmode        = FB_VMODE_NONINTERLACED,
+		.flag         = 0,
+	}, {
+		/* 10.0 inch display */
+		.name         = "AA104XG02",
+		.refresh      = 60,
+		.xres         = 1024,
+		.yres         = 768,
+		.pixclock     = 15384, /* in ps (65,0 MHz) */
+		.hsync_len    = 168,
+		.left_margin  = 8,
+		.right_margin = 29,
+		.vsync_len    = 3,
+		.upper_margin = 144,
+		.lower_margin = 6,
 		.sync         = 0,
 		.vmode        = FB_VMODE_NONINTERLACED,
 		.flag         = 0,
