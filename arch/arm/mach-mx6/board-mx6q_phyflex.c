@@ -131,8 +131,10 @@
 
 #define MX6_PHYCARD_CAP_TCH_INT0	IMX_GPIO_NR(4, 29)
 
-#define MX6_PHYFLEX_CAP_TCH_INT0	IMX_GPIO_NR(5, 8)
-#define MX6_PHYFLEX_CAP_TCH_INT1	IMX_GPIO_NR(5, 7)
+// #define MX6_PHYFLEX_CAP_TCH_INT0	IMX_GPIO_NR(5, 8)
+// #define MX6_PHYFLEX_CAP_TCH_INT1	IMX_GPIO_NR(5, 7)
+#define MX6_PHYFLEX_POWER_OFF_INT  	IMX_GPIO_NR(5, 8) /* 单片机向IMX6发送断电中断 */
+#define MX6_PHYFLEX_POWER_OFF_FIN  	IMX_GPIO_NR(5, 7) /* IMX6向单片机发送断电完成 */
 #define MX6_PHYFLEX_KAPA_TOUCH_INT0	IMX_GPIO_NR(7, 12)
  
 #define MX6_PHYFLEX_DISP0_DET_INT	IMX_GPIO_NR(3, 31)
@@ -384,11 +386,11 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 	}, {
 		I2C_BOARD_INFO("pca9533", 0x62),
 		.platform_data = &user_leds_data,
-	}, {
+	}, /*{
 		I2C_BOARD_INFO("stmpe811", 0x41),
 		.irq = gpio_to_irq(MX6_PHYFLEX_CAP_TCH_INT0),
 		.platform_data = (void *)&stmpe811_data0,
-	}, {
+	}, */{
 		I2C_BOARD_INFO("edt-ft5x06", 0x38),
 		.irq = gpio_to_irq(MX6_PHYFLEX_KAPA_TOUCH_INT0),
 		.platform_data = (void *)&mx6_phyflex_ft5x06_data,
@@ -400,11 +402,11 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 	{
 /*		I2C_BOARD_INFO("max1037", 0x64),
-	} , {*/
+	} , {
 		I2C_BOARD_INFO("stmpe811", 0x41),
 		.irq = gpio_to_irq(MX6_PHYFLEX_CAP_TCH_INT1),
 		.platform_data = (void *)&stmpe811_data1,
-	}, {
+	}, {*/
 		I2C_BOARD_INFO("pca9538", 0x70),
 		.platform_data = &pca9538_platdata,
 	}, {
@@ -1145,17 +1147,68 @@ static struct platform_device leds_gpio = {
 	},
 };
 
+#if defined(CONFIG_KEYBOARD_GPIO) || defined(CONFIG_KEYBOARD_GPIO_MODULE)
+#define GPIO_BUTTON(gpio_num, ev_code, act_low, descr, wake, debounce)	\
+{								\
+	.gpio		= gpio_num,				\
+	.type		= EV_KEY,				\
+	.code		= ev_code,				\
+	.active_low	= act_low,				\
+	.desc		= "btn " descr,				\
+	.wakeup		= wake,					\
+	.debounce_interval = debounce,				\
+}
+
+static struct gpio_keys_button gpio_keys_buttons[] = {
+	GPIO_BUTTON(MX6_PHYFLEX_POWER_OFF_INT, KEY_POWER, 1, "power", 1, 1),
+};
+
+static struct gpio_keys_platform_data gpio_keys_data = {
+	.buttons	= gpio_keys_buttons,
+	.nbuttons	= ARRAY_SIZE(gpio_keys_buttons),
+};
+
+static struct platform_device gpio_keys = {
+	.name		= "gpio-keys",
+	.id		= -1,
+	.num_resources  = 0,
+	.dev		= {
+		.platform_data = &gpio_keys_data,
+	}
+};
+
+static void mx6_add_gpio_buttons(void)
+{
+	platform_device_register(&gpio_keys);
+}
+#else
+static void mx6_add_gpio_buttons(void)
+{
+}
+#endif /* CONFIG_KEYBOARD_GPIO || CONFIG_KEYBOARD_GPIO_MODULE */
+
+static void mx6_poweroff_gpio_init(void)
+{
+	gpio_request(MX6_PHYFLEX_POWER_OFF_FIN , "poweroff-fin");
+	gpio_direction_output(MX6_PHYFLEX_POWER_OFF_FIN, 1);
+	gpio_set_value(MX6_PHYFLEX_POWER_OFF_FIN, 0);
+}
+
 #define SNVS_LPCR 0x38
 static void mx6_snvs_poweroff(void)
 {
-        u32 value;
-        void __iomem *mx6_snvs_base = MX6_IO_ADDRESS(MX6Q_SNVS_BASE_ADDR);
+	u32 value;
+	void __iomem *mx6_snvs_base = MX6_IO_ADDRESS(MX6Q_SNVS_BASE_ADDR);
+	void __iomem *mx6_gpio5_base = MX6_IO_ADDRESS(GPIO5_BASE_ADDR); /* GPIO5_BASE_ADDR: 0x20AC000 */
 
 	printk(KERN_INFO "Goodbye phyFLEX-i.MX6!\n");
 
-        value = readl(mx6_snvs_base + SNVS_LPCR);
-        /* set TOP and DP_EN bit */
-        writel(value | 0x60, mx6_snvs_base + SNVS_LPCR);
+	value = readl(mx6_gpio5_base); /* set GPIO5_7 bit to 1 */
+	writel(value | 0x00000080, mx6_gpio5_base);
+	msleep(200); /* 必须延时否则单片机检测不准确 */
+	value = readl(mx6_snvs_base + SNVS_LPCR);
+	/* set TOP and DP_EN bit */
+	writel(value | 0x60, mx6_snvs_base + SNVS_LPCR);
 }
 
 /*
@@ -1216,10 +1269,16 @@ static void __init mx6_phyflex_init(void)
 		mx6_phyflex_pcie_data.pcie_rst = IMX_GPIO_NR(4, 17);
 	}
 
+	/* Init poweroff GPIO */
+	mx6_poweroff_gpio_init();
+
 	pm_power_off = mx6_snvs_poweroff;
 
 	/* Init GPIO Led's */
 	platform_device_register(&leds_gpio);
+
+	/* Register gpio buttons */
+	mx6_add_gpio_buttons();
 
 	/* Main Voltage regulators */
 	gp_reg_id = phyflex_dvfscore_data.reg_id;
