@@ -36,6 +36,7 @@ config MXC_TVIN_ADV7180
 config MXC_TVIN_ISL7998X_MIPI
 	tristate "Intersil ISL7998x Video Decoder support"
 	depends on !VIDEO_MXC_EMMA_CAMERA && I2C
+	select MXC_MIPI_CSI2
 	---help---
 	  If you plan to use the isl7998x Video Decoder with your MXC system, say Y here.
 
