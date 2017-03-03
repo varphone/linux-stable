@@ -798,6 +798,7 @@ int32_t ipu_init_channel(struct ipu_soc *ipu, ipu_channel_t channel, ipu_channel
 			_ipu_smfc_init(ipu, channel, 0, params->csi_mem.csi);
 			_ipu_csi_set_mipi_di(ipu, 0,
 				params->csi_mem.mipi_id, params->csi_mem.csi);
+			_ipu_csi_set_skip_smfc(ipu, 1, 1, 0, params->csi_mem.csi);  // set 1/2 fps
 		} else {
 			ipu_conf &= ~(1 << (IPU_CONF_CSI0_DATA_SOURCE_OFFSET +
 				params->csi_mem.csi));

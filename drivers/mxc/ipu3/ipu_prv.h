@@ -347,6 +347,7 @@ void ipu_csi_set_test_generator(struct ipu_soc *ipu, bool active, uint32_t r_val
 void _ipu_csi_ccir_err_detection_enable(struct ipu_soc *ipu, uint32_t csi);
 void _ipu_csi_ccir_err_detection_disable(struct ipu_soc *ipu, uint32_t csi);
 void _ipu_csi_wait4eof(struct ipu_soc *ipu, ipu_channel_t channel);
+int _ipu_csi_set_skip_smfc(struct ipu_soc *ipu, uint32_t skip, uint32_t max_ratio, uint32_t id, uint32_t csi);
 void _ipu_smfc_init(struct ipu_soc *ipu, ipu_channel_t channel, uint32_t mipi_id, uint32_t csi);
 void _ipu_smfc_set_burst_size(struct ipu_soc *ipu, ipu_channel_t channel, uint32_t bs);
 void _ipu_dp_set_csc_coefficients(struct ipu_soc *ipu, ipu_channel_t channel, int32_t param[][3]);
