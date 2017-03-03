@@ -169,16 +169,29 @@ static int csi_enc_setup(cam_data *cam)
 		return err;
 	}
 
-	err = ipu_init_channel_buffer(cam->ipu,
-				      chan,
-				      IPU_OUTPUT_BUFFER,
-				      pixel_fmt, cam->v2f.fmt.pix.width,
-				      cam->v2f.fmt.pix.height,
-				      cam->v2f.fmt.pix.bytesperline,
-				      IPU_ROTATE_NONE,
-				      dummy, dummy, 0,
-				      cam->offset.u_offset,
-				      cam->offset.v_offset);
+	if (cam->is_mipi_cam && cam->is_mipi_cam_interlaced) {
+		err = ipu_init_channel_buffer(cam->ipu,
+					      chan,
+					      IPU_OUTPUT_BUFFER,
+					      pixel_fmt, cam->v2f.fmt.pix.width,
+					      cam->v2f.fmt.pix.height/2,
+					      cam->v2f.fmt.pix.bytesperline*2,
+					      IPU_ROTATE_NONE,
+					      dummy, dummy, 0,
+					      cam->offset.u_offset,
+					      cam->offset.v_offset);
+	} else {
+		err = ipu_init_channel_buffer(cam->ipu,
+					      chan,
+					      IPU_OUTPUT_BUFFER,
+					      pixel_fmt, cam->v2f.fmt.pix.width,
+					      cam->v2f.fmt.pix.height,
+					      cam->v2f.fmt.pix.bytesperline,
+					      IPU_ROTATE_NONE,
+					      dummy, dummy, 0,
+					      cam->offset.u_offset,
+					      cam->offset.v_offset);
+	}
 	if (err != 0) {
 		printk(KERN_ERR "CSI_MEM output buffer\n");
 		return err;
