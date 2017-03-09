@@ -33,6 +33,7 @@
 #include <mach/irqs.h>
 #include "clock.h"
 #include <linux/bootmem.h>
+#include <linux/i2c-gpio.h>
 
 static struct map_desc godnet_io_desc[] __initdata = {
 	{
@@ -395,8 +396,44 @@ static struct platform_device hisi_gpio_device = {
 	.resource = hisi_gpio_resources,
 };
 
+#if defined(CONFIG_I2C_GPIO)
+#define GODNET_I2C_GPIO_SDA ((12 * 8) + 5) /* GPIO12_4 */
+#define GODNET_I2C_GPIO_SCL ((12 * 8) + 4) /* GPIO12_5 */
+static struct i2c_gpio_platform_data i2c_gpio_data = {
+	.sda_pin		= GODNET_I2C_GPIO_SDA,
+	.scl_pin		= GODNET_I2C_GPIO_SCL,
+#if 0
+	.udelay			= 5, /* 100 kHz*/
+	.timeout		= 100, /* 100 HZ */
+	.sda_is_open_drain	= 1,
+	.scl_is_open_drain	= 1,
+#endif
+	.udelay			= 10, /* 100 kHz*/
+	.scl_is_output_only	= 0,
+};
+
+static struct platform_device i2c_gpio_device = {
+	.name	= "i2c-gpio",
+	.id	= 0,
+	.dev	= {
+		.platform_data	= &i2c_gpio_data,
+		.release = NULL,
+	},
+};
+#endif /* defined(CONFIG_I2C_GPIO) */
+
 static struct platform_device *godnet_devices[] __initdata = {
 	&hisi_gpio_device,
+#if defined(CONFIG_I2C_GPIO)
+	&i2c_gpio_device,
+#endif /* defined(CONFIG_I2C_GPIO) */
+};
+
+static struct i2c_board_info __initdata godnet_i2c_devices[] = {
+        {
+                I2C_BOARD_INFO("rtc-ds1307", 0x68),
+                .type   = "ds1339",
+        },
 };
 
 void __init godnet_init(void)
@@ -423,6 +460,9 @@ void __init godnet_init(void)
 	}
 
 	platform_add_devices(godnet_devices, ARRAY_SIZE(godnet_devices));
+
+	/* I2C devicesv*/
+	i2c_register_board_info(0, godnet_i2c_devices, ARRAY_SIZE(godnet_i2c_devices));
 }
 
 MACHINE_START(GODNET, "godnet")
