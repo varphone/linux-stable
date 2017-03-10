@@ -396,32 +396,6 @@ static struct platform_device hisi_gpio_device = {
 	.resource = hisi_gpio_resources,
 };
 
-#if defined(CONFIG_I2C_GPIO)
-#define GODNET_I2C_GPIO_SDA ((12 * 8) + 5) /* GPIO12_4 */
-#define GODNET_I2C_GPIO_SCL ((12 * 8) + 4) /* GPIO12_5 */
-static struct i2c_gpio_platform_data i2c_gpio_data = {
-	.sda_pin		= GODNET_I2C_GPIO_SDA,
-	.scl_pin		= GODNET_I2C_GPIO_SCL,
-#if 0
-	.udelay			= 5, /* 100 kHz*/
-	.timeout		= 100, /* 100 HZ */
-	.sda_is_open_drain	= 1,
-	.scl_is_open_drain	= 1,
-#endif
-	.udelay			= 10, /* 100 kHz*/
-	.scl_is_output_only	= 0,
-};
-
-static struct platform_device i2c_gpio_device = {
-	.name	= "i2c-gpio",
-	.id	= 0,
-	.dev	= {
-		.platform_data	= &i2c_gpio_data,
-		.release = NULL,
-	},
-};
-#endif /* defined(CONFIG_I2C_GPIO) */
-
 static struct platform_device i2c_hisi_gpio_device = {
 	.name	= "i2c-hisi-gpio",
 	.id	= -1,
@@ -429,9 +403,6 @@ static struct platform_device i2c_hisi_gpio_device = {
 
 static struct platform_device *godnet_devices[] __initdata = {
 	&hisi_gpio_device,
-#if defined(CONFIG_I2C_GPIO)
-	&i2c_gpio_device,
-#endif /* defined(CONFIG_I2C_GPIO) */
 	&i2c_hisi_gpio_device,
 };
 
