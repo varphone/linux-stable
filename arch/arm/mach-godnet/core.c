@@ -422,11 +422,17 @@ static struct platform_device i2c_gpio_device = {
 };
 #endif /* defined(CONFIG_I2C_GPIO) */
 
+static struct platform_device i2c_hisi_gpio_device = {
+	.name	= "i2c-hisi-gpio",
+	.id	= -1,
+};
+
 static struct platform_device *godnet_devices[] __initdata = {
 	&hisi_gpio_device,
 #if defined(CONFIG_I2C_GPIO)
 	&i2c_gpio_device,
 #endif /* defined(CONFIG_I2C_GPIO) */
+	&i2c_hisi_gpio_device,
 };
 
 static struct i2c_board_info __initdata godnet_i2c_devices[] = {
