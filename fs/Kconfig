@@ -67,6 +67,7 @@ source "fs/quota/Kconfig"
 
 source "fs/autofs4/Kconfig"
 source "fs/fuse/Kconfig"
+source "fs/overlayfs/Kconfig"
 
 config CUSE
 	tristate "Character device in Userspace support"
@@ -103,6 +104,7 @@ menu "DOS/FAT/NT Filesystems"
 
 source "fs/fat/Kconfig"
 source "fs/ntfs/Kconfig"
+source "fs/fatfs/Kconfig"
 
 endmenu
 endif # BLOCK
@@ -203,6 +205,10 @@ source "fs/hfsplus/Kconfig"
 source "fs/befs/Kconfig"
 source "fs/bfs/Kconfig"
 source "fs/efs/Kconfig"
+
+# Patched by YAFFS
+source "fs/yaffs2/Kconfig"
+
 source "fs/jffs2/Kconfig"
 # UBIFS File system configuration
 source "fs/ubifs/Kconfig"
@@ -275,5 +281,9 @@ endif # NETWORK_FILESYSTEMS
 
 source "fs/nls/Kconfig"
 source "fs/dlm/Kconfig"
+
+
+# for fs compat
+source "fs/fs_compat.kconfig"
 
 endmenu

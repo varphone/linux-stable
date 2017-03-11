@@ -3495,6 +3495,7 @@ static void check_flags(unsigned long flags)
 		}
 	}
 
+#ifndef CONFIG_PREEMPT_RT_FULL
 	/*
 	 * We dont accurately track softirq state in e.g.
 	 * hardirq contexts (such as on 4KSTACKS), so only
@@ -3509,6 +3510,7 @@ static void check_flags(unsigned long flags)
 			DEBUG_LOCKS_WARN_ON(!current->softirqs_enabled);
 		}
 	}
+#endif
 
 	if (!debug_locks)
 		print_irqtrace_events(current);
@@ -4044,7 +4046,7 @@ void debug_check_no_locks_freed(const void *mem_from, unsigned long mem_len)
 }
 EXPORT_SYMBOL_GPL(debug_check_no_locks_freed);
 
-static void print_held_locks_bug(struct task_struct *curr)
+static void print_held_locks_bug(void)
 {
 	if (!debug_locks_off())
 		return;
@@ -4053,22 +4055,21 @@ static void print_held_locks_bug(struct task_struct *curr)
 
 	printk("\n");
 	printk("=====================================\n");
-	printk("[ BUG: lock held at task exit time! ]\n");
+	printk("[ BUG: %s/%d still has locks held! ]\n",
+	       current->comm, task_pid_nr(current));
 	print_kernel_ident();
 	printk("-------------------------------------\n");
-	printk("%s/%d is exiting with locks still held!\n",
-		curr->comm, task_pid_nr(curr));
-	lockdep_print_held_locks(curr);
-
+	lockdep_print_held_locks(current);
 	printk("\nstack backtrace:\n");
 	dump_stack();
 }
 
-void debug_check_no_locks_held(struct task_struct *task)
+void debug_check_no_locks_held(void)
 {
-	if (unlikely(task->lockdep_depth > 0))
-		print_held_locks_bug(task);
+	if (unlikely(current->lockdep_depth > 0))
+		print_held_locks_bug();
 }
+EXPORT_SYMBOL_GPL(debug_check_no_locks_held);
 
 void debug_show_all_locks(void)
 {

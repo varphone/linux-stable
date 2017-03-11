@@ -508,12 +508,21 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
 			Also note the kernel might malfunction if you disable
 			some critical bits.
 
+	cma=nn[MG]	[ARM,KNL]
+			Sets the size of kernel global memory area for contiguous
+			memory allocations. For more information, see
+			include/linux/dma-contiguous.h
+
 	cmo_free_hint=	[PPC] Format: { yes | no }
 			Specify whether pages are marked as being inactive
 			when they are freed.  This is used in CMO environments
 			to determine OS memory pressure for page stealing by
 			a hypervisor.
 			Default: yes
+
+	coherent_pool=nn[KMG]	[ARM,KNL]
+			Sets the size of memory pool for coherent, atomic dma
+			allocations, by default set to 256K.
 
 	code_bytes	[X86] How many bytes of object code to print
 			in an oops report.
@@ -1151,6 +1160,15 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
 	ip2=		[HW] Set IO/IRQ pairs for up to 4 IntelliPort boards
 			See comment before ip2_setup() in
 			drivers/char/ip2/ip2base.c.
+
+	irqaffinity=	[SMP] Set the default irq affinity mask
+			Format:
+			<cpu number>,...,<cpu number>
+			or
+			<cpu number>-<cpu number>
+			(must be a positive range in ascending order)
+			or a mixture
+			<cpu number>,...,<cpu number>-<cpu number>
 
 	irqfixup	[HW]
 			When an interrupt is not handled search all handlers
@@ -2398,6 +2416,8 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
 
 	resume=		[SWSUSP]
 			Specify the partition device for software suspend
+			Format:
+			{/dev/<dev> | PARTUUID=<uuid> | <int>:<int> | <hex>}
 
 	resume_offset=	[SWSUSP]
 			Specify the offset from the beginning of the partition
@@ -2451,6 +2471,15 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
 	sbni=		[NET] Granch SBNI12 leased line adapter
 
 	sched_debug	[KNL] Enables verbose scheduler debug messages.
+
+	skew_tick=	[KNL] Offset the periodic timer tick per cpu to mitigate
+			xtime_lock contention on larger systems, and/or RCU lock
+			contention on all systems with CONFIG_MAXSMP set.
+			Format: { "0" | "1" }
+			0 -- disable. (may be 1 via CONFIG_CMDLINE="skew_tick=1"
+			1 -- enable.
+			Note: increases power consumption, thus should only be
+			enabled if running jitter sensitive (HPC/RT) workloads.
 
 	security=	[SECURITY] Choose a security module to enable at boot.
 			If this boot parameter is not specified, only the first

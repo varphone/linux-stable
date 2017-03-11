@@ -91,7 +91,7 @@ int max_threads;		/* tunable limit on nr_threads */
 
 DEFINE_PER_CPU(unsigned long, process_counts) = 0;
 
-__cacheline_aligned DEFINE_RWLOCK(tasklist_lock);  /* outer */
+DEFINE_RWLOCK(tasklist_lock);  /* outer */
 
 #ifdef CONFIG_PROVE_RCU
 int lockdep_tasklist_lock_is_held(void)
@@ -158,6 +158,9 @@ struct kmem_cache *vm_area_cachep;
 /* SLAB cache for mm_struct structures (tsk->mm) */
 static struct kmem_cache *mm_cachep;
 
+/* Notifier list called when a task struct is freed */
+static ATOMIC_NOTIFIER_HEAD(task_free_notifier);
+
 static void account_kernel_stack(struct thread_info *ti, int account)
 {
 	struct zone *zone = page_zone(virt_to_page(ti));
@@ -188,6 +191,18 @@ static inline void put_signal_struct(struct signal_struct *sig)
 		free_signal_struct(sig);
 }
 
+int task_free_register(struct notifier_block *n)
+{
+	return atomic_notifier_chain_register(&task_free_notifier, n);
+}
+EXPORT_SYMBOL(task_free_register);
+
+int task_free_unregister(struct notifier_block *n)
+{
+	return atomic_notifier_chain_unregister(&task_free_notifier, n);
+}
+EXPORT_SYMBOL(task_free_unregister);
+
 void __put_task_struct(struct task_struct *tsk)
 {
 	WARN_ON(!tsk->exit_state);
@@ -199,10 +214,22 @@ void __put_task_struct(struct task_struct *tsk)
 	delayacct_tsk_free(tsk);
 	put_signal_struct(tsk->signal);
 
+	atomic_notifier_call_chain(&task_free_notifier, 0, tsk);
 	if (!profile_handoff_task(tsk))
 		free_task(tsk);
 }
+#ifndef CONFIG_PREEMPT_RT_BASE
 EXPORT_SYMBOL_GPL(__put_task_struct);
+#else
+void __put_task_struct_cb(struct rcu_head *rhp)
+{
+	struct task_struct *tsk = container_of(rhp, struct task_struct, put_rcu);
+
+	__put_task_struct(tsk);
+
+}
+EXPORT_SYMBOL_GPL(__put_task_struct_cb);
+#endif
 
 /*
  * macro override instead of weak attribute alias, to workaround
@@ -563,11 +590,25 @@ void __mmdrop(struct mm_struct *mm)
 }
 EXPORT_SYMBOL_GPL(__mmdrop);
 
+#ifdef CONFIG_PREEMPT_RT_BASE
+/*
+ * RCU callback for delayed mm drop. Not strictly rcu, but we don't
+ * want another facility to make this work.
+ */
+void __mmdrop_delayed(struct rcu_head *rhp)
+{
+	struct mm_struct *mm = container_of(rhp, struct mm_struct, delayed_drop);
+
+	__mmdrop(mm);
+}
+#endif
+
 /*
  * Decrement the use count and release all resources for an mm.
  */
-void mmput(struct mm_struct *mm)
+int mmput(struct mm_struct *mm)
 {
+	int mm_freed = 0;
 	might_sleep();
 
 	if (atomic_dec_and_test(&mm->mm_users)) {
@@ -585,7 +626,9 @@ void mmput(struct mm_struct *mm)
 		if (mm->binfmt)
 			module_put(mm->binfmt->module);
 		mmdrop(mm);
+		mm_freed = 1;
 	}
+	return mm_freed;
 }
 EXPORT_SYMBOL_GPL(mmput);
 
@@ -677,7 +720,8 @@ struct mm_struct *mm_access(struct task_struct *task, unsigned int mode)
 
 	mm = get_task_mm(task);
 	if (mm && mm != current->mm &&
-			!ptrace_may_access(task, mode)) {
+			!ptrace_may_access(task, mode) &&
+			!capable(CAP_SYS_RESOURCE)) {
 		mmput(mm);
 		mm = ERR_PTR(-EACCES);
 	}
@@ -1103,6 +1147,9 @@ void mm_init_owner(struct mm_struct *mm, struct task_struct *p)
  */
 static void posix_cpu_timers_init(struct task_struct *tsk)
 {
+#ifdef CONFIG_PREEMPT_RT_BASE
+	tsk->posix_timer_list = NULL;
+#endif
 	tsk->cputime_expires.prof_exp = 0;
 	tsk->cputime_expires.virt_exp = 0;
 	tsk->cputime_expires.sched_exp = 0;
@@ -1210,6 +1257,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	spin_lock_init(&p->alloc_lock);
 
 	init_sigpending(&p->pending);
+	p->sigqueue_cache = NULL;
 
 	p->utime = p->stime = p->gtime = 0;
 	p->utimescaled = p->stimescaled = 0;
@@ -1267,6 +1315,9 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	p->softirq_disable_event = 0;
 	p->hardirq_context = 0;
 	p->softirq_context = 0;
+#endif
+#ifdef CONFIG_PREEMPT_RT_FULL
+	p->pagefault_disabled = 0;
 #endif
 #ifdef CONFIG_LOCKDEP
 	p->lockdep_depth = 0; /* no locks held yet */
@@ -1507,7 +1558,7 @@ fork_out:
 	return ERR_PTR(retval);
 }
 
-noinline struct pt_regs * __cpuinit __attribute__((weak)) idle_regs(struct pt_regs *regs)
+noinline struct pt_regs *  __attribute__((weak)) idle_regs(struct pt_regs *regs)
 {
 	memset(regs, 0, sizeof(struct pt_regs));
 	return regs;
@@ -1523,7 +1574,7 @@ static inline void init_idle_pids(struct pid_link *links)
 	}
 }
 
-struct task_struct * __cpuinit fork_idle(int cpu)
+struct task_struct * fork_idle(int cpu)
 {
 	struct task_struct *task;
 	struct pt_regs regs;

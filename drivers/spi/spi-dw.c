@@ -632,9 +632,11 @@ static int dw_spi_setup(struct spi_device *spi)
 	/* Only alloc on first setup */
 	chip = spi_get_ctldata(spi);
 	if (!chip) {
-		chip = kzalloc(sizeof(struct chip_data), GFP_KERNEL);
+		chip = devm_kzalloc(&spi->dev, sizeof(struct chip_data),
+				GFP_KERNEL);
 		if (!chip)
 			return -ENOMEM;
+		spi_set_ctldata(spi, chip);
 	}
 
 	/*
@@ -682,7 +684,6 @@ static int dw_spi_setup(struct spi_device *spi)
 			| (spi->mode  << SPI_MODE_OFFSET)
 			| (chip->tmode << SPI_TMOD_OFFSET);
 
-	spi_set_ctldata(spi, chip);
 	return 0;
 }
 

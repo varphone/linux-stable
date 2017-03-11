@@ -68,6 +68,7 @@
 #include <linux/shmem_fs.h>
 #include <linux/slab.h>
 #include <linux/perf_event.h>
+#include <linux/posix-timers.h>
 #include <linux/random.h>
 
 #include <asm/io.h>
@@ -123,6 +124,7 @@ extern void softirq_init(void);
 char __initdata boot_command_line[COMMAND_LINE_SIZE];
 /* Untouched saved command line (eg. for /proc) */
 char *saved_command_line;
+EXPORT_SYMBOL(saved_command_line);
 /* Command line for parameter parsing */
 static char *static_command_line;
 
@@ -360,6 +362,7 @@ static __initdata DECLARE_COMPLETION(kthreadd_done);
 static noinline void __init_refok rest_init(void)
 {
 	int pid;
+	const struct sched_param param = { .sched_priority = 1 };
 
 	rcu_scheduler_starting();
 	/*
@@ -373,6 +376,7 @@ static noinline void __init_refok rest_init(void)
 	rcu_read_lock();
 	kthreadd_task = find_task_by_pid_ns(pid, &init_pid_ns);
 	rcu_read_unlock();
+	sched_setscheduler_nocheck(kthreadd_task, SCHED_FIFO, &param);
 	complete(&kthreadd_done);
 
 	/*
@@ -500,6 +504,7 @@ asmlinkage void __init start_kernel(void)
 	setup_command_line(command_line);
 	setup_nr_cpu_ids();
 	setup_per_cpu_areas();
+	softirq_early_init();
 	smp_prepare_boot_cpu();	/* arch-specific boot-cpu hooks */
 
 	build_all_zonelists(NULL);
@@ -657,6 +662,9 @@ static void __init do_ctors(void)
 
 bool initcall_debug;
 core_param(initcall_debug, initcall_debug, bool, 0644);
+
+int initcall_debug_delay_ms = 0;
+core_param(initcall_debug_delay_ms, initcall_debug_delay_ms, int, 0644);
 
 static char msgbuf[64];
 
@@ -874,8 +882,14 @@ static int __init kernel_init(void * unused)
 	do_basic_setup();
 
 	/* Open the /dev/console on the rootfs, this should never fail */
-	if (sys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)
-		printk(KERN_WARNING "Warning: unable to open an initial console.\n");
+	//char *console = "/dev_console";
+
+	if (sys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0) {
+		sys_mknod((const char __user *) "/dev/console", S_IFCHR|0600, (TTYAUX_MAJOR<<8)|1);
+		if (sys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)
+			printk(KERN_WARNING "Warning: unable to open an initial console.\n");
+		sys_unlink((const char __user *) "/dev/console");
+	}
 
 	(void) sys_dup(0);
 	(void) sys_dup(0);

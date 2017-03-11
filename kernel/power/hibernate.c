@@ -25,6 +25,8 @@
 #include <linux/freezer.h>
 #include <linux/gfp.h>
 #include <linux/syscore_ops.h>
+#include <linux/ctype.h>
+#include <linux/genhd.h>
 #include <scsi/scsi_scan.h>
 
 #include "power.h"
@@ -270,6 +272,8 @@ static int create_image(int platform_mode)
 
 	local_irq_disable();
 
+	system_state = SYSTEM_SUSPEND;
+
 	error = syscore_suspend();
 	if (error) {
 		printk(KERN_ERR "PM: Some system devices failed to power down, "
@@ -281,13 +285,21 @@ static int create_image(int platform_mode)
 		goto Power_up;
 
 	in_suspend = 1;
+#ifdef CONFIG_ARCH_SUNXI
+	hibernate_save_processor_state();
+#else
 	save_processor_state();
+#endif
 	error = swsusp_arch_suspend();
 	if (error)
 		printk(KERN_ERR "PM: Error %d creating hibernation image\n",
 			error);
+#ifdef CONFIG_ARCH_SUNXI
 	/* Restore control flow magically appears here */
+	hibernate_restore_processor_state();
+#else
 	restore_processor_state();
+#endif
 	if (!in_suspend) {
 		events_check_enabled = false;
 		platform_leave(platform_mode);
@@ -297,6 +309,7 @@ static int create_image(int platform_mode)
 	syscore_resume();
 
  Enable_irqs:
+	system_state = SYSTEM_RUNNING;
 	local_irq_enable();
 
  Enable_cpus:
@@ -422,12 +435,17 @@ static int resume_target_kernel(bool platform_mode)
 		goto Enable_cpus;
 
 	local_irq_disable();
+	system_state = SYSTEM_SUSPEND;
 
 	error = syscore_suspend();
 	if (error)
 		goto Enable_irqs;
 
+#ifdef CONFIG_ARCH_SUNXI
+	hibernate_save_processor_state();
+#else
 	save_processor_state();
+#endif
 	error = restore_highmem();
 	if (!error) {
 		error = swsusp_arch_resume();
@@ -449,12 +467,17 @@ static int resume_target_kernel(bool platform_mode)
 	 * subsequent failures.
 	 */
 	swsusp_free();
+#ifdef CONFIG_ARCH_SUNXI
+	hibernate_restore_processor_state();
+#else
 	restore_processor_state();
+#endif
 	touch_softlockup_watchdog();
 
 	syscore_resume();
 
  Enable_irqs:
+	system_state = SYSTEM_RUNNING;
 	local_irq_enable();
 
  Enable_cpus:
@@ -543,6 +566,7 @@ int hibernation_platform_enter(void)
 		goto Platform_finish;
 
 	local_irq_disable();
+	system_state = SYSTEM_SUSPEND;
 	syscore_suspend();
 	if (pm_wakeup_pending()) {
 		error = -EAGAIN;
@@ -555,6 +579,7 @@ int hibernation_platform_enter(void)
 
  Power_up:
 	syscore_resume();
+	system_state = SYSTEM_RUNNING;
 	local_irq_enable();
 	enable_nonboot_cpus();
 
@@ -734,6 +759,17 @@ static int software_resume(void)
 
 	/* Check if the device is there */
 	swsusp_resume_device = name_to_dev_t(resume_file);
+
+	/*
+	 * name_to_dev_t is ineffective to verify parition if resume_file is in
+	 * integer format. (e.g. major:minor)
+	 */
+	if (isdigit(resume_file[0]) && resume_wait) {
+		int partno;
+		while (!get_gendisk(swsusp_resume_device, &partno))
+			msleep(10);
+	}
+
 	if (!swsusp_resume_device) {
 		/*
 		 * Some device discovery might still be in progress; we need

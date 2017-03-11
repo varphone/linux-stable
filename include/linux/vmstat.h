@@ -29,7 +29,9 @@ DECLARE_PER_CPU(struct vm_event_state, vm_event_states);
 
 static inline void __count_vm_event(enum vm_event_item item)
 {
+	preempt_disable_rt();
 	__this_cpu_inc(vm_event_states.event[item]);
+	preempt_enable_rt();
 }
 
 static inline void count_vm_event(enum vm_event_item item)
@@ -39,7 +41,9 @@ static inline void count_vm_event(enum vm_event_item item)
 
 static inline void __count_vm_events(enum vm_event_item item, long delta)
 {
+	preempt_disable_rt();
 	__this_cpu_add(vm_event_states.event[item], delta);
+	preempt_enable_rt();
 }
 
 static inline void count_vm_events(enum vm_event_item item, long delta)
@@ -140,7 +144,6 @@ static inline unsigned long zone_page_state_snapshot(struct zone *zone,
 }
 
 extern unsigned long global_reclaimable_pages(void);
-extern unsigned long zone_reclaimable_pages(struct zone *zone);
 
 #ifdef CONFIG_NUMA
 /*
@@ -257,6 +260,14 @@ static inline void refresh_cpu_vm_stats(int cpu) { }
 static inline void refresh_zone_stat_thresholds(void) { }
 
 #endif		/* CONFIG_SMP */
+
+static inline void __mod_zone_freepage_state(struct zone *zone, int nr_pages,
+					     int migratetype)
+{
+	__mod_zone_page_state(zone, NR_FREE_PAGES, nr_pages);
+	if (is_migrate_cma(migratetype))
+		__mod_zone_page_state(zone, NR_FREE_CMA_PAGES, nr_pages);
+}
 
 extern const char * const vmstat_text[];
 

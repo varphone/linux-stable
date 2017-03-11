@@ -375,7 +375,7 @@ extern enum system_states {
 	SYSTEM_HALT,
 	SYSTEM_POWER_OFF,
 	SYSTEM_RESTART,
-	SYSTEM_SUSPEND_DISK,
+	SYSTEM_SUSPEND,
 } system_state;
 
 #define TAINT_PROPRIETARY_MODULE	0
@@ -705,6 +705,9 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
 #endif
 
 extern int do_sysinfo(struct sysinfo *info);
+
+/* To identify board information in panic logs, set this */
+extern char *mach_panic_string;
 
 #endif /* __KERNEL__ */
 

@@ -36,6 +36,10 @@ obj-$(CONFIG_FUNCTION_TRACER) += trace_functions.o
 obj-$(CONFIG_IRQSOFF_TRACER) += trace_irqsoff.o
 obj-$(CONFIG_PREEMPT_TRACER) += trace_irqsoff.o
 obj-$(CONFIG_SCHED_TRACER) += trace_sched_wakeup.o
+obj-$(CONFIG_INTERRUPT_OFF_HIST) += latency_hist.o
+obj-$(CONFIG_PREEMPT_OFF_HIST) += latency_hist.o
+obj-$(CONFIG_WAKEUP_LATENCY_HIST) += latency_hist.o
+obj-$(CONFIG_MISSED_TIMER_OFFSETS_HIST) += latency_hist.o
 obj-$(CONFIG_NOP_TRACER) += trace_nop.o
 obj-$(CONFIG_STACK_TRACER) += trace_stack.o
 obj-$(CONFIG_MMIOTRACE) += trace_mmiotrace.o
@@ -61,5 +65,6 @@ endif
 ifeq ($(CONFIG_TRACING),y)
 obj-$(CONFIG_KGDB_KDB) += trace_kdb.o
 endif
+obj-$(CONFIG_GPU_TRACEPOINTS) += gpu-traces.o
 
 libftrace-y := ftrace.o

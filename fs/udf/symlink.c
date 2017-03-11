@@ -116,7 +116,7 @@ static int udf_symlink_filler(struct file *file, struct page *page)
 	}
 
 	iinfo = UDF_I(inode);
-	pos = udf_block_map(inode, 0);
+	pos = udf_block_map(inode, 0, NULL);
 
 	down_read(&iinfo->i_data_sem);
 	if (iinfo->i_alloc_type == ICBTAG_FLAG_AD_IN_ICB) {

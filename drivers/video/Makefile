@@ -4,6 +4,7 @@
 
 # Each configuration option enables a list of files.
 
+obj-y 				  += fbtft/
 obj-$(CONFIG_VGASTATE)            += vgastate.o
 obj-y                             += fb_notify.o
 obj-$(CONFIG_FB)                  += fb.o
@@ -16,6 +17,8 @@ obj-$(CONFIG_LOGO)		  += logo/
 obj-y				  += backlight/
 
 obj-$(CONFIG_EXYNOS_VIDEO)     += exynos/
+
+obj-y                          += sunxi/
 
 obj-$(CONFIG_FB_CFB_FILLRECT)  += cfbfillrect.o
 obj-$(CONFIG_FB_CFB_COPYAREA)  += cfbcopyarea.o

@@ -57,10 +57,33 @@ obj-$(CONFIG_IPMI_HANDLER)	+= ipmi/
 obj-$(CONFIG_HANGCHECK_TIMER)	+= hangcheck-timer.o
 obj-$(CONFIG_TCG_TPM)		+= tpm/
 
+obj-$(CONFIG_DCC_TTY)		+= dcc_tty.o
 obj-$(CONFIG_PS3_FLASH)		+= ps3flash.o
 obj-$(CONFIG_RAMOOPS)		+= ramoops.o
+obj-$(CONFIG_SUNXI_D7S)		+= sunxi-d7s.o
 
 obj-$(CONFIG_JS_RTC)		+= js-rtc.o
 js-rtc-y = rtc.o
 
+obj-$(CONFIG_SUNXI_G2D)         += sunxi_g2d/
+
 obj-$(CONFIG_TILE_SROM)		+= tile-srom.o
+obj-$(CONFIG_SUNXI_CMATESET)	+= cma_test/
+obj-$(CONFIG_SUNXI_TIMER_TEST)	+= timer_test/
+obj-$(CONFIG_SUNXI_ARISC_TEST)	+= arisc_test/
+obj-$(CONFIG_SUNXI_SOC_INFO)          += sunxi_soc_info/
+obj-$(CONFIG_SUNXI_MODULE)	+= sunxi_module/
+#obj-$(CONFIG_SUNXI_PINCTRL_TEST)+= sunxi_pinctrl_test/
+obj-$(CONFIG_SUNXI_DMA_TEST)	+= dma_test/
+obj-$(CONFIG_SUNXI_TRANSFORM)	+= sunxi_tr/
+obj-y				+= sunxi-scr/
+obj-y				+= sunxi-di/
+
+obj-${CONFIG_ID}       += sunxi_id/
+obj-${CONFIG_RESET_KEY} += sunxi_key/
+obj-$(CONFIG_IR_CUT)   += sunxi_ir_cut/
+
+obj-$(CONFIG_MATRIX_GPIO_INT)	+= matrix_gpio_int.o
+obj-$(CONFIG_MATRIX_PWM)	+= matrix_pwm.o
+obj-$(CONFIG_MATRIX_ROTARY_ENCODER)	+= matrix_rotary_encoder.o
+obj-$(CONFIG_MATRIX_HCSR04) 	+= matrix_hcsr04.o

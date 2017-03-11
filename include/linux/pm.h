@@ -28,6 +28,20 @@
 #include <linux/timer.h>
 #include <linux/completion.h>
 
+typedef enum{
+	NON_STANDBY = 0,
+	NORMAL_STANDBY = 1,
+	SUPER_STANDBY = 3
+}standby_type_e;
+extern standby_type_e standby_type; 
+
+typedef enum{
+	STANDBY_INITIAL = 0,
+	STANDBY_WITH_POWER = 1,
+	STANDBY_WITH_POWER_OFF = 2
+}standby_level_e;
+extern standby_level_e standby_level;
+
 /*
  * Callbacks for platform drivers to implement.
  */
@@ -544,8 +558,6 @@ struct dev_pm_info {
 	unsigned long		active_jiffies;
 	unsigned long		suspended_jiffies;
 	unsigned long		accounting_timestamp;
-	ktime_t			suspend_time;
-	s64			max_time_suspended_ns;
 	struct dev_pm_qos_request *pq_req;
 #endif
 	struct pm_subsys_data	*subsys_data;  /* Owned by the subsystem. */
@@ -640,6 +652,7 @@ extern void __suspend_report_result(const char *function, void *fn, int ret);
 	} while (0)
 
 extern int device_pm_wait_for_dev(struct device *sub, struct device *dev);
+extern void dpm_for_each_dev(void *data, void (*fn)(struct device *, void *));
 
 extern int pm_generic_prepare(struct device *dev);
 extern int pm_generic_suspend_late(struct device *dev);
@@ -677,6 +690,10 @@ static inline int dpm_suspend_start(pm_message_t state)
 static inline int device_pm_wait_for_dev(struct device *a, struct device *b)
 {
 	return 0;
+}
+
+static inline void dpm_for_each_dev(void *data, void (*fn)(struct device *, void *))
+{
 }
 
 #define pm_generic_prepare	NULL

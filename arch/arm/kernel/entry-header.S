@@ -104,8 +104,8 @@
 	.endm
 
 	.macro	get_thread_info, rd
-	mov	\rd, sp, lsr #13
-	mov	\rd, \rd, lsl #13
+	mov	\rd, sp, lsr #(PAGE_SHIFT + THREAD_SIZE_ORDER)
+	mov	\rd, \rd, lsl #(PAGE_SHIFT + THREAD_SIZE_ORDER)
 	.endm
 
 	@
@@ -151,8 +151,8 @@
 
 	.macro	get_thread_info, rd
 	mov	\rd, sp
-	lsr	\rd, \rd, #13
-	mov	\rd, \rd, lsl #13
+	lsr	\rd, \rd, #(PAGE_SHIFT + THREAD_SIZE_ORDER)
+	mov	\rd, \rd, lsl #(PAGE_SHIFT + THREAD_SIZE_ORDER)
 	.endm
 
 	@

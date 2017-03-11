@@ -358,7 +358,6 @@ void trace_init_global_iter(struct trace_iterator *iter);
 
 void tracing_iter_reset(struct trace_iterator *iter, int cpu);
 
-void default_wait_pipe(struct trace_iterator *iter);
 void poll_wait_pipe(struct trace_iterator *iter);
 
 void ftrace(struct trace_array *tr,
@@ -460,6 +459,7 @@ static inline void __trace_stack(struct trace_array *tr, unsigned long flags,
 extern cycle_t ftrace_now(int cpu);
 
 extern void trace_find_cmdline(int pid, char comm[]);
+extern int trace_find_tgid(int pid);
 
 #ifdef CONFIG_DYNAMIC_FTRACE
 extern unsigned long ftrace_update_tot_cnt;
@@ -671,6 +671,7 @@ enum trace_iterator_flags {
 	TRACE_ITER_OVERWRITE		= 0x200000,
 	TRACE_ITER_STOP_ON_FREE		= 0x400000,
 	TRACE_ITER_IRQ_INFO		= 0x800000,
+	TRACE_ITER_TGID 		= 0x1000000,
 };
 
 /*
