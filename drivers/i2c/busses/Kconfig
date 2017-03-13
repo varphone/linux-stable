@@ -370,6 +370,7 @@ config I2C_GPIO
 
 config I2C_HISI_GPIO
 	tristate "GPIO-based GPIO I2C for Hi3XXX, Hi6XXX platform"
+	select I2C_ALGOBIT
 	help
 	  Say Y if you want to support GPIO based I2C on Hi3XXX, Hi6XXX platforms.
 

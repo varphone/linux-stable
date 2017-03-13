@@ -1,821 +1,287 @@
-
-#include <linux/module.h>
-#include <linux/errno.h>
-#include <linux/miscdevice.h>
-#include <linux/fcntl.h>
-
-#include <linux/init.h>
-#include <linux/delay.h>
-#include <linux/proc_fs.h>
-#include <linux/workqueue.h>
-
-#include <asm/uaccess.h>
-#include <asm/system.h>
-#include <asm/io.h>
+/*
+ * Bitbanging I2C bus driver using the GPIO API
+ *
+ * Copyright (C) 2007 Atmel Corporation
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
 #include <linux/i2c.h>
+#include <linux/i2c-algo-bit.h>
+#include <linux/i2c-gpio.h>
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/slab.h>
 #include <linux/platform_device.h>
 
-#define GPIO_I2C_READ	0x01
-#define GPIO_I2C_WRITE	0x03
+#include <asm/gpio.h>
+#include <asm/io.h>
 
-#define GPIO_0_BASE		0x20210000
-#define GPIO_0_DIR		IO_ADDRESS(GPIO_0_BASE + 0x400)
-#define SCL_SHIFT_NUM		0x5
-#define SDA_SHIFT_NUM		0x4
-#define SCL			(1 << 5)    /* GPIO12 0_5 */
-#define SDA			(1 << 4)    /* GPIO12 0_4 */
-#define GPIO_I2C_SCL_REG	IO_ADDRESS(GPIO_0_BASE + 0x80)  /* 0x80 */
-#define GPIO_I2C_SDA_REG	IO_ADDRESS(GPIO_0_BASE + 0x40)  /* 0x40 */
-#define GPIO_I2C_SCLSDA_REG	IO_ADDRESS(GPIO_0_BASE + 0xc0)  /* need check */
-#define SCL_MUXCTRL_REG		IO_ADDRESS(0x200f0000 + 0x19c)
-#define SDA_MUXCTRL_REG		IO_ADDRESS(0x200f0000 + 0x198)
+#define DRV_NAME		"i2c-hisi-gpio"
+
+#define I2C_GPIO_BASE		0x20210000
+#define I2C_GPIO_DIR		IO_ADDRESS(I2C_GPIO_BASE + 0x400)
+
+#define I2C_SCL_DIR_REG		IO_ADDRESS(I2C_GPIO_BASE + 0x400)
+#define I2C_SCL_SHIFT_NUM	0x5
+#define I2C_SCL_MASK		(1 << 5)    /* GPIO12 0_5 */
+#define I2C_SCL_REG		IO_ADDRESS(I2C_GPIO_BASE + 0x80)  /* 0x80 */
+#define I2C_SCL_MUXCTRL_REG	IO_ADDRESS(0x200f0000 + 0x19c)
+
+#define I2C_SDA_DIR_REG		IO_ADDRESS(I2C_GPIO_BASE + 0x400)
+#define I2C_SDA_SHIFT_NUM	0x4
+#define I2C_SDA_MASK		(1 << 4)    /* GPIO12 0_4 */
+#define I2C_SDA_REG		IO_ADDRESS(I2C_GPIO_BASE + 0x40)  /* 0x40 */
+#define I2C_SDA_MUXCTRL_REG	IO_ADDRESS(0x200f0000 + 0x198)
+
 #define HW_REG(reg)		*((volatile unsigned int *)(reg))
 #define DELAY(us)		time_delay_us(us)
 
-typedef unsigned char  byte;
+static spinlock_t gpioi2c_lock;
 
-unsigned char gpio_i2c_read(unsigned char devaddress, unsigned char address);
-unsigned char gpio_i2c_read_ex(unsigned char devaddress, unsigned short address);
-void gpio_i2c_write(unsigned char devaddress, unsigned char address, unsigned char value);
-void gpio_i2c_write_ex(unsigned char devaddress, unsigned short address, unsigned char value);
-byte siiReadSegmentBlockEDID(byte SlaveAddr, byte Segment, byte Offset, byte *Buffer, byte Length);
-
-static spinlock_t  gpioi2c_lock;
-
-/*
- * I2C by GPIO simulated  clear 0 routine.
- *
- * @param whichline: GPIO control line
- *
- */
-static void i2c_clr(unsigned char whichline)
-{
-	unsigned char regvalue;
-
-	if(whichline == SCL) {
-		regvalue = HW_REG(GPIO_0_DIR);
-		regvalue |= SCL;
-		HW_REG(GPIO_0_DIR) = regvalue;
-
-		HW_REG(GPIO_I2C_SCL_REG) = 0;
-		return;
-	} else if(whichline == SDA) {
-		regvalue = HW_REG(GPIO_0_DIR);
-		regvalue |= SDA;
-		HW_REG(GPIO_0_DIR) = regvalue;
-
-		HW_REG(GPIO_I2C_SDA_REG) = 0;
-		return;
-	} else if(whichline == (SDA|SCL)) {
-		regvalue = HW_REG(GPIO_0_DIR);
-		regvalue |= (SDA|SCL);
-		HW_REG(GPIO_0_DIR) = regvalue;
-
-		HW_REG(GPIO_I2C_SCLSDA_REG) = 0;
-		return;
-	} else {
-		printk("Error input.\n");
-		return;
-	}
-
-}
-
-/*
- * I2C by GPIO simulated  set 1 routine.
- *
- * @param whichline: GPIO control line
- *
- */
-static void  i2c_set(unsigned char whichline)
-{
-	unsigned char regvalue;
-
-	if(whichline == SCL) {
-		regvalue = HW_REG(GPIO_0_DIR);
-		regvalue |= SCL;
-		HW_REG(GPIO_0_DIR) = regvalue;
-
-		HW_REG(GPIO_I2C_SCL_REG) = SCL;
-		return;
-	} else if(whichline == SDA) {
-		regvalue = HW_REG(GPIO_0_DIR);
-		regvalue |= SDA;
-		HW_REG(GPIO_0_DIR) = regvalue;
-
-		HW_REG(GPIO_I2C_SDA_REG) = SDA;
-		return;
-	} else if(whichline == (SDA|SCL)) {
-		regvalue = HW_REG(GPIO_0_DIR);
-		regvalue |= (SDA|SCL);
-		HW_REG(GPIO_0_DIR) = regvalue;
-
-		HW_REG(GPIO_I2C_SCLSDA_REG) = (SDA|SCL);
-		return;
-	} else {
-		printk("Error input.\n");
-		return;
-	}
-}
-
-/*
- *  delays for a specified number of micro seconds rountine.
- *
- *  @param usec: number of micro seconds to pause for
- *
- */
-// FPGA  APB :  25M
-// ASIC  APB : 155M
-//  翻转5倍
-static void time_delay_us(unsigned int usec)
-{
-	volatile int i,j;
-	/*
-	//FPGA: 25MHZ
-	for(i=0;i<usec * 5;i++)
-	{
-	        for(j=0;j<47;j++)
-	        {;}
-	}
-
-	*/
-	//ASIC: 155MHZ
-	//AP = 155/25 = 6.2
-	for(i=0; i<usec * 2; i++) {
-		for(j=0; j<50*6; j++) {
-			;
-		}
-	}
-}
-
-//------------------------------------add for 9024---------------------
-/*
-add for sil9024
-*/
-//------------------------------------------------------------------------------
-// Function Name:  siiReadSegmentBlockEDID
-// Function Description: Reads segment block of EDID from HDMI Downstream Device
-//------------------------------------------------------------------------------
-byte siiReadSegmentBlockEDID(byte SlaveAddr, byte Segment, byte Offset, byte *Buffer, byte Length)
-{
-
-	//I2CSendAddr(EDID_SEG_ADDR);
-	//i2c_stop_bit();
-
-	//I2CSendByte(Segment);
-	//i2c_stop_bit()
-
-
-	//I2CSendAddr(SlaveAddr);
-	//i2c_stop_bit();
-
-
-	//I2CSendByte(Offset);
-	//i2c_stop_bit();
-
-	//I2CSendAddr (SlaveAddr|1);
-	//I2CSendStop();
-
-	//for (i = 0; i < Length - 1; i++)
-	//Buffer[i] = I2CGetByte(NOT_LAST_BYTE);
-	//Buffer[i] = I2CGetByte(LAST_BYTE);
-	//Buffer[i] = i2c_data_read(NOT_LAST_BYTE);
-	//Buffer[i] = i2c_data_read(LAST_BYTE);
-	//i2c_stop_bit();
-
-	//return 1;
-}
-EXPORT_SYMBOL(siiReadSegmentBlockEDID);
-/*
- * I2C by GPIO simulated  read data routine.
- *
- * @return value: a bit for read
- *
- */
-
-static unsigned char i2c_data_read(void)
-{
-	unsigned char regvalue;
-
-	regvalue = HW_REG(GPIO_0_DIR);
-	regvalue &= (~SDA);
-	HW_REG(GPIO_0_DIR) = regvalue;
-	DELAY(1);
-
-	regvalue = HW_REG(GPIO_I2C_SDA_REG);
-	if((regvalue&SDA) != 0)
-		return 1;
-	else
-		return 0;
-}
-
-
-
-/*
- * sends a start bit via I2C rountine.
- *
- */
-static void i2c_start_bit(void)
-{
-	DELAY(1);
-	i2c_set(SDA | SCL);
-	DELAY(1);
-	i2c_clr(SDA);
-	DELAY(1);
-}
-
-/*
- * sends a stop bit via I2C rountine.
- *
- */
-static void i2c_stop_bit(void)
-{
-	/* clock the ack */
-	DELAY(1);
-	i2c_set(SCL);
-	DELAY(1);
-	i2c_clr(SCL);
-
-	/* actual stop bit */
-	DELAY(1);
-	i2c_clr(SDA);
-	DELAY(1);
-	i2c_set(SCL);
-	DELAY(1);
-	i2c_set(SDA);
-	DELAY(1);
-}
-
-/*
- * sends a character over I2C rountine.
- *
- * @param  c: character to send
- *
- */
-static void i2c_send_byte(unsigned char c)
-{
-	int i;
-	local_irq_disable();
-	for (i=0; i<8; i++) {
-		DELAY(1);
-		i2c_clr(SCL);
-		DELAY(1);
-
-		if (c & (1<<(7-i)))
-			i2c_set(SDA);
-		else
-			i2c_clr(SDA);
-
-		DELAY(1);
-		i2c_set(SCL);
-		DELAY(1);
-		i2c_clr(SCL);
-	}
-	DELAY(1);
-	// i2c_set(SDA);
-	local_irq_enable();
-}
-
-/*  receives a character from I2C rountine.
- *
- *  @return value: character received
- *
- */
-static unsigned char i2c_receive_byte(void)
-{
-	int j=0;
-	int i;
-	unsigned char regvalue;
-
-	local_irq_disable();
-	for (i=0; i<8; i++) {
-		DELAY(1);
-		i2c_clr(SCL);
-		DELAY(1);
-		i2c_set(SCL);
-
-		regvalue = HW_REG(GPIO_0_DIR);
-		regvalue &= (~SDA);
-		HW_REG(GPIO_0_DIR) = regvalue;
-		DELAY(1);
-
-		if (i2c_data_read())
-			j+=(1<<(7-i));
-
-		DELAY(1);
-		i2c_clr(SCL);
-	}
-	local_irq_enable();
-	DELAY(1);
-	// i2c_clr(SDA);
-	// DELAY(1);
-
-	return j;
-}
-
-/*  receives an acknowledge from I2C rountine.
- *
- *  @return value: 0--Ack received; 1--Nack received
- *
- */
-static int i2c_receive_ack(void)
-{
-	int nack;
-	unsigned char regvalue;
-
-	DELAY(1);
-
-	regvalue = HW_REG(GPIO_0_DIR);
-	regvalue &= (~SDA);
-	HW_REG(GPIO_0_DIR) = regvalue;
-
-	DELAY(1);
-	i2c_clr(SCL);
-	DELAY(1);
-	i2c_set(SCL);
-	DELAY(1);
-
-
-
-	nack = i2c_data_read();
-
-	DELAY(1);
-	i2c_clr(SCL);
-	DELAY(1);
-	//  i2c_set(SDA);
-	//  DELAY(1);
-
-	if (nack == 0)
-		return 1;
-
-	return 0;
-}
-
-#if 1
-static void i2c_send_ack(void)
-{
-	DELAY(1);
-	i2c_clr(SCL);
-	DELAY(1);
-	i2c_set(SDA);
-	DELAY(1);
-	i2c_set(SCL);
-	DELAY(1);
-	i2c_clr(SCL);
-	DELAY(1);
-	i2c_clr(SDA);
-	DELAY(1);
-}
-#endif
-
-unsigned char gpio_i2c_quick(unsigned char devaddress, unsigned char bit)
-{
-	int ack;
-
-	spin_lock(&gpioi2c_lock);
-
-	i2c_start_bit();
-	i2c_send_byte((unsigned char)(devaddress) | bit);
-	ack = i2c_receive_ack();
-	i2c_stop_bit();
-
-	spin_unlock(&gpioi2c_lock);
-	return ack;
-}
-EXPORT_SYMBOL(gpio_i2c_quick);
-
-
+#if 0
 unsigned char gpio_i2c_read(unsigned char devaddress, unsigned char address)
 {
-	int rxdata;
-
+	int ret;
+	unsigned char val;
+	struct i2c_adapter *adap;
+	struct i2c_msg msgs[2];
 	spin_lock(&gpioi2c_lock);
-
-	i2c_start_bit();
-	i2c_send_byte((unsigned char)(devaddress));
-	i2c_receive_ack();
-	i2c_send_byte(address);
-	i2c_receive_ack();
-	i2c_start_bit();
-	i2c_send_byte((unsigned char)(devaddress) | 1);
-	i2c_receive_ack();
-	rxdata = i2c_receive_byte();
-	//i2c_send_ack();
-	i2c_stop_bit();
-
+	adap = i2c_get_adapter(0);
+	msgs[0].addr = devaddress >> 1;
+	msgs[0].flags = 0;
+	msgs[0].len = 1;
+	msgs[0].buf = &address;
+	msgs[1].addr = devaddress >> 1;
+	msgs[1].flags = I2C_M_RD;
+	msgs[1].len = 1;
+	msgs[1].buf = &val;
+	ret = i2c_transfer(adap, msgs, 2);
 	spin_unlock(&gpioi2c_lock);
-	return rxdata;
+	if (ret < 0)
+		return 0xff;
+	return val;
+
 }
+#else
+unsigned char gpio_i2c_read(unsigned char devaddress, unsigned char address)
+{
+	int ret;
+	struct i2c_adapter *adap;
+	union i2c_smbus_data smdata;
+	spin_lock(&gpioi2c_lock);
+	adap = i2c_get_adapter(0);
+	ret = i2c_smbus_xfer(adap, devaddress >> 1, 0, I2C_SMBUS_READ,
+			     address, I2C_SMBUS_BYTE_DATA, &smdata);
+	spin_unlock(&gpioi2c_lock);
+	if (ret < 0)
+		return 0xff;
+	return smdata.byte;
+}
+#endif
 EXPORT_SYMBOL(gpio_i2c_read);
 
+/* Read a byte from 16 bit register */
 unsigned char gpio_i2c_read_ex(unsigned char devaddress, unsigned short address)
 {
-	int rxdata;
-
+	int ret;
+	struct i2c_adapter *adap;
+	union i2c_smbus_data smdata;
+	unsigned char command = (address >> 8) & 0xff;
 	spin_lock(&gpioi2c_lock);
-
-	i2c_start_bit();
-	i2c_send_byte((unsigned char)(devaddress));
-	i2c_receive_ack();
-	i2c_send_byte((address >> 8) & 0xFF);
-	i2c_receive_ack();
-	i2c_send_byte(address & 0xFF);
-	i2c_receive_ack();
-	i2c_start_bit();
-	i2c_send_byte((unsigned char)(devaddress) | 1);
-	i2c_receive_ack();
-	rxdata = i2c_receive_byte();
-	//i2c_send_ack();
-	i2c_stop_bit();
-
+	adap = i2c_get_adapter(0);
+	smdata.byte = address & 0xff;
+	ret = i2c_smbus_xfer(adap, devaddress >> 1, 0, I2C_SMBUS_WRITE,
+			     command, I2C_SMBUS_BYTE_DATA, &smdata);
+	ret = i2c_smbus_xfer(adap, devaddress >> 1, 0, I2C_SMBUS_READ,
+			     command, I2C_SMBUS_BYTE, &smdata);
 	spin_unlock(&gpioi2c_lock);
-	return rxdata;
+	if (ret < 0)
+		return 0xff;
+	return smdata.byte;
 }
 EXPORT_SYMBOL(gpio_i2c_read_ex);
 
-
+#if 0
 void gpio_i2c_write(unsigned char devaddress, unsigned char address, unsigned char data)
 {
+	int ret;
+	unsigned char buf[2];
+	struct i2c_adapter *adap = i2c_get_adapter(0);
+	struct i2c_msg msgs[1];
 	spin_lock(&gpioi2c_lock);
-
-	i2c_start_bit();
-	i2c_send_byte((unsigned char)(devaddress));
-	i2c_receive_ack();
-	i2c_send_byte(address);
-	i2c_receive_ack();
-	i2c_send_byte(data);
-	// i2c_receive_ack();//add by hyping for tw2815
-	i2c_stop_bit();
-
+	adap = i2c_get_adapter(0);
+	msgs[0].addr = devaddress >> 1;
+	msgs[0].flags = 0;
+	msgs[0].len = 1;
+	msgs[0].buf = buf;
+	buf[0] = address;
+	buf[1] = data;
+	ret = i2c_transfer(adap, msgs, 1);
+	(void)ret;
 	spin_unlock(&gpioi2c_lock);
 }
+#else
+void gpio_i2c_write(unsigned char devaddress, unsigned char address, unsigned char data)
+{
+	int ret;
+	struct i2c_adapter *adap;
+	union i2c_smbus_data smdata;
+	spin_lock(&gpioi2c_lock);
+	adap = i2c_get_adapter(0);
+	smdata.byte = data;
+	ret = i2c_smbus_xfer(adap, devaddress >> 1, 0, I2C_SMBUS_WRITE,
+			     address, I2C_SMBUS_BYTE_DATA, &smdata);
+	spin_unlock(&gpioi2c_lock);
+}
+#endif
 EXPORT_SYMBOL(gpio_i2c_write);
 
+/* Write a byte to 16 bit register */
 void gpio_i2c_write_ex(unsigned char devaddress, unsigned short address, unsigned char data)
 {
+	int ret;
+	struct i2c_adapter *adap;
+	union i2c_smbus_data smdata;
+	unsigned char command = (address >> 8) & 0xff;
 	spin_lock(&gpioi2c_lock);
-
-	i2c_start_bit();
-	i2c_send_byte((unsigned char)(devaddress));
-	i2c_receive_ack();
-	i2c_send_byte((address >> 8) & 0xFF);
-	i2c_receive_ack();
-	i2c_send_byte(address & 0xFF);
-	i2c_receive_ack();
-	i2c_send_byte(data);
-	// i2c_receive_ack();//add by hyping for tw2815
-	i2c_stop_bit();
-
+	adap = i2c_get_adapter(0);
+	smdata.block[0] = 2;
+	smdata.block[1] = address & 0xff;
+	smdata.block[2] = data;
+	ret = i2c_smbus_xfer(adap, devaddress >> 1, 0, I2C_SMBUS_WRITE,
+			     command, I2C_SMBUS_BLOCK_DATA, &smdata);
 	spin_unlock(&gpioi2c_lock);
 }
 EXPORT_SYMBOL(gpio_i2c_write_ex);
 
-static long gpioi2c_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+static void time_delay_us(unsigned int usec)
 {
-	unsigned int val, opt;
+    volatile int i, j;
+    for (i = 0; i < usec * 2; i++)
+    {
+        for (j = 0; j < 50*6; j++)
+        {
+            ;
+        }
+    }
+}
 
-	char device_addr;
-	short reg_addr, reg_val;
-
-
-	switch(cmd) {
-	case GPIO_I2C_READ:
-		val = *(unsigned int *)arg;
-		opt = *(unsigned int *)(arg+4);
-		device_addr = (val&0xff000000)>>24;
-		reg_addr = (val&0xffff00)>>8;
-		if ((opt & 0xff) == 2)
-			reg_val = gpio_i2c_read_ex(device_addr, reg_addr);
-		else
-			reg_val = gpio_i2c_read(device_addr, reg_addr);
-		*(unsigned int *)arg = (val&0xffffff00)|reg_val;
-		break;
-
-	case GPIO_I2C_WRITE:
-		val = *(unsigned int *)arg;
-		opt = *(unsigned int *)(arg+4);
-		device_addr = (val&0xff000000)>>24;
-		reg_addr = (val&0xffff00)>>8;
-		reg_val = val&0xff;
-		if ((opt & 0xff) == 2)
-			gpio_i2c_write_ex(device_addr, reg_addr, reg_val);
-		else
-			gpio_i2c_write(device_addr, reg_addr, reg_val);
-		break;
-
-	default:
-		return -1;
+/* if state == true, set input, else set output and change to 0 */
+static void hisi_i2c_setsda_dir(void *data, int state)
+{
+	volatile long val;
+	val  = readl(I2C_SDA_DIR_REG);
+	if (state) {
+		val &= (~I2C_SDA_MASK);
+		writel(val, I2C_SDA_DIR_REG);
 	}
-	return 0;
+	else {
+		val |= I2C_SDA_MASK;
+		writel(val, I2C_SDA_DIR_REG);
+		writel(0, I2C_SDA_REG);
+	}
 }
 
-static int gpioi2c_open(struct inode * inode, struct file * file)
+/* if state == true, set input, else set output and change to 0 */
+static void hisi_i2c_setscl_dir(void *data, int state)
 {
-	return 0;
+	volatile long val;
+	val  = readl(I2C_SCL_DIR_REG);
+	if (state) {
+		val &= (~I2C_SCL_MASK);
+		writel(val, I2C_SCL_DIR_REG);
+	} else {
+		val |= I2C_SCL_MASK;
+		writel(val, I2C_SCL_DIR_REG);
+		writel(0, I2C_SCL_REG);
+	}
 }
-static int gpioi2c_close(struct inode * inode, struct file * file)
-{
-	return 0;
-}
-
-
-static struct file_operations gpioi2c_fops = {
-	.owner      = THIS_MODULE,
-	.unlocked_ioctl = gpioi2c_ioctl,
-	.open       = gpioi2c_open,
-	.release    = gpioi2c_close
-};
-
-
-static struct miscdevice gpioi2c_dev = {
-	.minor               = MISC_DYNAMIC_MINOR,
-	.name                = "gpioi2c",
-	.fops  = &gpioi2c_fops,
-};
-
 
 /*
- * Low level master read/write transaction.
+ * Toggle SDA by changing the output value of the pin. This is only
+ * valid for pins configured as open drain (i.e. setting the value
+ * high effectively turns off the output driver.)
  */
-static int hi3531_master_xfer_msg(struct i2c_adapter *adap, struct i2c_msg *msg,
-                                  int stop)
+static void hisi_i2c_setsda_val(void *data, int state)
 {
-	return 0;
+	volatile long val;
+	val  = readl(I2C_SDA_DIR_REG);
+	val |= I2C_SDA_MASK;
+	writel(val, I2C_SDA_DIR_REG);
+	writel(state ? I2C_SDA_MASK : 0, I2C_SDA_REG);
 }
 
-static int hi3531_master_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[],
-                              int num)
+/*
+ * Toggle SCL by changing the output value of the pin. This is used
+ * for pins that are configured as open drain and for output-only
+ * pins. The latter case will break the i2c protocol, but it will
+ * often work in practice.
+ */
+static void hisi_i2c_setscl_val(void *data, int state)
 {
-	int i;
-	int err;
+	volatile long val;
 
-	for (i = 0; i < num; i++) {
-		err = hi3531_master_xfer_msg(adap, &msgs[i], i == (num - 1));
-		if (err)
-			return err;
-	}
-
-	return num;
+	val  = readl(I2C_SCL_DIR_REG);
+	val |= I2C_SCL_MASK;
+	writel(val, I2C_SCL_DIR_REG);
+	writel(state ? I2C_SCL_MASK : 0, I2C_SCL_REG);
 }
 
-static int hi3531_smbus_quick(unsigned char devaddr, unsigned char bit)
+static int hisi_i2c_getsda(void *data)
 {
-	spin_lock(&gpioi2c_lock);
-	i2c_send_ack();
-	i2c_send_byte(devaddr | bit);
-	i2c_receive_ack();
-	i2c_stop_bit();
-	spin_unlock(&gpioi2c_lock);
-	return 0;
+	volatile long val;
+	val = readl(I2C_SDA_REG);
+	return val ? 1 : 0;
 }
 
-static int hi3531_smbus_read_byte(unsigned char devaddr)
+static int hisi_i2c_getscl(void *data)
 {
-	int rxdata;
-
-	spin_lock(&gpioi2c_lock);
-
-	i2c_start_bit();
-	i2c_send_byte(devaddr);
-	if (!i2c_receive_ack())
-		goto io_error;
-	rxdata = i2c_receive_byte();
-	/* FIXME: NACK */
-	i2c_stop_bit();
-
-	spin_unlock(&gpioi2c_lock);
-	return rxdata;
-io_error:
-	/* FIXME: NACK */
-	i2c_stop_bit();
-
-	spin_unlock(&gpioi2c_lock);
-	return -EIO;
+	volatile long val;
+	val = readl(I2C_SCL_REG);
+	return val ? 1 : 0;
 }
 
-static int hi3531_smbus_read_byte_data(unsigned char devaddr,
-                                       unsigned char command)
+static void hisi_i2c_startup(void* data)
 {
-	int rxdata;
+	volatile long val;
 
-	spin_lock(&gpioi2c_lock);
-
-	i2c_start_bit();
-	i2c_send_byte(devaddr);
-	if (!i2c_receive_ack()) {
-		goto io_error;
-	}
-	i2c_send_byte(command);
-	if (!i2c_receive_ack()) {
-		goto io_error;
-	}
-	i2c_start_bit();
-	i2c_send_byte(devaddr|1);
-	if (!i2c_receive_ack()) {
-		goto io_error;
-	}
-	rxdata = i2c_receive_byte();
-	/* FIXME: NACK */
-	i2c_stop_bit();
-
-	spin_unlock(&gpioi2c_lock);
-	return rxdata;
-io_error:
-	/* FIXME: NACK */
-	i2c_stop_bit();
-	spin_unlock(&gpioi2c_lock);
-	return -EIO;
+	/* Pin ctrl */
+	writel(0, I2C_SCL_MUXCTRL_REG);
+	writel(0, I2C_SDA_MUXCTRL_REG);
+	/* Pull high */
+	hisi_i2c_setscl_val(NULL, 1);
+	hisi_i2c_setsda_val(NULL, 1);
 }
 
-static int hi3531_smbus_read_block_data(unsigned char devaddr,
-                                        unsigned char command,
-                                        unsigned char* block)
+static int __devinit hisi_i2c_probe(struct platform_device *pdev)
 {
-	int count;
-	int pos;
-	int data;
-
-	spin_lock(&gpioi2c_lock);
-
-	i2c_start_bit();
-	i2c_send_byte(devaddr);
-	i2c_receive_ack();
-	i2c_send_byte(command);
-	i2c_receive_ack();
-	i2c_start_bit();
-	i2c_send_byte(devaddr|1);
-	i2c_receive_ack();
-	count = i2c_receive_byte();
-	i2c_send_ack();
-	if (count == 0)
-		goto done;
-	else if (count > I2C_SMBUS_BLOCK_MAX)
-		goto io_error;
-
-	for (pos = 0; pos < count; pos++) {
-		data = i2c_receive_byte();
-		i2c_send_ack();
-		block[pos] = data;
-	}
-done:
-	/* FIXME: NACK */
-	i2c_stop_bit();
-
-	spin_unlock(&gpioi2c_lock);
-	return count;
-io_error:
-	/* FIXME: NACK */
-	i2c_stop_bit();
-
-	spin_unlock(&gpioi2c_lock);
-	return -EIO;
-}
-
-
-static int hi3531_smbus_write_byte(unsigned char devaddr, unsigned char data)
-{
-	spin_lock(&gpioi2c_lock);
-
-	i2c_start_bit();
-	i2c_send_byte(devaddr);
-	i2c_receive_ack();
-	i2c_send_byte(data);
-	i2c_receive_ack();
-	i2c_stop_bit();
-
-	spin_unlock(&gpioi2c_lock);
-	return 0;
-}
-
-static int hi3531_smbus_write_byte_data(unsigned char devaddr,
-                                        unsigned char command,
-                                        unsigned char data)
-{
-	spin_lock(&gpioi2c_lock);
-
-	i2c_start_bit();
-	i2c_send_byte(devaddr);
-	i2c_receive_ack();
-	i2c_send_byte(command);
-	i2c_receive_ack();
-	i2c_send_byte(data);
-	i2c_receive_ack();
-	i2c_stop_bit();
-
-	spin_unlock(&gpioi2c_lock);
-	return 0;
-}
-
-static int hi3531_smbus_write_block_data(unsigned char devaddr,
-                unsigned char command,
-                unsigned char* block)
-{
-	int count = block[0];
-	int pos = 0;
-	int data;
-
-	spin_lock(&gpioi2c_lock);
-
-	i2c_start_bit();
-	i2c_send_byte(devaddr);
-	if (!i2c_receive_ack())
-		goto io_error;
-	i2c_send_byte(command);
-	if (!i2c_receive_ack())
-		goto io_error;
-	i2c_send_byte(count);
-	if (!i2c_receive_ack())
-		goto io_error;
-	for (pos = 0; pos < count; pos++) {
-		i2c_send_byte(block[pos+1]);
-		if (!i2c_receive_ack())
-			goto io_error;
-	}
-	i2c_stop_bit();
-
-	spin_unlock(&gpioi2c_lock);
-	return count;
-io_error:
-	i2c_stop_bit();
-
-	spin_unlock(&gpioi2c_lock);
-	return -EIO;
-}
-
-
-/* Return negative errno on error. */
-static int hi3531_smbus_xfer(struct i2c_adapter *adap, u16 addr,
-                             unsigned short flags, char read_write, u8 command,
-                             int size, union i2c_smbus_data *data)
-{
-	int ret = -EINVAL;
-
-	/* Shift to 8bit address */
-	addr <<= 1;
-
-	switch (size) {
-	case I2C_SMBUS_QUICK:
-		if (read_write == I2C_SMBUS_WRITE) {
-			ret = hi3531_smbus_quick(addr, 0);
-		} else {
-			ret = hi3531_smbus_quick(addr, 1);
-		}
-		break;
-	case I2C_SMBUS_BYTE:
-		if (read_write == I2C_SMBUS_WRITE) {
-			ret = hi3531_smbus_write_byte(addr, data->byte);
-		} else {
-			ret = hi3531_smbus_read_byte(addr);
-			data->byte = ret < 0 ? 0xff : ret & 0xff;
-		}
-		break;
-	case I2C_SMBUS_BYTE_DATA:
-		if (read_write == I2C_SMBUS_WRITE) {
-			hi3531_smbus_write_byte_data(addr, command, data->byte);
-		} else {
-			ret = hi3531_smbus_read_byte_data(addr, command);
-			data->byte = ret < 0 ? 0xff : ret & 0xff;
-		}
-		break;
-	case I2C_SMBUS_BLOCK_DATA:
-		if (read_write == I2C_SMBUS_WRITE) {
-			ret = hi3531_smbus_write_block_data(addr, command, data->block);
-		} else {
-			ret = hi3531_smbus_read_block_data(addr, command, data->block);
-			if (ret < 0)
-				memset(data->block, 0, sizeof(data->block));
-		}
-		break;
-	default:
-		return -1;
-	}
-	return ret > 0 ? 0 : ret;
-}
-
-static unsigned hi3531_func(struct i2c_adapter *adapter)
-{
-	return I2C_FUNC_SMBUS_QUICK |
-	       I2C_FUNC_SMBUS_BYTE |
-	       I2C_FUNC_SMBUS_BYTE_DATA |
-	       I2C_FUNC_SMBUS_BLOCK_DATA;
-}
-
-static const struct i2c_algorithm smbus_algorithm = {
-	.smbus_xfer	= hi3531_smbus_xfer,
-	.functionality	= hi3531_func,
-};
-
-static struct i2c_adapter i2c_hisi_gpio_adapter = {
-	.name		= "i2c-hisi-gpio",
-	.owner		= THIS_MODULE,
-	.class          = I2C_CLASS_HWMON | I2C_CLASS_SPD,
-	.algo		= &smbus_algorithm,
-};
-
-static int __devinit i2c_hisi_gpio_probe(struct platform_device *pdev)
-{
-	struct i2c_adapter *adap = &i2c_hisi_gpio_adapter;
+	struct i2c_algo_bit_data *bit_data;
+	struct i2c_adapter *adap;
 	int ret;
 
+	ret = -ENOMEM;
+	adap = kzalloc(sizeof(struct i2c_adapter), GFP_KERNEL);
+	if (!adap)
+		goto err_alloc_adap;
+
+	bit_data = kzalloc(sizeof(struct i2c_algo_bit_data), GFP_KERNEL);
+	if (!bit_data)
+		goto err_alloc_bit_data;
+
+	bit_data->setsda = hisi_i2c_setsda_dir;
+	bit_data->setscl = hisi_i2c_setscl_dir;
+	bit_data->getsda = hisi_i2c_getsda;
+	bit_data->getscl = hisi_i2c_getscl;
+	bit_data->udelay = 2;			/* 100 kHz */
+	bit_data->timeout = HZ / 10;		/* 100 ms */
+	bit_data->data = NULL;
+
+	adap->owner = THIS_MODULE;
+	snprintf(adap->name, sizeof(adap->name), "i2c-hisi-gpio");
+	adap->algo_data = bit_data;
+	adap->class = I2C_CLASS_HWMON | I2C_CLASS_SPD;
 	adap->dev.parent = &pdev->dev;
 
 	/*
@@ -824,78 +290,70 @@ static int __devinit i2c_hisi_gpio_probe(struct platform_device *pdev)
 	 * sense when there are multiple adapters.
 	 */
 	adap->nr = (pdev->id != -1) ? pdev->id : 0;
-	ret = i2c_add_numbered_adapter(adap);
-	if (ret) {
-		dev_err(&pdev->dev, "add adapter failed: %d\n", ret);
-		return ret;
-	}
+	ret = i2c_bit_add_numbered_bus(adap);
+	if (ret)
+		goto err_add_bus;
 
 	platform_set_drvdata(pdev, adap);
+	hisi_i2c_startup(NULL);
+
+	spin_lock_init(&gpioi2c_lock);
 
 	dev_info(&pdev->dev, "probed.\n");
 
 	return 0;
+
+err_add_bus:
+	kfree(bit_data);
+err_alloc_bit_data:
+	kfree(adap);
+err_alloc_adap:
+	return ret;
 }
 
-static int __devexit i2c_hisi_gpio_remove(struct platform_device *pdev)
+static int __devexit hisi_i2c_remove(struct platform_device *pdev)
 {
+	struct hisi_i2c_platform_data *pdata;
 	struct i2c_adapter *adap;
 
 	adap = platform_get_drvdata(pdev);
+	pdata = pdev->dev.platform_data;
+
 	i2c_del_adapter(adap);
-	dev_info(&pdev->dev, "removed.\n");
+	kfree(adap->algo_data);
+	kfree(adap);
+
 	return 0;
 }
 
-
-static struct platform_driver i2c_hisi_gpio_driver = {
+static struct platform_driver hisi_i2c_driver = {
 	.driver		= {
-		.name	= "i2c-hisi-gpio",
+		.name	= DRV_NAME,
 		.owner	= THIS_MODULE,
 	},
-	.probe		= i2c_hisi_gpio_probe,
-	.remove		= __devexit_p(i2c_hisi_gpio_remove),
+	.probe		= hisi_i2c_probe,
+	.remove		= __devexit_p(hisi_i2c_remove),
 };
 
-static int __init gpio_i2c_init(void)
+static int __init hisi_i2c_init(void)
 {
 	int ret;
 
-	ret = platform_driver_register(&i2c_hisi_gpio_driver);
-	if (0 != ret) {
-		printk(KERN_ERR "i2c-hisi-gpio: register platform driver failed: %d\n", ret);
-		return ret;
-	}
-
-	ret = misc_register(&gpioi2c_dev);
-	if (0 != ret) {
-		printk(KERN_ERR "i2c-hisi-gpio: register misc driver failed: %d\n", ret);
-		platform_driver_unregister(&i2c_hisi_gpio_driver);
-		return ret;
-	}
-
-#if 1
-	/* PIN muxctrl */
-	HW_REG(SCL_MUXCTRL_REG) = 0;
-	HW_REG(SDA_MUXCTRL_REG) = 0;
-	/* Set initial state */
-	i2c_set(SCL | SDA);
-#endif
-
-	spin_lock_init(&gpioi2c_lock);
-	return 0;
+	ret = platform_driver_register(&hisi_i2c_driver);
+	if (ret)
+		printk(KERN_ERR "%s: probe failed: %d\n", DRV_NAME, ret);
+	return ret;
 }
 
-static void __exit gpio_i2c_exit(void)
+static void __exit hisi_i2c_exit(void)
 {
-	platform_driver_unregister(&i2c_hisi_gpio_driver);
-	misc_deregister(&gpioi2c_dev);
+	platform_driver_unregister(&hisi_i2c_driver);
 }
 
-module_init(gpio_i2c_init);
-module_exit(gpio_i2c_exit);
+module_init(hisi_i2c_init);
+module_exit(hisi_i2c_exit);
 
-MODULE_AUTHOR("Varphone Wong (varphone@qq.com )");
-MODULE_DESCRIPTION("GPIO based I2C driver for Hi3XXX, Hi6XXX");
+MODULE_AUTHOR("Varphone Wong (varphone@qq.com)");
+MODULE_DESCRIPTION("Bitbanging I2C driver for Hi3XXX, Hi6XXX");
 MODULE_LICENSE("GPL");
-
+MODULE_ALIAS("platform:"DRV_NAME);
