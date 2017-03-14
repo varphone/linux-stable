@@ -174,6 +174,14 @@ static int max_connections = TNK_MAX_CONNECTIONS;
 module_param(max_connections, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(max_connections, "Maximum Concurrent TOE Connections");
 
+static char eth0_mac[MAX_ADDR_LEN];
+module_param_string(eth0_mac, eth0_mac, MAX_ADDR_LEN, 0);
+MODULE_PARM_DESC(eth0_mac, "Ethernet 0 MAC Address");
+
+static char eth1_mac[MAX_ADDR_LEN];
+module_param_string(eth1_mac, eth1_mac, MAX_ADDR_LEN, 0);
+MODULE_PARM_DESC(eth1_mac, "Ethernet 1 MAC Address");
+
 static const u32 default_msg_level = (NETIF_MSG_DRV | NETIF_MSG_PROBE |
 				      NETIF_MSG_LINK | NETIF_MSG_IFUP |
 				      NETIF_MSG_IFDOWN | NETIF_MSG_TIMER);
@@ -1102,6 +1110,19 @@ static void stmmac_check_func(unsigned long arg)
 	mod_timer(&priv->check_timer, jiffies + STMMAC_POLL_TIMER);
 }
 
+static int str_to_dev_addr(char* str, unsigned char dev_addr[MAX_ADDR_LEN])
+{
+	char *c;
+	int p = 0;
+	if (!str || !*str)
+		return -EINVAL;
+	while ((c = strsep(&str, ":")) != NULL)
+	     dev_addr[p++] = simple_strtoul(c, NULL, 16);
+	if (p < 6)
+		return -EINVAL;
+	return 0;
+}
+
 /**
  *  stmmac_open - open entry point of the driver
  *  @dev : pointer to the device structure.
@@ -1114,16 +1135,29 @@ static void stmmac_check_func(unsigned long arg)
 static int stmmac_open(struct net_device *dev)
 {
 	struct stmmac_priv *priv = netdev_priv(dev);
-	int ret;
+	int ret = -EINVAL;
+	unsigned char* mac = NULL;
 
 	/* Check that the MAC address is valid.  If its not, refuse
 	 * to bring the device up. The user must specify an
 	 * address using the following linux command:
 	 *      ifconfig eth0 hw ether xx:xx:xx:xx:xx:xx  */
 	if (!is_valid_ether_addr(dev->dev_addr)) {
-		random_ether_addr(dev->dev_addr);
-		pr_warning("%s: generated random MAC address %pM\n", dev->name,
-			   dev->dev_addr);
+		if (strncmp(dev->name, "eth0", 4) == 0)
+			mac = eth0_mac;
+		else if (strncmp(dev->name, "eth1", 4) == 0)
+			mac = eth1_mac;
+
+		if (mac && is_valid_ether_addr(mac)) {
+			ret = str_to_dev_addr(mac, dev->dev_addr);
+		}
+		if (ret == 0)
+			pr_info("%s: fixed MAC address %pM\n", dev->name, dev->dev_addr);
+		else {
+			random_ether_addr(dev->dev_addr);
+			pr_warning("%s: generated random MAC address %pM\n", dev->name,
+				   dev->dev_addr);
+		}
 	}
 
 	stmmac_verify_args();
@@ -2943,7 +2977,25 @@ static int __init stmmac_cmdline_opt(char *str)
 	return 0;
 }
 
+static int __init eth0_mac_cmdline_opt(char* str)
+{
+	if (!str || !*str)
+		return -EINVAL;
+	strncpy(eth0_mac, str, sizeof(eth0_mac));
+	return 0;
+}
+
+static int __init eth1_mac_cmdline_opt(char* str)
+{
+	if (!str || !*str)
+		return -EINVAL;
+	strncpy(eth1_mac, str, sizeof(eth1_mac));
+	return 0;
+}
+
 __setup("stmmaceth=", stmmac_cmdline_opt);
+__setup("eth0.mac=", eth0_mac_cmdline_opt);
+__setup("eth1.mac=", eth1_mac_cmdline_opt);
 #endif
 
 module_init(stmmac_init_module);
