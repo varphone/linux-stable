@@ -7,13 +7,16 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
+#include <linux/fs.h>
+#include <linux/fcntl.h>
 #include <linux/i2c.h>
 #include <linux/i2c-algo-bit.h>
 #include <linux/i2c-gpio.h>
 #include <linux/init.h>
+#include <linux/miscdevice.h>
 #include <linux/module.h>
-#include <linux/slab.h>
 #include <linux/platform_device.h>
+#include <linux/slab.h>
 
 #include <asm/gpio.h>
 #include <asm/io.h>
@@ -37,6 +40,9 @@
 
 #define HW_REG(reg)		*((volatile unsigned int *)(reg))
 #define DELAY(us)		time_delay_us(us)
+
+#define GPIO_I2C_READ		0x01
+#define GPIO_I2C_WRITE		0x03
 
 static spinlock_t gpioi2c_lock;
 
@@ -335,18 +341,91 @@ static struct platform_driver hisi_i2c_driver = {
 	.remove		= __devexit_p(hisi_i2c_remove),
 };
 
+static long gpioi2c_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+	unsigned int val, opt;
+
+	char device_addr;
+	short reg_addr, reg_val;
+
+
+	switch(cmd) {
+	case GPIO_I2C_READ:
+		val = *(unsigned int *)arg;
+		opt = *(unsigned int *)(arg+4);
+		device_addr = (val&0xff000000)>>24;
+		reg_addr = (val&0xffff00)>>8;
+		if ((opt & 0xff) == 2)
+			reg_val = gpio_i2c_read_ex(device_addr, reg_addr);
+		else
+			reg_val = gpio_i2c_read(device_addr, reg_addr);
+		*(unsigned int *)arg = (val&0xffffff00)|reg_val;
+		break;
+
+	case GPIO_I2C_WRITE:
+		val = *(unsigned int *)arg;
+		opt = *(unsigned int *)(arg+4);
+		device_addr = (val&0xff000000)>>24;
+		reg_addr = (val&0xffff00)>>8;
+		reg_val = val&0xff;
+		if ((opt & 0xff) == 2)
+			gpio_i2c_write_ex(device_addr, reg_addr, reg_val);
+		else
+			gpio_i2c_write(device_addr, reg_addr, reg_val);
+		break;
+
+	default:
+		return -1;
+	}
+	return 0;
+}
+
+static int gpioi2c_open(struct inode * inode, struct file * file)
+{
+	return 0;
+}
+static int gpioi2c_close(struct inode * inode, struct file * file)
+{
+	return 0;
+}
+
+
+static struct file_operations gpioi2c_fops = {
+	.owner		= THIS_MODULE,
+	.unlocked_ioctl	= gpioi2c_ioctl,
+	.open		= gpioi2c_open,
+	.release	= gpioi2c_close
+};
+
+
+static struct miscdevice gpioi2c_dev = {
+	.minor	= MISC_DYNAMIC_MINOR,
+	.name	= "gpioi2c",
+	.fops	= &gpioi2c_fops,
+};
+
+
 static int __init hisi_i2c_init(void)
 {
 	int ret;
 
 	ret = platform_driver_register(&hisi_i2c_driver);
-	if (ret)
+	if (ret) {
 		printk(KERN_ERR "%s: probe failed: %d\n", DRV_NAME, ret);
+		return ret;
+	}
+	ret = misc_register(&gpioi2c_dev);
+	if (ret) {
+		printk(KERN_ERR "%s: register misc driver [%s] failed: %d\n",
+			 DRV_NAME, "gpioi2c", ret);
+		platform_driver_unregister(&hisi_i2c_driver);
+	}
 	return ret;
 }
 
 static void __exit hisi_i2c_exit(void)
 {
+	misc_deregister(&gpioi2c_dev);
 	platform_driver_unregister(&hisi_i2c_driver);
 }
 
