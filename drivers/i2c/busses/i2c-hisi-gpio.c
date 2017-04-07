@@ -93,19 +93,28 @@ unsigned char gpio_i2c_read_ex(unsigned char devaddress, unsigned short address)
 {
 	int ret;
 	struct i2c_adapter *adap;
-	union i2c_smbus_data smdata;
-	unsigned char command = (address >> 8) & 0xff;
+	struct i2c_msg msgs[2];
+	unsigned char buf[2];
 	spin_lock(&gpioi2c_lock);
 	adap = i2c_get_adapter(0);
-	smdata.byte = address & 0xff;
-	ret = i2c_smbus_xfer(adap, devaddress >> 1, 0, I2C_SMBUS_WRITE,
-			     command, I2C_SMBUS_BYTE_DATA, &smdata);
-	ret = i2c_smbus_xfer(adap, devaddress >> 1, 0, I2C_SMBUS_READ,
-			     command, I2C_SMBUS_BYTE, &smdata);
+	/* MSB register address */
+	buf[0] = address >> 8;
+	buf[1] = address & 0xff;
+	/* Setup read register address */
+	msgs[0].addr = devaddress >> 1;
+	msgs[0].flags = 0;
+	msgs[0].len = 2;
+	msgs[0].buf = buf;
+	/* Request read */
+	msgs[1].addr = devaddress >> 1;
+	msgs[1].flags = I2C_M_RD;
+	msgs[1].len = 1;
+	msgs[1].buf = buf;
+	ret = i2c_transfer(adap, msgs, 2);
 	spin_unlock(&gpioi2c_lock);
 	if (ret < 0)
 		return 0xff;
-	return smdata.byte;
+	return buf[0];
 }
 EXPORT_SYMBOL(gpio_i2c_read_ex);
 
@@ -134,6 +143,7 @@ void gpio_i2c_write(unsigned char devaddress, unsigned char address, unsigned ch
 	int ret;
 	struct i2c_adapter *adap;
 	union i2c_smbus_data smdata;
+	printk(KERN_INFO "gpio_i2c_write(%02x, %02x, %02x)\n", devaddress, address, data);
 	spin_lock(&gpioi2c_lock);
 	adap = i2c_get_adapter(0);
 	smdata.byte = data;
@@ -149,15 +159,20 @@ void gpio_i2c_write_ex(unsigned char devaddress, unsigned short address, unsigne
 {
 	int ret;
 	struct i2c_adapter *adap;
-	union i2c_smbus_data smdata;
-	unsigned char command = (address >> 8) & 0xff;
+	struct i2c_msg msgs[1];
+	unsigned char buf[3];
 	spin_lock(&gpioi2c_lock);
 	adap = i2c_get_adapter(0);
-	smdata.block[0] = 2;
-	smdata.block[1] = address & 0xff;
-	smdata.block[2] = data;
-	ret = i2c_smbus_xfer(adap, devaddress >> 1, 0, I2C_SMBUS_WRITE,
-			     command, I2C_SMBUS_BLOCK_DATA, &smdata);
+	/* MSB register address */
+	buf[0] = address >> 8;
+	buf[1] = address & 0xff;
+	buf[2] = data;
+	/* Setup write message */
+	msgs[0].addr = devaddress >> 1;
+	msgs[0].flags = 0;
+	msgs[0].len = 3;
+	msgs[0].buf = buf;
+	ret = i2c_transfer(adap, msgs, 1);
 	spin_unlock(&gpioi2c_lock);
 }
 EXPORT_SYMBOL(gpio_i2c_write_ex);
