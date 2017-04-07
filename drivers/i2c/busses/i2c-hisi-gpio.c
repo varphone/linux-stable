@@ -354,7 +354,7 @@ static long gpioi2c_ioctl(struct file *file, unsigned int cmd, unsigned long arg
 		val = *(unsigned int *)arg;
 		opt = *(unsigned int *)(arg+4);
 		device_addr = (val&0xff000000)>>24;
-		reg_addr = (val&0xffff00)>>8;
+		reg_addr = (val&0xffff00)>>16;
 		if ((opt & 0xff) == 2)
 			reg_val = gpio_i2c_read_ex(device_addr, reg_addr);
 		else
@@ -366,7 +366,7 @@ static long gpioi2c_ioctl(struct file *file, unsigned int cmd, unsigned long arg
 		val = *(unsigned int *)arg;
 		opt = *(unsigned int *)(arg+4);
 		device_addr = (val&0xff000000)>>24;
-		reg_addr = (val&0xffff00)>>8;
+		reg_addr = (val&0xffff00)>>16;
 		reg_val = val&0xff;
 		if ((opt & 0xff) == 2)
 			gpio_i2c_write_ex(device_addr, reg_addr, reg_val);
