@@ -5,6 +5,7 @@ ARCH=$2
 SMP=$3
 PREEMPT=$4
 CC=$5
+VERSION_SIGNATURE=$6
 
 vecho() { [ "${quiet}" = "silent_" ] || echo "$@" ; }
 
@@ -57,7 +58,11 @@ UTS_VERSION="#$VERSION"
 CONFIG_FLAGS=""
 if [ -n "$SMP" ] ; then CONFIG_FLAGS="SMP"; fi
 if [ -n "$PREEMPT" ] ; then CONFIG_FLAGS="$CONFIG_FLAGS PREEMPT"; fi
-UTS_VERSION="$UTS_VERSION $CONFIG_FLAGS $TIMESTAMP"
+if [ -n "$VERSION_SIGNATURE" ]; then
+	UTS_VERSION="$UTS_VERSION-$VERSION_SIGNATURE $CONFIG_FLAGS $TIMESTAMP"
+else
+	UTS_VERSION="$UTS_VERSION $CONFIG_FLAGS $TIMESTAMP"
+fi
 
 # Truncate to maximum length
 

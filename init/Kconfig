@@ -115,6 +115,12 @@ config LOCALVERSION_AUTO
 
 	  which is done within the script "scripts/setlocalversion".)
 
+config VERSION_SIGNATURE
+	string "Signature append to kernel version"
+	help
+	  Append an extra string after UTS_VERSION.
+	  Example: #4-SIGNATURE SMP ...."
+
 config HAVE_KERNEL_GZIP
 	bool
 
