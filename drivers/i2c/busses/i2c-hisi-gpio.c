@@ -295,7 +295,7 @@ static int __devinit hisi_i2c_probe(struct platform_device *pdev)
 	bit_data->setscl = hisi_i2c_setscl_dir;
 	bit_data->getsda = hisi_i2c_getsda;
 	bit_data->getscl = hisi_i2c_getscl;
-	bit_data->udelay = 2;			/* 100 kHz */
+	bit_data->udelay = 4;			/* 100 kHz */
 	bit_data->timeout = HZ / 10;		/* 100 ms */
 	bit_data->data = NULL;
 
