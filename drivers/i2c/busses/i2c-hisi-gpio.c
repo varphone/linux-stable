@@ -143,7 +143,6 @@ void gpio_i2c_write(unsigned char devaddress, unsigned char address, unsigned ch
 	int ret;
 	struct i2c_adapter *adap;
 	union i2c_smbus_data smdata;
-	printk(KERN_INFO "gpio_i2c_write(%02x, %02x, %02x)\n", devaddress, address, data);
 	spin_lock(&gpioi2c_lock);
 	adap = i2c_get_adapter(0);
 	smdata.byte = data;
