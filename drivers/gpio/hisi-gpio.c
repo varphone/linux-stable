@@ -62,6 +62,45 @@ static struct hisi_gpio {
 	spinlock_t lock;
 } hisi_gpio;
 
+/*
+ * Hi3531 GPIO Muxing value:
+ *   GPIO = 1 muxctrl_reg0 ~ muxctrl_reg77
+ *   GPIO = 0 muxctrl_reg78 ~ muxctrl_reg107
+ *   GPIO = 1 muxctrl_reg108
+ *   GPIO = 0 muxctrl_reg109 ~ muxctrl_reg125
+ *   GPIO = 1 muxctrl_reg126 ~ muxctrl_reg140
+ *   GPIO = 0 muxctrl_reg141 ~ muxctrl_reg150
+ *
+ * Hi3531 Muxctrl reg offset:
+ *   0x000 muxctrl_reg0
+ *   0x134 muxctrl_reg77
+ *   0x138 muxctrl_reg78
+ *   0x1AC muxctrl_reg107
+ *   0x1B0 muxctrl_reg108
+ *   0x1B4 muxctrl_reg109
+ *   0x1F4 muxctrl_reg125
+ *   0x1F8 muxctrl_reg126
+ *   0x230 muxctrl_reg140
+ *   0x234 muxctrl_reg141
+ *   0x258 muxctrl_reg150
+ */
+static long hisi_gpio_mux_val(unsigned long reg_offset)
+{
+	if (reg_offset <= 0x134)
+		return 1;
+	if (reg_offset >= 0x138 && reg_offset <= 0x1AC)
+		return 0;
+	if (reg_offset == 0x1B0)
+		return 1;
+	if (reg_offset >= 0x1B4 && reg_offset <= 0x1F4)
+		return 0;
+	if (reg_offset >= 0x1F8 && reg_offset <= 0x230)
+		return 1;
+	if (reg_offset >= 0x234 && reg_offset <= 0x258)
+		return 0;
+	return 0;
+}
+
 static int hisi_gpio_mux_setup(struct gpio_chip *chip, unsigned offset)
 {
 	void* base;
@@ -79,7 +118,7 @@ static int hisi_gpio_mux_setup(struct gpio_chip *chip, unsigned offset)
 		reg += 0x08;
 	reg += (hic->group_id * 8 + offset) * 4;
 	hic->mux_vals[offset] = readl(reg);
-	writel(HISI_GPIO_MUXCTRL_GPIO, reg);
+	writel(hisi_gpio_mux_val(reg - (unsigned long)base), reg);
 	iounmap(base);
 	return 0;
 }
