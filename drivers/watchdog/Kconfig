@@ -331,6 +331,15 @@ config IMX2_WDT
 	  To compile this driver as a module, choose M here: the
 	  module will be called imx2_wdt.
 
+config HI_WDT
+	tristate "Hisilicon Watchdog"
+	depends on ARM
+	help
+	  This is the driver for the hardware watchdog
+	  on the Hisilicon platforms.
+	  If you have one of these processors and wish to have
+	  watchdog support enabled, say Y, otherwise say N.
+
 # AVR32 Architecture
 
 config AT32AP700X_WDT
