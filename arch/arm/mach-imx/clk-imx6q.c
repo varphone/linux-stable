@@ -752,8 +752,13 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
 	/* Set pll4_audio to a value that can derive 5K-88.2KHz and 8K-96KHz */
 	imx_clk_set_rate(clk[pll4_audio_div], 541900800);
 
-	/*Set enet_ref clock to 125M to supply for RGMII tx_clk */
-	clk_set_rate(clk[enet_ref], 125000000);
+	if (of_machine_is_compatible("myzr,myimx6ek200")) {
+		/* Set enet_ref clock to 50M to supply for RMII tx_clk */
+		clk_set_rate(clk[enet_ref], 50000000);
+	} else {
+		/* Set enet_ref clock to 125M to supply for RGMII tx_clk */
+		clk_set_rate(clk[enet_ref], 125000000);
+	}
 
 #ifdef CONFIG_MX6_VPU_352M
 	/*
