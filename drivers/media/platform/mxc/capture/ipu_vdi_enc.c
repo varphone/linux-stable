@@ -137,16 +137,15 @@ static int vdi_enc_setup(cam_data *cam)
 
 	if (mipi_csi2_info) {
 		if (mipi_csi2_get_status(mipi_csi2_info)) {
-			ipu_id = mipi_csi2_get_bind_ipu(mipi_csi2_info);
-			csi_id = mipi_csi2_get_bind_csi(mipi_csi2_info);
+			ipu_id = mipi_csi2_get_bind_ipu(mipi_csi2_info, cam->mipi_v_channel);
+			csi_id = mipi_csi2_get_bind_csi(mipi_csi2_info, cam->mipi_v_channel);
 
 			if (cam->ipu == ipu_get_soc(ipu_id)
 				&& cam->csi == csi_id) {
 				params.csi_vdi_mem.mipi_en = true;
-				params.csi_vdi_mem.mipi_vc =
-				mipi_csi2_get_virtual_channel(mipi_csi2_info);
+				params.csi_vdi_mem.mipi_vc = cam->mipi_v_channel;
 				params.csi_vdi_mem.mipi_id =
-				mipi_csi2_get_datatype(mipi_csi2_info);
+				mipi_csi2_get_datatype(mipi_csi2_info, cam->mipi_v_channel);
 
 				mipi_csi2_pixelclk_enable(mipi_csi2_info);
 			} else {
@@ -197,9 +196,11 @@ static int vdi_enc_setup(cam_data *cam)
  *
  * @return  status
  */
-static int vdi_enc_eba_update(struct ipu_soc *ipu, 
+static int vdi_enc_eba_update(void* private, struct ipu_soc *ipu,
 			      dma_addr_t eba, int *buffer_num)
 {
+	cam_data *cam = (cam_data *)private;
+	ipu_channel_t csi_channel;
 	int err = 0;
 
 	pr_debug("eba %x\n", eba);
@@ -300,8 +301,8 @@ static int vdi_enc_disabling_tasks(void *private)
 
 	if (mipi_csi2_info) {
 		if (mipi_csi2_get_status(mipi_csi2_info)) {
-			ipu_id = mipi_csi2_get_bind_ipu(mipi_csi2_info);
-			csi_id = mipi_csi2_get_bind_csi(mipi_csi2_info);
+			ipu_id = mipi_csi2_get_bind_ipu(mipi_csi2_info, cam->mipi_v_channel);
+			csi_id = mipi_csi2_get_bind_csi(mipi_csi2_info, cam->mipi_v_channel);
 
 			if (cam->ipu == ipu_get_soc(ipu_id)
 				&& cam->csi == csi_id)
