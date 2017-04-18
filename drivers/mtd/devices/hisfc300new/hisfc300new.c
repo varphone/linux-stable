@@ -767,7 +767,7 @@ static int hisfc300_probe(struct hisfc300_host *host)
 static int hisfc300_driver_suspend(struct platform_device *pltdev,
 		pm_message_t state)
 {
-	struct hisfc_host *host = platform_get_drvdata(pltdev);
+	struct hisfc300_host *host = platform_get_drvdata(pltdev);
 	if (host->suspend)
 		return (host->suspend)(pltdev, state);
 	return 0;
@@ -775,7 +775,7 @@ static int hisfc300_driver_suspend(struct platform_device *pltdev,
 /*****************************************************************************/
 static int hisfc300_driver_resume(struct platform_device *pltdev)
 {
-	struct hisfc_host *host = platform_get_drvdata(pltdev);
+	struct hisfc300_host *host = platform_get_drvdata(pltdev);
 	if (host->resume)
 		return (host->resume)(pltdev);
 	return 0;
