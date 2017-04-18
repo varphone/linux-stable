@@ -239,6 +239,7 @@ static int __init pcie_sys_init(unsigned int mode_sel)
 
 
 #ifdef CONFIG_PM
+#if 0
 int hisi_pcie_plat_driver_suspend(struct device *dev)
 {
 	void *crg_base = (void *)IO_ADDRESS(REG_BASE_CRG);
@@ -274,12 +275,14 @@ int hisi_pcie_plat_driver_resume(struct device *pdev)
 {
 	return pcie_sys_init(hisi_pcie_mode_sel);
 }
-
+#endif
 const struct dev_pm_ops hisi_pcie_pm_ops = {
 	.suspend = NULL,
-	.suspend_noirq = hisi_pcie_plat_driver_suspend,
+	/*.suspend_noirq = hisi_pcie_plat_driver_suspend,*/
+	.suspend_noirq = NULL,
 	.resume = NULL,
-	.resume_noirq = hisi_pcie_plat_driver_resume
+	/*.resume_noirq = hisi_pcie_plat_driver_resume*/
+	.resume_noirq = NULL
 };
 
 #define HISI_PCIE_PM_OPS (&hisi_pcie_pm_ops)
