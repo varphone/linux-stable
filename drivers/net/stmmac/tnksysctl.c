@@ -46,8 +46,8 @@ int tnk_tcp_rtt_sample_interval = TNK_TCP_RTT_SAMPLE_INTERVAL;
 int tnk_rx_q_limit = TNK_RX_Q_LIMIT;
 #endif
 
-int hitoe;
-module_param(hitoe, int, S_IRUGO | S_IWUSR);
+int hitoe = 0;
+module_param(hitoe, int, S_IRUGO);
 MODULE_PARM_DESC(hitoe, "0:Bypass 1:TOE");
 
 int control_dbg;
