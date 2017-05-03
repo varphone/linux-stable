@@ -363,5 +363,11 @@
 				MX6QDL_PAD_RGMII_TX_CTL
 			>;
 		}; */
+
+		pinctrl_atmega_keypad: atmegakeypadgrp {
+			fsl,pins = <
+				MX6QDL_PAD_SD2_CMD__GPIO1_IO11        0x4001b0b0
+			>;
+		};
 	};
 };

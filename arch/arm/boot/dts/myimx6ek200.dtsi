@@ -243,7 +243,7 @@
 
 &iomuxc {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_eim0_pad &pinctrl_sd1_pad &pinctrl_sd2_pad &pinctrl_sd3_pad &pinctrl_gpio_pad &pinctrl_nandf_mipi_csi &pinctrl_nandf_pcie>;
+	pinctrl-0 = <&pinctrl_eim0_pad &pinctrl_sd1_pad &pinctrl_sd3_pad &pinctrl_gpio_pad &pinctrl_nandf_mipi_csi &pinctrl_nandf_pcie>;
 };
 
 &dcic1 {
@@ -377,6 +377,19 @@
 	isl1208@6f {
 		compatible = "rtc,isl1208";
 		reg = <0x6f>;
+	};
+
+	atmega-keypad@7a {
+		compatible = "atmega,atmega-keypad";
+		reg = <0x7a>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_atmega_keypad>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <11 0>;
+		debounce_time = <1>;
+		repeat = <0>;
+		keymap = /bits/ 16 <1 57 103 108 116>; /* KEY_ESC, KEY_SPACE, KEY_UP, KEY_DOWN, KEY_POWER */
+		linux,wakeup;
 	};
 };
 
