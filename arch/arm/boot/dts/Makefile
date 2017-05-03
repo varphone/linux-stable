@@ -165,6 +165,8 @@ dtb-$(CONFIG_ARCH_MXC) += \
 	imx6sx-sabreauto-m4.dtb \
 	myimx6ek200-6q.dtb \
 	myimx6ek200-6s.dtb \
+	myimx6ek200-6s-cm2.dtb \
+	myimx6ek200-6s-cm3.dtb \
 	myimx6ek200-6u.dtb \
 	vf610-twr.dtb
 dtb-$(CONFIG_ARCH_MXS) += imx23-evk.dtb \
