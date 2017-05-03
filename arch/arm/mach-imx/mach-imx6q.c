@@ -370,6 +370,18 @@ static void __init imx6q_audio_lvds2_init(void)
 	clk_set_rate(esai_extal, ESAI_AUDIO_MCLK);
 }
 
+#define IMX6Q_GPIO1_BASE_ADDR	0x0209C000
+#define IMX6Q_GPIO_DR		0x00
+
+static void imx6q_cvr_power_off(void)
+{
+	void __iomem* base = phys_to_virt(IMX6Q_GPIO1_BASE_ADDR);
+	unsigned long val;
+	val = readl(base + IMX6Q_GPIO_DR);
+	/* Set GPIO1_IO10 to 0 */
+	writel(val & (~0x00000400), base + IMX6Q_GPIO_DR);
+}
+
 static struct platform_device imx6q_cpufreq_pdev = {
 	.name = "imx6-cpufreq",
 };
@@ -408,6 +420,13 @@ static void __init imx6q_init_late(void)
 		imx6q_flexcan_fixup_auto();
 		imx6q_audio_lvds2_init();
 	}
+
+	/*
+	 * Poweroff supports for CVR-MIL-xx
+	 */
+	if (of_machine_is_compatible("tdc,cvr-mil-v2") ||
+	    of_machine_is_compatible("tdc,cvr-mil-v3"))
+		pm_power_off = imx6q_cvr_power_off;
 }
 
 static void __init imx6q_map_io(void)
