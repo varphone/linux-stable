@@ -346,6 +346,8 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
 	imx6dqscm-1gb-qwks-rev3-hdcp-fix-ldo.dtb \
 	imx6dqscm-1gb-qwks-rev3-btwifi-fix-ldo.dtb \
 	myimx6ek200-6q.dtb \
+	myimx6ek200-6q-cm2.dtb \
+	myimx6ek200-6q-cm3.dtb \
 	myimx6ek200-6s.dtb \
 	myimx6ek200-6s-cm2.dtb \
 	myimx6ek200-6s-cm3.dtb \
