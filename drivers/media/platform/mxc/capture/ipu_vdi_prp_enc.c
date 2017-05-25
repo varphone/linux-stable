@@ -85,6 +85,13 @@ static int vdi_prp_enc_setup(cam_data *cam)
 	memset(&enc, 0, sizeof(ipu_channel_params_t));
 
 	switch (ipu_csi_get_sensor_protocol(cam->ipu, cam->csi)) {
+		case IPU_CSI_CLK_MODE_GATED_CLK:
+		case IPU_CSI_CLK_MODE_NONGATED_CLK:
+		case IPU_CSI_CLK_MODE_CCIR656_PROGRESSIVE:
+		case IPU_CSI_CLK_MODE_CCIR1120_PROGRESSIVE_DDR:
+		case IPU_CSI_CLK_MODE_CCIR1120_PROGRESSIVE_SDR:
+			enc.csi_vdi_prp_mem.interlaced = false;
+			break;
 		case IPU_CSI_CLK_MODE_CCIR656_INTERLACED:
 		case IPU_CSI_CLK_MODE_CCIR1120_INTERLACED_DDR:
 		case IPU_CSI_CLK_MODE_CCIR1120_INTERLACED_SDR:
@@ -173,6 +180,8 @@ static int vdi_prp_enc_setup(cam_data *cam)
 			enc.csi_vdi_prp_mem.mipi_vc = 0;
 			enc.csi_vdi_prp_mem.mipi_id = 0;
 		}
+		if (cam->is_mipi_cam && cam->is_mipi_cam_interlaced)
+			enc.csi_vdi_prp_mem.interlaced = true;
 	}
 #endif
 
