@@ -820,8 +820,19 @@ void fb_videomode_to_var(struct fb_var_screeninfo *var,
 {
 	var->xres = mode->xres;
 	var->yres = mode->yres;
-	var->xres_virtual = mode->xres;
-	var->yres_virtual = mode->yres;
+	if ((mode->xres % 32) != 0) {
+		var->xres_virtual = ((mode->xres / 32) + 1) * 32;
+	}
+	else {
+		var->xres_virtual = mode->xres;
+	}
+
+	if ((mode->yres % 32) != 0) {
+		var->yres_virtual = ((mode->yres / 32) + 1) * 32;
+	}
+	else {
+		var->yres_virtual = mode->yres;
+	}
 	var->xoffset = 0;
 	var->yoffset = 0;
 	var->pixclock = mode->pixclock;
