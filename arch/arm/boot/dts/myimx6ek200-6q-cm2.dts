@@ -18,8 +18,8 @@
 		crtc = "ipu2-di0";
 		fsl,data-mapping = "spwg";
 		fsl,data-width = <18>;
-		primary;
 		status = "okay";
+
 		display-timings {
 			native-mode = <&timing0>;
 			timing0: hsd100pxn1 {
@@ -42,6 +42,7 @@
 		fsl,data-width = <18>;
 		primary;
 		status = "okay";
+
 		display-timings {
 			native-mode = <&timing1>;
 			timing1: hsd100pxn1 {
