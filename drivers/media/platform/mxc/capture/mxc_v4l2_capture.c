@@ -2460,6 +2460,7 @@ static long mxc_v4l_do_ioctl(struct file *file,
 	case VIDIOC_S_TUNER:
 	case VIDIOC_G_FREQUENCY:
 	case VIDIOC_S_FREQUENCY:
+	case VIDIOC_QUERYSTD:
 	default:
 		pr_debug("   case default or not supported\n");
 		retval = -EINVAL;
