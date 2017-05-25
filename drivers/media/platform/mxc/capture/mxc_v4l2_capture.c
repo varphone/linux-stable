@@ -1087,7 +1087,7 @@ static int mxc_v4l2_g_ctrl(cam_data *cam, struct v4l2_control *c)
 		}
 		break;
 	default:
-		pr_err("ERROR: v4l2 capture: unsupported ioctrl!\n");
+		pr_warn("WARNING: v4l2 capture: unsupported ioctrl!\n");
 	}
 
 	return status;
@@ -1462,7 +1462,7 @@ static int mxc_v4l2_s_std(cam_data *cam, v4l2_std_id e)
 	} else {
 		cam->standard.id = V4L2_STD_ALL;
 		video_index = TV_NOT_LOCKED;
-		pr_err("ERROR: unrecognized std! %Lx (PAL=%Lx, NTSC=%Lx\n",
+		pr_warn("WARNING: unrecognized std! %Lx (PAL=%Lx, NTSC=%Lx\n",
 			e, V4L2_STD_PAL, V4L2_STD_NTSC);
 	}
 
