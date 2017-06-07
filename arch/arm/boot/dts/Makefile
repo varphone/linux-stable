@@ -164,9 +164,11 @@ dtb-$(CONFIG_ARCH_MXC) += \
 	imx6sx-sabreauto.dtb \
 	imx6sx-sabreauto-m4.dtb \
 	myimx6ek200-6q.dtb \
+	myimx6ek200-6q-cm1.dtb \
 	myimx6ek200-6q-cm2.dtb \
 	myimx6ek200-6q-cm3.dtb \
 	myimx6ek200-6s.dtb \
+	myimx6ek200-6s-cm1.dtb \
 	myimx6ek200-6s-cm2.dtb \
 	myimx6ek200-6s-cm3.dtb \
 	myimx6ek200-6u.dtb \

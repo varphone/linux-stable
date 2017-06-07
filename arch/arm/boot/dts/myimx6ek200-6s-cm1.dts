@@ -1,0 +1,51 @@
+﻿/*
+ * Technology Development Co.,Ltd
+ * http://www.nedi.com.cn
+ * Varphone Wong <varphone@qq.com>
+ */
+
+/dts-v1/;
+#include "imx6dl.dtsi"
+#include "myimx6ek200.dtsi"
+
+/ {
+	model = "TDC Car Video Recorder For Military (V1)";
+	compatible = "tdc,cvr-mil-v1", "myzr,myimx6", "myzr,myimx6u", "myzr,myimx6cb200", "myzr,myimx6ek200", "fsl,imx6dl", "fsl,imx6dl-ldb";
+};
+
+&ldb {
+	lvds-channel@0 {
+		crtc = "ipu1-di0";
+	};
+
+	lvds-channel@1 {
+		crtc = "ipu1-di1";
+		fsl,data-mapping = "spwg";
+		fsl,data-width = <18>;
+		primary;
+		status = "okay";
+
+		display-timings {
+			native-mode = <&timing1>;
+			timing1: hsd100pxn1 {
+				clock-frequency = <30419000>;
+				hactive = <854>;
+				vactive = <480>;
+				hback-porch = <82>;
+				hfront-porch = <48>;
+				vback-porch = <6>;
+				vfront-porch = <3>;
+				hsync-len = <32>;
+				vsync-len = <10>;
+			};
+		};
+	};
+};
+
+&mxcfb1 {
+	status = "okay";
+};
+
+&mxcfb2 {
+	status = "okay";
+};
