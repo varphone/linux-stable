@@ -331,9 +331,10 @@ static int vdi_prp_enc_setup(cam_data *cam)
  *
  * @return  status
  */
-static int vdi_prp_enc_eba_update(struct ipu_soc *ipu, 
+static int vdi_prp_enc_eba_update(void *private, struct ipu_soc *ipu,
 			      dma_addr_t eba, int *buffer_num)
 {
+	cam_data *cam = (cam_data *)private;
 	int err = 0;
 
 	pr_debug("eba %x\n", eba);
