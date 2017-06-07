@@ -2216,8 +2216,9 @@ static int mxcfb_setup_overlay(struct platform_device *pdev,
 	mxcfbi_fg->cur_blank = mxcfbi_fg->next_blank = FB_BLANK_POWERDOWN;
 
 	/* Need dummy values until real panel is configured */
-	ovfbi->var.xres = 240;
-	ovfbi->var.yres = 320;
+	ovfbi->var.xres = fbi_bg->var.xres;
+	ovfbi->var.yres = fbi_bg->var.yres;
+	ovfbi->var.bits_per_pixel = fbi_bg->var.bits_per_pixel;
 
 	if (res && res->start && res->end) {
 		ovfbi->fix.smem_len = res->end - res->start + 1;
