@@ -424,7 +424,8 @@ static void __init imx6q_init_late(void)
 	/*
 	 * Poweroff supports for CVR-MIL-xx
 	 */
-	if (of_machine_is_compatible("tdc,cvr-mil-v2") ||
+	if (of_machine_is_compatible("tdc,cvr-mil-v1") ||
+	    of_machine_is_compatible("tdc,cvr-mil-v2") ||
 	    of_machine_is_compatible("tdc,cvr-mil-v3"))
 		pm_power_off = imx6q_cvr_power_off;
 }
