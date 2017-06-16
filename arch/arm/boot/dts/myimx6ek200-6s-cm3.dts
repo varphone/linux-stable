@@ -11,6 +11,14 @@
 / {
 	model = "TDC Car Video Recorder For Military (V3)";
 	compatible = "tdc,cvr-mil-v3", "myzr,myimx6", "myzr,myimx6u", "myzr,myimx6cb200", "myzr,myimx6ek200", "fsl,imx6dl", "fsl,imx6dl-ldb";
+
+	v4l2_cap_2 {
+		status = "disabled";
+	};
+
+	v4l2_cap_3 {
+		status = "disabled";
+	};
 };
 
 &ldb {
@@ -59,12 +67,4 @@
 	mipi-csi2-channel@2 {
 		status = "disabled";
 	};
-};
-
-&v4l2_cap_2 {
-	status = "disabled";
-};
-
-&v4l2_cap_3 {
-	status = "disabled";
 };
