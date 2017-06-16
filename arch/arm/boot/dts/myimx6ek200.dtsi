@@ -219,7 +219,7 @@
 		ipu_id = <1>;
 		csi_id = <0>;
 		mclk_source = <0>;
-		status = "disabled";
+		status = "okay";
 	};
 
 	v4l2_cap_3 {
@@ -227,7 +227,7 @@
 		ipu_id = <1>;
 		csi_id = <1>;
 		mclk_source = <0>;
-		status = "disabled";
+		status = "okay";
 	};
 
 	v4l2_out {
@@ -514,14 +514,14 @@
 		ipu_id = <1>;
 		csi_id = <0>;
 		v_channel = <2>;
-		status = "disabled";
+		status = "okay";
 	};
 
 	mipi-csi2-channel@3 {
 		ipu_id = <1>;
 		csi_id = <1>;
 		v_channel = <3>;
-		status = "disabled";
+		status = "okay";
 	};
 };
 
