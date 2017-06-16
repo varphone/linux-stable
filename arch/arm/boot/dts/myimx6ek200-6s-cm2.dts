@@ -50,3 +50,21 @@
 &mxcfb2 {
 	status = "okay";
 };
+
+&mipi_csi {
+	mipi-csi2-channel@2 {
+		status = "disabled";
+	};
+
+	mipi-csi2-channel@2 {
+		status = "disabled";
+	};
+};
+
+&v4l2_cap_2 {
+	status = "disabled";
+};
+
+&v4l2_cap_3 {
+	status = "disabled";
+};
