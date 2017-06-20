@@ -134,8 +134,12 @@ struct mty065x {
 #define dev_to_i2c_client(d)	container_of(d, struct i2c_client, dev)
 #define dev_to_mty065x(d)	i2c_get_clientdata(dev_to_i2c_client(d))
 
+static void mty065x_get_led_pwm_level(struct mty065x *mty, int *level);
+static void mty065x_set_led_pwm_level(struct mty065x *mty, int level);
+
 static void mty065x_set_backlight(struct mty065x *data, int brightness)
 {
+	mty065x_set_led_pwm_level(data, brightness);
 }
 
 static int mty065x_update_status(struct backlight_device *dev)
@@ -155,9 +159,12 @@ static int mty065x_update_status(struct backlight_device *dev)
 
 static int mty065x_get_brightness(struct backlight_device *dev)
 {
-	struct backlight_properties *props = &dev->props;
+	struct mty065x *mty = bl_get_data(dev);
+	int level;
 
-	return props->brightness;
+	mty065x_get_led_pwm_level(mty, &level);
+
+	return level;
 }
 
 static const struct backlight_ops bl_ops = {
@@ -1185,7 +1192,7 @@ static int mty065x_bl_probe(struct i2c_client *client,
 
 	memset(&props, 0, sizeof(struct backlight_properties));
 	props.type = BACKLIGHT_RAW;
-	props.max_brightness = 512 - 1;
+	props.max_brightness = MTY065X_LED_PWM_LEVEL_MAX;
 
 	mty->bl = devm_backlight_device_register(&client->dev, "mty065x-bl",
 						&client->dev, mty, &bl_ops,
@@ -1195,7 +1202,7 @@ static int mty065x_bl_probe(struct i2c_client *client,
 		goto err_blreg;
 	}
 
-	mty->bl->props.brightness = 69;
+	mty065x_get_led_pwm_level(mty, &mty->bl->props.brightness);
 	mty->bl->props.power = FB_BLANK_UNBLANK;
 
 	ret = sysfs_create_group(&mty->bl->dev.kobj, &mty065x_attr_group);
