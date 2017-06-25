@@ -177,11 +177,11 @@ static int mty065x_check_fb(struct backlight_device *dev, struct fb_info *fbi)
 	if (fbi) {
 		if (of_machine_is_compatible("myzr,myimx6q")) {
 			/* LVDS0 and LVDS1 only */
-			if (strncmp(fbi->fix.id, "DISP4", 5) == 0)
+			if (strncmp(fbi->fix.id, "DISP4 BG", 8) == 0)
 				return 0;
 		} else if (of_machine_is_compatible("myzr,myimx6u")) {
 			/* LVDS0 and LVDS1 only */
-			if (strncmp(fbi->fix.id, "DISP3", 5) == 0)
+			if (strncmp(fbi->fix.id, "DISP3 BG", 8) == 0)
 				return 0;
 		}
 	}
