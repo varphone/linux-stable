@@ -51,6 +51,12 @@
 	};
 };
 
+&dcic2 {
+	dcic_id = <1>;
+	dcic_mux = "dcic-lvds0";
+	status = "okay";
+};
+
 &ldb {
 	lvds-channel@0 {
 		crtc = "ipu1-di0";
