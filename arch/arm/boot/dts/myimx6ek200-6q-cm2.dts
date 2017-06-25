@@ -13,6 +13,15 @@
 	compatible = "tdc,cvr-mil-v2", "myzr,myimx6", "myzr,myimx6q", "myzr,myimx6cb200", "myzr,myimx6ek200", "fsl,imx6q", "fsl,imx6q-ldb";
 };
 
+&i2c1 {
+	rx8025@32 {
+		compatible = "rtc,rx8025";
+		reg = <0x32>;
+		/* Default date time: 2016-8-1 0:0:0 */
+		def-rtc-time = <0 0 0 1 7 116 1 0 0>;
+	};
+};
+
 &ldb {
 	lvds-channel@0 {
 		crtc = "ipu2-di0";
