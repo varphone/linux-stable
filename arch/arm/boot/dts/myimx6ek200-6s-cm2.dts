@@ -68,3 +68,7 @@
 		status = "disabled";
 	};
 };
+
+&snvs {
+	status = "disabled";
+};
