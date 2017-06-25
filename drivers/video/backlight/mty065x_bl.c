@@ -926,17 +926,12 @@ static ssize_t mty065x_get_ks_correction_attr(struct device *dev,
 					      char *buf)
 {
 	struct mty065x* mty = dev_to_mty065x(dev);
-	unsigned int ratio_i, ratio_f;
-	int offset_i, offset_f;
 
 	mty065x_get_ks_correction(mty);
-	ratio_i  = mty->props.ks_correction.ratio / 256;
-	ratio_f  = (mty->props.ks_correction.ratio % 256) * 1000 / 256;
-	offset_i = mty->props.ks_correction.offset / 256;
-	offset_f = (mty->props.ks_correction.offset % 256) * 1000 / 256;
-	return scnprintf(buf, PAGE_SIZE, "%u %u.%03u %d.%03u\n",
+	return scnprintf(buf, PAGE_SIZE, "%u %u %d\n",
 			 mty->props.ks_correction.enable,
-			 ratio_i, ratio_f, offset_i, offset_f);
+			 mty->props.ks_correction.ratio,
+			 mty->props.ks_correction.offset);
 
 }
 
@@ -946,14 +941,13 @@ static ssize_t mty065x_set_ks_correction_attr(struct device *dev,
 {
 	struct mty065x* mty = dev_to_mty065x(dev);
 	unsigned int enable;
-	unsigned int ratio_i, ratio_f;
-	int offset_i, offset_f;
+	unsigned int ratio;
+	int offset;
 
-	if (sscanf(buf, "%u %u.%03u %d.%03u",
-		   &enable, &ratio_i, &ratio_f, &offset_i, &offset_f) == 5) {
+	if (sscanf(buf, "%u %u %d", &enable, &ratio, &offset) == 3) {
 		mty->props.ks_correction.enable = enable;
-		mty->props.ks_correction.ratio = (ratio_i * 256) + (ratio_f * 256 / 1000);
-		mty->props.ks_correction.offset = (offset_i * 256) + (offset_f * 256 / 1000);
+		mty->props.ks_correction.ratio = ratio;
+		mty->props.ks_correction.offset = offset;
 		mty065x_set_ks_correction(mty);
 		return count;
 	}
