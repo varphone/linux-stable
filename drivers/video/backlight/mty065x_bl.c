@@ -101,7 +101,7 @@ struct ks_correction {
 
 /* Keystone Projection */
 struct ks_projection {
-	u16	angle;		/* Pitch Angle */
+	s16	angle;		/* Pitch Angle */
 } __attribute__((packed));
 
 /* RGB LED PWM */
@@ -960,12 +960,9 @@ static ssize_t mty065x_get_ks_projection_attr(struct device *dev,
 					      char *buf)
 {
 	struct mty065x* mty = dev_to_mty065x(dev);
-	unsigned int angle_i, angle_f;
 
 	mty065x_get_ks_projection(mty);
-	angle_i = mty->props.ks_projection.angle / 256;
-	angle_f = (mty->props.ks_projection.angle % 256) * 1000 / 256;
-	return scnprintf(buf, PAGE_SIZE, "%u.%03u\n", angle_i, angle_f);
+	return scnprintf(buf, PAGE_SIZE, "%d\n", mty->props.ks_projection.angle);
 
 }
 
@@ -974,10 +971,10 @@ static ssize_t mty065x_set_ks_projection_attr(struct device *dev,
 					      const char *buf, size_t count)
 {
 	struct mty065x* mty = dev_to_mty065x(dev);
-	unsigned int angle_i, angle_f;
+	int angle;
 
-	if (sscanf(buf, "%u.%03u", &angle_i, &angle_f) == 2) {
-		mty->props.ks_projection.angle = (angle_i * 256) + (angle_f * 256 / 1000);
+	if (sscanf(buf, "%d", &angle) == 1) {
+		mty->props.ks_projection.angle = angle;
 		mty065x_set_ks_projection(mty);
 		return count;
 	}
