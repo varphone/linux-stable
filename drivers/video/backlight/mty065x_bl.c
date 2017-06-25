@@ -141,10 +141,16 @@ struct mty065x {
 
 static void mty065x_get_led_pwm_level(struct mty065x *mty, int *level);
 static void mty065x_set_led_pwm_level(struct mty065x *mty, int level);
+static void mty065x_set_rgb_led_ctrl_value(struct mty065x *mty, u8 value);
 
 static void mty065x_set_backlight(struct mty065x *data, int brightness)
 {
 	mty065x_set_led_pwm_level(data, brightness);
+	/* Turn the rgb led power if brightness == 0 */
+	if (brightness == 0)
+		mty065x_set_rgb_led_ctrl_value(data, 0);
+	else
+		mty065x_set_rgb_led_ctrl_value(data, 7);
 }
 
 static int mty065x_update_status(struct backlight_device *dev)
