@@ -309,6 +309,16 @@
 			 >;
 		};
 
+		pinctrl_gpio_isl7998x: gpioisl7998xgrp {
+			fsl,pins = <
+				/* ISL7998X_RST */
+				MX6QDL_PAD_SD2_CLK__GPIO1_IO10		0x80000000
+				/* ISL7998X_INT */
+				MX6QDL_PAD_SD2_CMD__GPIO1_IO11		0x80000000
+				/* ISL7998X_PD */
+				MX6QDL_PAD_SD2_DAT3__GPIO1_IO12		0x80000000
+			>;
+		};
 		pinctrl_nandf_leds: nandfledsgrp {
 			fsl,pins = <
 				MX6QDL_PAD_NANDF_CS0__GPIO6_IO11	0x80000000
