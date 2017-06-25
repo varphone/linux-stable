@@ -422,17 +422,6 @@
 		reset-gpios = <&gpio1 17 0>;
 		linux,wakeup;
 	};
-
-	mty065x-bl@1b {
-		compatible = "tdc,mty065x-bl";
-		reg = <0x1b>;
-		pingctrl-names = "default";
-		/* Driver properties */
-		display-size = /bits/ 16 <854 480 1280 720>;
-		input-format = /bits/ 8 <0x41>;
-		input-select = /bits/ 8 <0x00>;
-		image-crop = /bits/ 16 <0 0 1280 720>;
-	};
 };
 
 &ldb {
