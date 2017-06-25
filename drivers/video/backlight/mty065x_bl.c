@@ -475,17 +475,21 @@ static void mty065x_get_rgb_led_ctrl(struct mty065x *mty)
 	}
 }
 
-static void mty065x_set_rgb_led_ctrl(struct mty065x *mty)
+static void mty065x_set_rgb_led_ctrl_value(struct mty065x *mty, u8 value)
 {
 	int ret;
 
 	ret = i2c_smbus_write_byte_data(mty->i2c, MTY065X_RGB_LED_CTRL_W,
-					mty->props.rgb_led_ctrl);
+					value);
 	if (ret < 0) {
 		dev_warn(mty->dev, "write rgb led control failed, err: %d\n", ret);
 	}
 }
 
+static void mty065x_set_rgb_led_ctrl(struct mty065x *mty)
+{
+	mty065x_set_rgb_led_ctrl_value(mty, mty->props.rgb_led_ctrl);
+}
 
 static void mty065x_get_rgb_led_pwm(struct mty065x *mty);
 static void mty065x_set_rgb_led_pwm(struct mty065x *mty);
