@@ -369,6 +369,7 @@ static irqreturn_t ds1307_irq(int irq, void *dev_id)
 
 /*----------------------------------------------------------------------*/
 
+static int ds1307_set_time(struct device *dev, struct rtc_time *t);
 static int ds1307_get_time(struct device *dev, struct rtc_time *t)
 {
 	struct ds1307	*ds1307 = dev_get_drvdata(dev);
@@ -401,6 +402,12 @@ static int ds1307_get_time(struct device *dev, struct rtc_time *t)
 		"read", t->tm_sec, t->tm_min,
 		t->tm_hour, t->tm_mday,
 		t->tm_mon, t->tm_year, t->tm_wday);
+
+	/* set default date time if not valid */
+	if (rtc_valid_tm(t)) {
+		if (!of_property_read_u32_array(dev->of_node, "def-rtc-time", (u32*)t, 9))
+			return ds1307_set_time(dev, t);
+	}
 
 	/* initial clock setting can be undefined */
 	return rtc_valid_tm(t);
