@@ -54,20 +54,21 @@
 		crtc = "ipu2-di0";
 		fsl,data-mapping = "spwg";
 		fsl,data-width = <18>;
+		primary;
 		status = "okay";
 
 		display-timings {
 			native-mode = <&timing0>;
 			timing0: hsd100pxn1 {
-				clock-frequency = <30419000>;
-				hactive = <854>;
-				vactive = <480>;
-				hback-porch = <82>;
+				clock-frequency = <64022400>;
+				hactive = <1280>;
+				vactive = <720>;
+				hback-porch = <80>;
 				hfront-porch = <48>;
-				vback-porch = <6>;
+				vback-porch = <13>;
 				vfront-porch = <3>;
 				hsync-len = <32>;
-				vsync-len = <10>;
+				vsync-len = <5>;
 			};
 		};
 	};
@@ -76,7 +77,6 @@
 		crtc = "ipu2-di1";
 		fsl,data-mapping = "spwg";
 		fsl,data-width = <18>;
-		primary;
 		status = "okay";
 
 		display-timings {
