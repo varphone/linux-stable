@@ -80,3 +80,7 @@
 &sata {
 	status = "okay";
 };
+
+&snvs {
+	status = "disabled";
+};
