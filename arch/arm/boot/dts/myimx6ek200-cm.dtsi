@@ -252,6 +252,48 @@
 	pinctrl-0 = <&pinctrl_csi_i2c1>;
 	status = "okay";
 
+	atm88pa@7a {
+		compatible = "tdc,atm88pa";
+		reg = <0x7a>;
+		interrupt-parent = <&gpio5>;
+		interrupts = <20 0>;
+		linux,wakeup;
+		status = "okay";
+
+		keypad {
+			debounce_time = <1>;
+			repeat = <0>;
+			/* KEY_ENTER, KEY_ESC, KEY_UP, KEY_DOWN, KEY_F4, KEY_F5, KEY_F6, KEY_POWER */
+			keymap = /bits/ 16 <28 1 103 108 62 63 64 116>;
+		};
+
+		leds {
+			l-led1@0 {
+				id = <0>;
+				label = "l-led1";
+				brightness = <0>;
+				max-brightness = <255>;
+			};
+			l-led2@1 {
+				id = <1>;
+				label = "l-led2";
+				brightness = <0>;
+				max-brightness = <255>;
+			};
+			r-led1@2 {
+				id = <2>;
+				label = "r-led1";
+				brightness = <0>;
+				max-brightness = <255>;
+			};
+		};
+
+		power {
+			/* poweroff GPIO1_IO13, ACTIVE_LOW */
+			gpios = <&gpio1 13 1>;
+		};
+	};
+
 	isl1208@6f {
 		compatible = "rtc,isl1208";
 		reg = <0x6f>;
