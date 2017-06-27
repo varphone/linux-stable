@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include "imx6dl.dtsi"
-#include "myimx6ek200.dtsi"
+#include "myimx6ek200-cm.dtsi"
 
 / {
 	model = "TDC Car Video Recorder For Military (V3)";
@@ -25,29 +25,8 @@
 	lvds-channel@0 {
 		crtc = "ipu1-di0";
 	};
-
 	lvds-channel@1 {
 		crtc = "ipu1-di1";
-		fsl,data-mapping = "spwg";
-		fsl,data-width = <18>;
-		primary;
-		status = "okay";
-
-		display-timings {
-			native-mode = <&timing1>;
-			timing1: hsd100pxn1 {
-				clock-frequency = <64022400>;
-				hactive = <1280>;
-				vactive = <720>;
-				hback-porch = <80>;
-				hfront-porch = <48>;
-				vback-porch = <13>;
-				vfront-porch = <3>;
-				hsync-len = <32>;
-				vsync-len = <5>;
-			};
-
-		};
 	};
 };
 
