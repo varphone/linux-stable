@@ -187,3 +187,5 @@ obj-$(CONFIG_MFD_MXC_HDMI)	+= mxc-hdmi-core.o
 intel-soc-pmic-objs		:= intel_soc_pmic_core.o intel_soc_pmic_crc.o
 obj-$(CONFIG_INTEL_SOC_PMIC)	+= intel-soc-pmic.o
 obj-$(CONFIG_MFD_MT6397)	+= mt6397-core.o
+atm88pa-objs			:= atm88pa-core.o atm88pa-keypad.o atm88pa-leds.o atm88pa-irq.o atm88pa-power.o
+obj-$(CONFIG_MFD_ATM88PA)	+= atm88pa.o
