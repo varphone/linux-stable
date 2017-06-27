@@ -1,0 +1,77 @@
+* Atmel Microelectronics ATMEGA88PA Multi-Functional Device
+
+Required properties:
+ - compatible			: "tdc,atm88pa"
+ - reg				: I2C address of the device
+ - interrupts			: The interrupt output from the controller
+ - interrupt-parent		: Specifies which IRQ controller we're connected to
+ - linux,wakeup			: Marks the input device as wakable
+ - keypad
+  - debounce_time		: Key press debounce time in ms
+  - repeat			: Key repeat delay in ms
+  - keymap			: Key code mapping
+ - leds
+  - id				: Index number
+  - label			: Text identifer
+  - brightness			: Brightness
+  - max-brightness		: Maximum brightness
+ - power			: Power managerment
+  - gpios			: Specifies which gpio we're connected to power management
+
+Optional properties:
+ - leds
+  - default-trigger		: Default trigger
+
+Notes:
+ - KEY_ENTER			: Show menu or dialog or confirm
+ - KEY_ESC			: Cancel or back to prev
+ - KEY_UP			: Move up or do plus
+ - KEY_DOWN			: Move down or do minus
+ - KEY_F4			: Toggle front/back camera
+ - KEY_F5			: Toggle video display mode
+ - KEY_F6			: Toggle supplementary lighting
+ - KEY_POWER			: Power on/off
+
+Example:
+
+	atm88pa: atm88pa@7a {
+		compatible = "tdc,atm88pa";
+		reg = <0x7a>;
+		interrupt-parent = <&gpio5>;
+		interrupts = <20 0x04>;
+		linux,wakeup;
+		
+		keypad {
+			debounce_time = <1>;
+			repeat = <0>;
+			/* KEY_ENTER, KEY_ESC, KEY_UP, KEY_DOWN, KEY_F4, KEY_F5, KEY_F6, KEY_POWER */
+			keymap = /bits/ 16 <28 1 103 108 62 63 64 116>;
+		};
+
+		leds {
+			l-led1@0 {
+				id = <0>;
+				label = "l-led1";
+				brightness = <0>;
+				max-brightness = <255>;
+			};
+			l-led2@1 {
+				id = <1>;
+				label = "l-led2";
+				brightness = <0>;
+				max-brightness = <255>;
+			};
+			r-led1@2 {
+				id = <2>;
+				label = "r-led1";
+				brightness = <0>;
+				max-brightness = <255>;
+			};
+		};
+
+		power {
+			/* poweroff-gpio: GPIO1_IO13, ACTIVE_LOW */
+			gpios = <&gpio1 13 1>;
+		};
+	};
+

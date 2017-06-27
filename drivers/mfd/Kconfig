@@ -1445,6 +1445,13 @@ config MFD_STW481X
 	  in various ST Microelectronics and ST-Ericsson embedded
 	  Nomadik series.
 
+config MFD_ATM88PA
+	tristate "Atmel Microelectronics ATMEGA88PA with I2C"
+	depends on I2C && GPIOLIB && INPUT
+	help
+	  The ATM88PA is an integrated keypad, leds, and power management
+	  subsystem for embeded systems.
+
 menu "Multimedia Capabilities Port drivers"
 	depends on ARCH_SA1100
 
