@@ -6,105 +6,19 @@
 
 /dts-v1/;
 #include "imx6q.dtsi"
-#include "myimx6ek200.dtsi"
+#include "myimx6ek200-cm.dtsi"
 
 / {
 	model = "TDC Car Video Recorder for Military (V2)";
 	compatible = "tdc,cvr-mil-v2", "myzr,myimx6", "myzr,myimx6q", "myzr,myimx6cb200", "myzr,myimx6ek200", "fsl,imx6q", "fsl,imx6q-ldb";
 };
 
-&iomuxc {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_eim0_pad &pinctrl_sd1_pad &pinctrl_sd3_pad &pinctrl_gpio_pad &pinctrl_nandf_mipi_csi &pinctrl_nandf_pcie>;
-};
-
-&i2c1 {
-	isl7998x_mipi@44 {
-		compatible = "intersil,isl7998x_mipi";
-		reg = <0x44>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_gpio_isl7998x>;
-		clocks = <&clks 201>;
-		clock-names = "csi_mclk";
-		csi_id = <0>;
-		mclk = <27000000>;
-		mclk_source = <0>;
-		interrupt-parent = <&gpio1>;
-		interrupts = <11 0>;
-		reset-gpios = <&gpio1 10 0>;
-		power-gpios = <&gpio1 12 1>;
-	};
-
-	mty065x-bl@1b {
-		compatible = "tdc,mty065x-bl";
-		reg = <0x1b>;
-		pingctrl-names = "default";
-		/* Driver properties */
-		display-size = /bits/ 16 <854 480 1280 720>;
-		input-format = /bits/ 8 <0x41>;
-		input-select = /bits/ 8 <0x00>;
-		image-crop = /bits/ 16 <0 0 1280 720>;
-	};
-
-	rx8025@32 {
-		compatible = "rtc,rx8025";
-		reg = <0x32>;
-		/* Default date time: 2016-8-1 0:0:0 */
-		def-rtc-time = <0 0 0 1 7 116 1 0 0>;
-	};
-};
-
-&dcic2 {
-	dcic_id = <1>;
-	dcic_mux = "dcic-lvds0";
-	status = "okay";
-};
-
 &ldb {
 	lvds-channel@0 {
 		crtc = "ipu2-di0";
-		fsl,data-mapping = "spwg";
-		fsl,data-width = <18>;
-		primary;
-		status = "okay";
-
-		display-timings {
-			native-mode = <&timing0>;
-			timing0: hsd100pxn1 {
-				clock-frequency = <64022400>;
-				hactive = <1280>;
-				vactive = <720>;
-				hback-porch = <80>;
-				hfront-porch = <48>;
-				vback-porch = <13>;
-				vfront-porch = <3>;
-				hsync-len = <32>;
-				vsync-len = <5>;
-			};
-		};
 	};
-
 	lvds-channel@1 {
 		crtc = "ipu2-di1";
-		fsl,data-mapping = "spwg";
-		fsl,data-width = <18>;
-		status = "okay";
-
-		display-timings {
-			native-mode = <&timing1>;
-			timing1: hsd100pxn1 {
-				clock-frequency = <64022400>;
-				hactive = <1280>;
-				vactive = <720>;
-				hback-porch = <80>;
-				hfront-porch = <48>;
-				vback-porch = <13>;
-				vfront-porch = <3>;
-				hsync-len = <32>;
-				vsync-len = <5>;
-			};
-
-		};
 	};
 };
 
