@@ -178,20 +178,22 @@ static int mty065x_get_brightness(struct backlight_device *dev)
 	return level;
 }
 
+/* Check if given framebuffer device is the one bound to this backlight;
+   return 0 if not, !=0 if it is. */
 static int mty065x_check_fb(struct backlight_device *dev, struct fb_info *fbi)
 {
 	if (fbi) {
 		if (of_machine_is_compatible("myzr,myimx6q")) {
 			/* LVDS0 and LVDS1 only */
 			if (strncmp(fbi->fix.id, "DISP4 BG", 8) == 0)
-				return 0;
+				return 1;
 		} else if (of_machine_is_compatible("myzr,myimx6u")) {
 			/* LVDS0 and LVDS1 only */
 			if (strncmp(fbi->fix.id, "DISP3 BG", 8) == 0)
-				return 0;
+				return 1;
 		}
 	}
-	return -ENODEV;
+	return 0;
 }
 
 static const struct backlight_ops bl_ops = {
