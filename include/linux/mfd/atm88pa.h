@@ -35,12 +35,12 @@
  *   bit[4]: Front camera fault, 1 fault, 0 normal
  *   bit[3]: Hall sensor, 1 closed, 0 opened
  *   bit[2]: Power source, 1 external, 0 super cap
- *   bit[1..0]: SuperCap state, undefined
+ *   bit[1:0]: SuperCap state, undefined
  */
 #define ATM88PA_REG_STATUS	0x01 /* R */
 
 /* Temperature, 16 bit signed, precision: 0.1 Celsius */
-#define ATM88PA_REG_TEMP	0x02 /* R */
+#define ATM88PA_REG_TEMPERATURE	0x02 /* R */
 
 /* SuperCap voltage, 16 bit unsigned, precision: 0.01V */
 #define ATM88PA_REG_SUCAP_VOLT	0x04 /* R */
@@ -66,13 +66,27 @@
 /* Back camera power control, 1 on, 0 off */
 #define ATM88PA_REG_BC_PWR_CTRL	0x0D /* R/W */
 
-/* Side camera power control, 1 on, 0 off */
-#define ATM88PA_REG_SC_PWR_CTRL	0x0E /* R/W */
+/* Reserved */
+#define ATM88PA_REG_RSV1	0x0E /* R/W */
 
 /* Fault flags, 1 fault, 0 normal */
 #define ATM88PA_REG_FAULT	0x0F /* R/W */
 
+/* Poweroff control, 0x55 poweroff */
+#define ATM88PA_REG_PWR_CTRL	0x10 /* R/W */
+
+/*
+ * Interrupts bits:
+ *   bit[7:6]: Reserved
+ *   bit[5]  : System status interrupt flag, clear after read
+ *   bit[4]  : Keys interrupt flag, clear after read
+ *   bit[3:2]: Reserved
+ *   bit[1]  : Enable system status interrupt, 1 enabled, 0 disabled
+ *   bit[0]  : Enable keys interrupt, 1 enabled, 0 disabled.
+ */
+#define ATM88PA_REG_INT_CTRL	0x11 /* R/W */
+
 /* Software version, 16 bit unsigned */
-#define ATM88PA_REG_SW_VER	0x20
+#define ATM88PA_REG_SW_VER	0x20 /* R */
 
 #endif /* MFD_ATM88PA_H */

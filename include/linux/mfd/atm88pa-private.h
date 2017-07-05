@@ -42,6 +42,7 @@ struct atm88pa {
 	struct led_classdev	leds[ATM88PA_MAX_LEDS]; /* Leds */
 	struct miscdevice	misc; /* Misc device */
 	struct atm88pa_power	power; /* Power off */
+	u8			old_status; /* Prev status value */
 };
 
 #define dev_to_i2c_client(d)	container_of(d, struct i2c_client, dev)
@@ -54,6 +55,7 @@ extern int atm88pa_write(struct atm88pa *atm, u8 reg, u8 val);
 extern int atm88pa_write_word(struct atm88pa *atm, u8 reg, u16 val);
 
 extern int atm88pa_get_sw_ver(struct atm88pa *atm);
+extern void atm88pa_update_status(struct atm88pa *atm);
 
 extern int atm88pa_irq_init(struct atm88pa *atm);
 extern int atm88pa_irq_exit(struct atm88pa *atm);
@@ -63,6 +65,7 @@ extern int atm88pa_irq_suspend(struct atm88pa *atm);
 extern int atm88pa_keypad_init(struct atm88pa *atm);
 extern int atm88pa_keypad_reset(struct atm88pa *atm);
 extern void atm88pa_keypad_update(struct atm88pa *atm);
+extern void atm88pa_keypad_simulate_key(struct atm88pa *atm, int key, int value);
 
 extern int atm88pa_keypad_register(struct atm88pa *atm);
 extern int atm88pa_keypad_unregister(struct atm88pa *atm);
