@@ -11,13 +11,21 @@
 #include <linux/module.h>
 #include <linux/i2c.h>
 #include <linux/interrupt.h>
+#include <linux/mfd/atm88pa.h>
 #include <linux/mfd/atm88pa-private.h>
 
 static irqreturn_t atm88pa_irq_handler(int irq, void *data)
 {
 	struct atm88pa *atm = (struct atm88pa *)data;
+	int ret;
 
-	atm88pa_keypad_update(atm);
+	ret = atm88pa_read(atm, ATM88PA_REG_INT_CTRL);
+	if (ret >= 0) {
+		if (ret & 0x10)
+			atm88pa_keypad_update(atm);
+		if (ret & 0x20)
+			atm88pa_update_status(atm);
+	}
 
 	return IRQ_HANDLED;
 }
@@ -28,6 +36,15 @@ int atm88pa_irq_init(struct atm88pa *atm)
 
 	if (!atm->i2c)
 		return -EINVAL;
+
+	/* Flush current status */
+	atm88pa_update_status(atm);
+
+	/* Flush current keys */
+	atm88pa_keypad_update(atm);
+
+	/* Enable status and keys interrupts */
+	atm88pa_write(atm, ATM88PA_REG_INT_CTRL, 0x03);
 
 	ret = request_threaded_irq(atm->i2c->irq,
 				   NULL, atm88pa_irq_handler,
@@ -52,16 +69,12 @@ int atm88pa_irq_exit(struct atm88pa *atm)
 
 int atm88pa_irq_resume(struct atm88pa *atm)
 {
-#if 0
 	enable_irq(atm->i2c->irq);
-#endif
 	return 0;
 }
 
 int atm88pa_irq_suspend(struct atm88pa *atm)
 {
-#if 0
 	disable_irq(atm->i2c->irq);
-#endif
 	return 0;
 }
