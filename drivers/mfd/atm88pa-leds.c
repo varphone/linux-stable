@@ -8,16 +8,30 @@
  * Author: Varphone Wong <varphone@qq.com>
  *
  */
+#include <linux/device.h>
+#include <linux/i2c.h>
+#include <linux/mfd/atm88pa.h>
 #include <linux/mfd/atm88pa-private.h>
 
 static void atm88pa_leds_set(struct led_classdev *led,
 			     enum led_brightness brightness)
 {
+	struct atm88pa *atm = dev_to_atm88pa(led->dev->parent);
+
+	if (strcmp(led->name, "keypad-bl") == 0) {
+		atm88pa_write(atm, ATM88PA_REG_IND_LIGHT, brightness);
+	}
 }
 
 static enum led_brightness atm88pa_leds_get(struct led_classdev *led)
 {
-	return 0;
+	struct atm88pa *atm = dev_to_atm88pa(led->dev->parent);
+	int ret;
+
+	if (strcmp(led->name, "keypad-bl") == 0) {
+		ret = atm88pa_read(atm, ATM88PA_REG_IND_LIGHT);
+	}
+	return ret;
 }
 
 int atm88pa_leds_register(struct atm88pa *atm)
