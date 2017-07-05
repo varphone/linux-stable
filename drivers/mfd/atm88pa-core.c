@@ -45,6 +45,54 @@ int atm88pa_get_sw_ver(struct atm88pa *atm)
 	return atm88pa_read_word(atm, ATM88PA_REG_SW_VER);
 }
 
+void atm88pa_update_status(struct atm88pa *atm)
+{
+	int ret;
+	u8 new_status, diff_status;
+
+	ret = atm88pa_read(atm, ATM88PA_REG_STATUS);
+	if (ret < 0) {
+		dev_warn(atm->dev, "read status failed, err: %d\n", ret);
+	} else {
+		new_status = ret;
+		diff_status = atm->old_status ^ new_status;
+		atm->old_status = new_status;
+
+		dev_dbg(atm->dev, "status 0x%02x, diff 0x%02x\n", new_status, diff_status);
+
+		/* Check power flag */
+		if (diff_status & 0x04) {
+			if (new_status & 0x04) {
+				/* Simulate KEY_BATTERY released */
+				atm88pa_keypad_simulate_key(atm, KEY_BATTERY, 0);
+			} else {
+				/* Simulate KEY_BATTERY pressed */
+				atm88pa_keypad_simulate_key(atm, KEY_BATTERY, 1);
+			}
+		}
+
+		/* Check hall flags */
+		if (diff_status & 0x18) {
+			/* If cover closed, send KEY_SLEEP event */
+			if ((new_status & 0x18) == 0x18) {
+				/* Simulate KEY_SLEEP pressed and released */
+				atm88pa_keypad_simulate_key(atm, KEY_SLEEP, 1);
+				atm88pa_keypad_simulate_key(atm, KEY_SLEEP, 0);
+			} else if ((new_status & 0x18) == 0) {
+				/* Simulate KEY_WAKEUP pressed and released */
+				atm88pa_keypad_simulate_key(atm, KEY_WAKEUP, 1);
+				atm88pa_keypad_simulate_key(atm, KEY_WAKEUP, 0);
+			}
+		}
+
+		if (diff_status) {
+			/* Simulate KEY_SYSRQ pressed and released */
+			atm88pa_keypad_simulate_key(atm, KEY_SYSRQ, 1);
+			atm88pa_keypad_simulate_key(atm, KEY_SYSRQ, 0);
+		}
+	}
+}
+
 #ifdef CONFIG_OF
 static int atm88pa_parse_dt(struct atm88pa *atm)
 {
@@ -117,6 +165,18 @@ static inline int atm88pa_parse_dt(struct device *dev, struct atm88pa *atm)
 }
 #endif
 
+static ssize_t atm88pa_get_amb_light_attr(struct device *dev,
+					  struct device_attribute *attr,
+					  char *buf)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int light;
+
+	light = atm88pa_read_word(atm, ATM88PA_REG_AMB_LIGHT);
+
+	return scnprintf(buf, PAGE_SIZE, "%u\n", light);
+}
+
 static ssize_t atm88pa_get_status_attr(struct device *dev,
 				       struct device_attribute *attr,
 				       char *buf)
@@ -129,6 +189,30 @@ static ssize_t atm88pa_get_status_attr(struct device *dev,
 	return scnprintf(buf, PAGE_SIZE, "0x%02x\n", status);
 }
 
+static ssize_t atm88pa_get_sucap_volt_attr(struct device *dev,
+					   struct device_attribute *attr,
+					   char *buf)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int volt;
+
+	volt = atm88pa_read_word(atm, ATM88PA_REG_SUCAP_VOLT);
+
+	return scnprintf(buf, PAGE_SIZE, "%u\n", volt);
+}
+
+static ssize_t atm88pa_get_temperature_attr(struct device *dev,
+					    struct device_attribute *attr,
+					    char *buf)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int temperature;
+
+	temperature = atm88pa_read_word(atm, ATM88PA_REG_TEMPERATURE);
+
+	return scnprintf(buf, PAGE_SIZE, "%d\n", temperature);
+}
+
 static ssize_t atm88pa_get_version_attr(struct device *dev,
 					struct device_attribute *attr,
 					char *buf)
@@ -138,15 +222,21 @@ static ssize_t atm88pa_get_version_attr(struct device *dev,
 
 	version = atm88pa_get_sw_ver(atm);
 
-	return scnprintf(buf, PAGE_SIZE, "0x%04x\n", version);
+	return scnprintf(buf, PAGE_SIZE, "%d\n", version);
 }
 
 
+DEVICE_ATTR(amb_light, S_IRUGO, atm88pa_get_amb_light_attr, NULL);
 DEVICE_ATTR(status, S_IRUGO, atm88pa_get_status_attr, NULL);
+DEVICE_ATTR(sucap_volt, S_IRUGO, atm88pa_get_sucap_volt_attr, NULL);
+DEVICE_ATTR(temperature, S_IRUGO, atm88pa_get_temperature_attr, NULL);
 DEVICE_ATTR(version, S_IRUGO, atm88pa_get_version_attr, NULL);
 
 static struct attribute *atm88pa_attrs[] = {
+	&dev_attr_amb_light.attr,
 	&dev_attr_status.attr,
+	&dev_attr_sucap_volt.attr,
+	&dev_attr_temperature.attr,
 	&dev_attr_version.attr,
 	NULL
 };
@@ -247,13 +337,12 @@ static int atm88pa_probe(struct i2c_client* client,
 	atm->dev = &client->dev;
 	atm->i2c = client;
 
-#if 0
-	/* Check software version */
-	if (atm88pa_get_sw_ver(atm) != 0x0001) {
+	/* Check software version, current: 5.01 */
+	if (atm88pa_get_sw_ver(atm) != 501) {
 		dev_err(atm->dev, "ATMEGA88PA not found.\n");
 		return -ENODEV;
 	}
-#endif
+
 	err = atm88pa_parse_dt(atm);
 	if (err) {
 		dev_err(atm->dev, "DT not found\n");
