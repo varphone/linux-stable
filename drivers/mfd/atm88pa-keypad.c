@@ -49,7 +49,16 @@ void atm88pa_keypad_update(struct atm88pa *atm)
 	if (ret < 0) {
 		dev_warn(atm->dev, "read keys failed, err: %d\n", ret);
 	} else {
+		dev_dbg(atm->dev, "keys %02x\n", (u8)ret);
 		atm88pa_keypad_process_keys(&atm->keypad, (u8)ret);
+	}
+}
+
+void atm88pa_keypad_simulate_key(struct atm88pa *atm, int key, int value)
+{
+	if (atm && atm->keypad.idev) {
+		input_report_key(atm->keypad.idev, key, value);
+		input_sync(atm->keypad.idev);
 	}
 }
 
@@ -73,6 +82,12 @@ int atm88pa_keypad_register(struct atm88pa *atm)
 	for (i = 0; i < ARRAY_SIZE(kp->keymap); i++) {
 		__set_bit(kp->keymap[i], idev->keybit);
 	}
+
+	/* Set simulation keys */
+	__set_bit(KEY_BATTERY, idev->keybit);
+	__set_bit(KEY_SLEEP, idev->keybit);
+	__set_bit(KEY_WAKEUP, idev->keybit);
+	__set_bit(KEY_SYSRQ, idev->keybit);
 
 	/* Clear reserved key */
 	__clear_bit(KEY_RESERVED, idev->keybit);
