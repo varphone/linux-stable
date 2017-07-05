@@ -268,11 +268,11 @@
 		};
 
 		leds {
-			l-led1@0 {
+			keypad-bl@0 {
 				id = <0>;
-				label = "l-led1";
+				label = "keypad-bl";
 				brightness = <0>;
-				max-brightness = <255>;
+				max-brightness = <100>;
 			};
 			l-led2@1 {
 				id = <1>;
