@@ -21,6 +21,12 @@ static void atm88pa_leds_set(struct led_classdev *led,
 	if (strcmp(led->name, "keypad-bl") == 0) {
 		atm88pa_write(atm, ATM88PA_REG_IND_LIGHT, brightness);
 	}
+	else if (strcmp(led->name, "camera-sl") == 0) {
+		atm88pa_write(atm, ATM88PA_REG_SUP_LIGHT, brightness);
+	}
+	else if (strcmp(led->name, "fault") == 0) {
+		atm88pa_write(atm, ATM88PA_REG_FAULT, brightness);
+	}
 }
 
 static enum led_brightness atm88pa_leds_get(struct led_classdev *led)
@@ -30,6 +36,12 @@ static enum led_brightness atm88pa_leds_get(struct led_classdev *led)
 
 	if (strcmp(led->name, "keypad-bl") == 0) {
 		ret = atm88pa_read(atm, ATM88PA_REG_IND_LIGHT);
+	}
+	else if (strcmp(led->name, "camera-sl") == 0) {
+		ret = atm88pa_read(atm, ATM88PA_REG_SUP_LIGHT);
+	}
+	else if (strcmp(led->name, "fault") == 0) {
+		ret = atm88pa_read(atm, ATM88PA_REG_FAULT);
 	}
 	return ret;
 }
