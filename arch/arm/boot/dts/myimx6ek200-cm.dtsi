@@ -274,17 +274,17 @@
 				brightness = <0>;
 				max-brightness = <100>;
 			};
-			l-led2@1 {
+			camera-sl@1 {
 				id = <1>;
-				label = "l-led2";
+				label = "camera-sl";
 				brightness = <0>;
-				max-brightness = <255>;
+				max-brightness = <100>;
 			};
-			r-led1@2 {
+			fault@2 {
 				id = <2>;
-				label = "r-led1";
+				label = "fault";
 				brightness = <0>;
-				max-brightness = <255>;
+				max-brightness = <1>;
 			};
 		};
 
