@@ -74,8 +74,12 @@ int atm88pa_keypad_register(struct atm88pa *atm)
 		return -ENOMEM;
 	}
 
-	idev->name = "atm88pa-keypad";
-	idev->phys = kp->phys;
+	idev->name = "ATMEGA88PA Keypad";
+	idev->phys = kp->phys ? kp->phys : "i2c/atm88pa/input0";
+	idev->id.bustype = BUS_I2C;
+	idev->id.vendor = 0x0001;
+	idev->id.product = 0x0001;
+	idev->id.version = 0x01F5;
 	idev->evbit[0] = BIT(EV_KEY);
 
 	/* Fill key bits */
