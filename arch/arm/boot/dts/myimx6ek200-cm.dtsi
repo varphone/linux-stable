@@ -262,7 +262,7 @@
 
 		keypad {
 			debounce_time = <1>;
-			repeat = <0>;
+			repeat = <1>;
 			/* KEY_ENTER, KEY_ESC, KEY_UP, KEY_DOWN, KEY_F4, KEY_F5, KEY_F6, KEY_POWER */
 			keymap = /bits/ 16 <28 1 103 108 62 63 64 116>;
 		};
