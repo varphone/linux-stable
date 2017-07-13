@@ -15,6 +15,11 @@ config FB_LOGO_EXTRA
 	depends on FB=y
 	default y if SPU_BASE
 
+config FB_LOGO_CENTERED
+	bool "Show the logo centered in the screen"
+	depends on FB=y
+	default y if LOGO_CVR_MIL_CLUT224
+
 config LOGO_LINUX_MONO
 	bool "Standard black and white Linux logo"
 	default y
@@ -81,5 +86,10 @@ config LOGO_M32R_CLUT224
 	bool "224-color M32R Linux logo"
 	depends on M32R
 	default y
+
+config LOGO_CVR_MIL_CLUT224
+	bool "224-color CVR-MIL Linux logo"
+	depends on SOC_IMX6 || SOC_IMX6Q || SOC_IMX6SL || SOC_IMX6UL
+	default n
 
 endif # LOGO
