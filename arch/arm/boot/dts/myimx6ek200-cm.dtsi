@@ -252,6 +252,11 @@
 	pinctrl-0 = <&pinctrl_csi_i2c1>;
 	status = "okay";
 
+	apds9306@52 {
+		compatible = "tdc,apds9306";
+		reg = <0x52>;
+	};
+
 	atm88pa@7a {
 		compatible = "tdc,atm88pa";
 		reg = <0x7a>;
