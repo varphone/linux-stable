@@ -2140,7 +2140,6 @@ static int do_con_write(struct tty_struct *tty, const unsigned char *buf, int co
 	console_lock();
 	vc = tty->driver_data;
 	if (vc == NULL) {
-		printk(KERN_ERR "vt: argh, driver_data is NULL !\n");
 		console_unlock();
 		return 0;
 	}
@@ -3027,7 +3026,9 @@ static int bind_con_driver(const struct consw *csw, int first, int last,
 	if (!try_module_get(owner))
 		return -ENODEV;
 
+//	printk(KERN_ERR "xym: %s:%d\n", __func__, __LINE__);
 	console_lock();
+//	printk(KERN_ERR "xym: %s:%d\n", __func__, __LINE__);
 
 	/* check if driver is registered */
 	for (i = 0; i < MAX_NR_CON_DRIVER; i++) {
@@ -3528,6 +3529,7 @@ int register_con_driver(const struct consw *csw, int first, int last)
 	if (!try_module_get(owner))
 		return -ENODEV;
 
+//	printk(KERN_ERR "xym: %s:%d\n", __func__, __LINE__);
 	console_lock();
 
 	for (i = 0; i < MAX_NR_CON_DRIVER; i++) {
@@ -3645,6 +3647,7 @@ int take_over_console(const struct consw *csw, int first, int last, int deflt)
 {
 	int err;
 
+//	printk(KERN_ERR "xym: %s:%d\n", __func__, __LINE__);
 	err = register_con_driver(csw, first, last);
 	/* if we get an busy error we still want to bind the console driver
 	 * and return success, as we may have unbound the console driver
@@ -3652,6 +3655,7 @@ int take_over_console(const struct consw *csw, int first, int last, int deflt)
 	*/
 	if (err == -EBUSY)
 		err = 0;
+//	printk(KERN_ERR "xym: %s:%d\n", __func__, __LINE__);
 	if (!err)
 		bind_con_driver(csw, first, last, deflt);
 

@@ -383,6 +383,12 @@ static void bit_cursor(struct vc_data *vc, struct fb_info *info, int mode,
 	if (info->fbops->fb_cursor)
 		err = info->fbops->fb_cursor(info, &cursor);
 
+	//add by xym start
+#if 1
+	err = 0;
+#endif
+	//add by xym end
+	
 	if (err)
 		soft_cursor(info, &cursor);
 

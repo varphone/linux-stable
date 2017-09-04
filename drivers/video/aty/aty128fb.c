@@ -2527,7 +2527,7 @@ static int aty128_do_resume(struct pci_dev *pdev)
 static int aty128_pci_resume(struct pci_dev *pdev)
 {
 	int rc;
-
+	
 	console_lock();
 	rc = aty128_do_resume(pdev);
 	console_unlock();

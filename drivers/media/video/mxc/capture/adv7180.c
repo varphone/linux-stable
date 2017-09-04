@@ -185,12 +185,16 @@ static struct v4l2_queryctrl adv7180_qctrl[] = {
 static inline int adv7180_read(u8 reg)
 {
 	int val;
+	//edited by xym
+	/*
 	val = i2c_smbus_read_byte_data(adv7180_data.sen.i2c_client, reg);
 	if (val < 0) {
 		dev_dbg(&adv7180_data.sen.i2c_client->dev,
 			"%s:read reg error: reg=%2x\n", __func__, reg);
 		return -1;
 	}
+	*/
+	//edited by xym
 	return val;
 }
 
@@ -204,6 +208,8 @@ static int adv7180_write_reg(u8 reg, u8 val)
 {
 	s32 ret;
 
+	//edit by xym
+	/*
 	ret = i2c_smbus_write_byte_data(adv7180_data.sen.i2c_client, reg, val);
 	if (ret < 0) {
 		dev_dbg(&adv7180_data.sen.i2c_client->dev,
@@ -211,6 +217,8 @@ static int adv7180_write_reg(u8 reg, u8 val)
 			reg, val);
 		return -1;
 	}
+	*/
+	//edit by xym
 	return 0;
 }
 
@@ -237,6 +245,9 @@ static void adv7180_get_std(v4l2_std_id *std)
 	tmp = adv7180_read(ADV7180_STATUS_1) & 0x70;
 
 	mutex_lock(&mutex);
+	//edit by xym
+	tmp = 0x40;
+	//edit by xym
 	if (tmp == 0x40) {
 		/* PAL */
 		*std = V4L2_STD_PAL;
@@ -1085,6 +1096,8 @@ static int adv7180_probe(struct i2c_client *client,
 
 	pr_debug("In adv7180_probe\n");
 
+	printk("In adv7180_probe\n");
+
 	if (tvin_plat->dvddio_reg) {
 		dvddio_regulator =
 		    regulator_get(&client->dev, tvin_plat->dvddio_reg);
@@ -1161,12 +1174,18 @@ static int adv7180_probe(struct i2c_client *client,
 		"%s:Analog Device adv7%2X0 detected!\n", __func__,
 		rev_id);
 
+
 	/*! ADV7180 initialization. */
 	adv7180_hard_reset(tvin_plat->cvbs);
 
 	pr_debug("   type is %d (expect %d)\n",
 		 adv7180_int_device.type, v4l2_int_type_slave);
 	pr_debug("   num ioctls is %d\n",
+		 adv7180_int_device.u.slave->num_ioctls);
+
+	printk("   type is %d (expect %d)\n",
+		 adv7180_int_device.type, v4l2_int_type_slave);
+	printk("   num ioctls is %d\n",
 		 adv7180_int_device.u.slave->num_ioctls);
 
 	/* This function attaches this structure to the /dev/video0 device.
@@ -1176,6 +1195,7 @@ static int adv7180_probe(struct i2c_client *client,
 
 	return ret;
 }
+
 
 /*!
  * ADV7180 I2C detach function.
@@ -1230,6 +1250,7 @@ static __init int adv7180_init(void)
 	u8 err = 0;
 
 	pr_debug("In adv7180_init\n");
+	printk("In adv7180_init\n");
 
 	/* Tells the i2c driver what functions to call for this driver. */
 	err = i2c_add_driver(&adv7180_i2c_driver);

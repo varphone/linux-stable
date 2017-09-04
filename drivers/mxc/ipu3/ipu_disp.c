@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2012 Freescale Semiconductor, Inc. All Rights Reserved.
+ * Copyright 2005-2013 Freescale Semiconductor, Inc. All Rights Reserved.
  */
 
 /*
@@ -61,7 +61,7 @@ static unsigned long _ipu_pixel_clk_get_rate(struct clk *clk)
 {
 	struct ipu_soc *ipu = pixelclk2ipu(clk);
 	u32 div;
-	u64 final_rate = clk_get_rate(clk->parent) * 16;
+	u64 final_rate = (unsigned long long)clk_get_rate(clk->parent) * 16;
 
 	_ipu_get(ipu);
 	div = ipu_di_read(ipu, clk->id, DI_BS_CLKGEN0);
@@ -1297,6 +1297,10 @@ int32_t ipu_init_sync_panel(struct ipu_soc *ipu, int disp, uint32_t pixel_clk,
 	msleep(5);
 	/* Get integer portion of divider */
 	div = clk_get_rate(clk_get_parent(&ipu->pixel_clk[disp])) / rounded_pixel_clk;
+	if (!div) {
+		dev_err(ipu->dev, "invalid pixel clk div = 0\n");
+		return -EINVAL;
+	}
 
 	mutex_lock(&ipu->mutex_lock);
 
@@ -2112,3 +2116,132 @@ void __devinit ipu_disp_init(struct ipu_soc *ipu)
 	_ipu_init_dc_mappings(ipu);
 	_ipu_dmfc_init(ipu, DMFC_NORMAL, 1);
 }
+
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+int32_t ipu_disp_set_global_alpha_late_init(struct ipu_soc *ipu, ipu_channel_t channel,
+				bool enable, uint8_t alpha)
+{
+	uint32_t reg;
+	uint32_t flow;
+	bool bg_chan;
+
+	if (channel == MEM_BG_SYNC || channel == MEM_FG_SYNC)
+		flow = DP_SYNC;
+	else if (channel == MEM_BG_ASYNC0 || channel == MEM_FG_ASYNC0)
+		flow = DP_ASYNC0;
+	else if (channel == MEM_BG_ASYNC1 || channel == MEM_FG_ASYNC1)
+		flow = DP_ASYNC1;
+	else
+		return -EINVAL;
+
+	if (channel == MEM_BG_SYNC || channel == MEM_BG_ASYNC0 ||
+	    channel == MEM_BG_ASYNC1)
+		bg_chan = true;
+	else
+		bg_chan = false;
+
+	mutex_lock(&ipu->mutex_lock);
+
+	if (bg_chan) {
+		reg = ipu_dp_read(ipu, DP_COM_CONF(flow));
+		ipu_dp_write(ipu, reg & ~DP_COM_CONF_GWSEL, DP_COM_CONF(flow));
+	} else {
+		reg = ipu_dp_read(ipu, DP_COM_CONF(flow));
+		ipu_dp_write(ipu, reg | DP_COM_CONF_GWSEL, DP_COM_CONF(flow));
+	}
+
+	if (enable) {
+		reg = ipu_dp_read(ipu, DP_GRAPH_WIND_CTRL(flow)) & 0x00FFFFFFL;
+		ipu_dp_write(ipu, reg | ((uint32_t) alpha << 24),
+			     DP_GRAPH_WIND_CTRL(flow));
+
+		reg = ipu_dp_read(ipu, DP_COM_CONF(flow));
+		ipu_dp_write(ipu, reg | DP_COM_CONF_GWAM, DP_COM_CONF(flow));
+	} else {
+		reg = ipu_dp_read(ipu, DP_COM_CONF(flow));
+		ipu_dp_write(ipu, reg & ~DP_COM_CONF_GWAM, DP_COM_CONF(flow));
+	}
+
+	reg = ipu_cm_read(ipu, IPU_SRM_PRI2) | 0x8;
+	ipu_cm_write(ipu, reg, IPU_SRM_PRI2);
+
+	mutex_unlock(&ipu->mutex_lock);
+
+	return 0;
+}
+EXPORT_SYMBOL(ipu_disp_set_global_alpha_late_init);
+
+int32_t ipu_disp_set_color_key_late_init(struct ipu_soc *ipu, ipu_channel_t channel,
+				bool enable, uint32_t color_key)
+{
+	uint32_t reg, flow;
+	int y, u, v;
+	int red, green, blue;
+
+	if (channel == MEM_BG_SYNC || channel == MEM_FG_SYNC)
+		flow = DP_SYNC;
+	else if (channel == MEM_BG_ASYNC0 || channel == MEM_FG_ASYNC0)
+		flow = DP_ASYNC0;
+	else if (channel == MEM_BG_ASYNC1 || channel == MEM_FG_ASYNC1)
+		flow = DP_ASYNC1;
+	else
+		return -EINVAL;
+
+	mutex_lock(&ipu->mutex_lock);
+
+	ipu->color_key_4rgb = true;
+	/* Transform color key from rgb to yuv if CSC is enabled */
+	if (((ipu->fg_csc_type == RGB2YUV) && (ipu->bg_csc_type == YUV2YUV)) ||
+			((ipu->fg_csc_type == YUV2YUV) && (ipu->bg_csc_type == RGB2YUV)) ||
+			((ipu->fg_csc_type == YUV2YUV) && (ipu->bg_csc_type == YUV2YUV)) ||
+			((ipu->fg_csc_type == YUV2RGB) && (ipu->bg_csc_type == YUV2RGB))) {
+
+		dev_dbg(ipu->dev, "color key 0x%x need change to yuv fmt\n", color_key);
+
+		red = (color_key >> 16) & 0xFF;
+		green = (color_key >> 8) & 0xFF;
+		blue = color_key & 0xFF;
+
+		y = _rgb_to_yuv(0, red, green, blue);
+		u = _rgb_to_yuv(1, red, green, blue);
+		v = _rgb_to_yuv(2, red, green, blue);
+		color_key = (y << 16) | (u << 8) | v;
+
+		ipu->color_key_4rgb = false;
+
+		dev_dbg(ipu->dev, "color key change to yuv fmt 0x%x\n", color_key);
+	}
+
+	if (enable) {
+		reg = ipu_dp_read(ipu, DP_GRAPH_WIND_CTRL(flow)) & 0xFF000000L;
+		ipu_dp_write(ipu, reg | color_key, DP_GRAPH_WIND_CTRL(flow));
+
+		reg = ipu_dp_read(ipu, DP_COM_CONF(flow));
+		ipu_dp_write(ipu, reg | DP_COM_CONF_GWCKE, DP_COM_CONF(flow));
+	} else {
+		reg = ipu_dp_read(ipu, DP_COM_CONF(flow));
+		ipu_dp_write(ipu, reg & ~DP_COM_CONF_GWCKE, DP_COM_CONF(flow));
+	}
+
+	reg = ipu_cm_read(ipu, IPU_SRM_PRI2) | 0x8;
+	ipu_cm_write(ipu, reg, IPU_SRM_PRI2);
+
+	mutex_unlock(&ipu->mutex_lock);
+
+	return 0;
+}
+EXPORT_SYMBOL(ipu_disp_set_color_key_late_init);
+
+int32_t ipu_disp_get_window_pos_late_init(struct ipu_soc *ipu, ipu_channel_t channel,
+				int16_t *x_pos, int16_t *y_pos)
+{
+	int ret;
+
+	mutex_lock(&ipu->mutex_lock);
+	ret = _ipu_disp_get_window_pos(ipu, channel, x_pos, y_pos);
+	mutex_unlock(&ipu->mutex_lock);
+	return ret;
+}
+EXPORT_SYMBOL(ipu_disp_get_window_pos_late_init);
+#endif
+

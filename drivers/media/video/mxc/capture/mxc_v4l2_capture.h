@@ -127,6 +127,15 @@ typedef struct _cam_data {
 	dma_addr_t rot_enc_bufs[2];
 	void *rot_enc_bufs_vaddr[2];
 	int rot_enc_buf_size[2];
+
+	//add by xym
+	int rot_enc_buf_num;
+	int csi_mem_buf_num;
+	dma_addr_t csi_mem_bufs[2];
+	void *csi_mem_bufs_vaddr[2];
+	int csi_mem_buf_size[2];
+	//add by xym
+
 	enum v4l2_buf_type type;
 
 	/* still image capture */
@@ -165,6 +174,11 @@ typedef struct _cam_data {
 	int green;
 	int blue;
 	int ae_mode;
+	//add by xym
+	int input;
+	int video_signal;
+	int csi_irq_pending;
+	//add by xym
 
 	/* standard */
 	struct v4l2_streamparm streamparm;
@@ -240,6 +254,11 @@ struct sensor_data {
 	int green;
 	int blue;
 	int ae_mode;
+	//add by xym
+	bool agc;
+	int gain;
+	int input;
+	//add by xym
 
 	u32 mclk;
 	u8 mclk_source;

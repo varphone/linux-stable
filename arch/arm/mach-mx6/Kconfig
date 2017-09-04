@@ -288,12 +288,25 @@ config IMX_PCIE
 	bool "PCI Express support"
 	select PCI
 
+config IMX_PCIE_EP_MODE_IN_EP_RC_SYS
+	bool "PCI Express EP mode in the IMX6 RC/EP interconnection system"
+	depends on IMX_PCIE
+
+config IMX_PCIE_RC_MODE_IN_EP_RC_SYS
+	bool "PCI Express RC mode in the IMX6 RC/EP interconnection system"
+	depends on IMX_PCIE
+
 config USB_EHCI_ARC_H1
 	tristate "USB Host 1 support"
 	depends on USB_EHCI_ARC
 
 config USB_FSL_ARC_OTG
 	tristate "FSL USB OTG support"
+
+config USB_ID_WAKEUP_ENABLE
+	bool "Enable USB ID Pin As System Wakeup Source"
+	depends on SOC_IMX6SL
+	default n
 
 config MX6_INTER_LDO_BYPASS
 	bool "Internal LDO in MX6Q/DL bypass"
@@ -307,11 +320,37 @@ config MX6_INTER_LDO_BYPASS
 config MX6_CLK_FOR_BOOTUI_TRANS
 	bool "MX6 clk setting for smooth UI transtion from bootloader to kernel"
 	depends on MXC_IPU_V3H
-	default n
+	default y
 	help
 	 This is choosed to keep enable IPU related clocks and PWM clocks and
 	 avoid setting IPU related clocks' parents when initializing clock tree
 	 so that bootloader splashimage can transition to kernel smoothly.
+
+choice
+	prompt "Select Display Interface"
+
+config MX6_CLK_FOR_BOOTUI_TRANS_LCD_IPU1_DI0
+	bool "Smooth UI transtion on LCD, IPU1, DI0."
+	depends on MX6_CLK_FOR_BOOTUI_TRANS
+	help
+	 This is choosed to keep enable IPU related setting on LCD panel which
+	 is connected on IPU1 DI0 port..
+
+config MX6_CLK_FOR_BOOTUI_TRANS_LVDS_IPU1_DI1
+	bool "Smooth UI transtion on LVDS, IPU1, DI1."
+	depends on MX6_CLK_FOR_BOOTUI_TRANS
+	help
+	 This is choosed to keep enable IPU related setting on LVDS panel which
+	 is connected on IPU1 DI1 port..
+
+config MX6_CLK_FOR_BOOTUI_TRANS_HDMI_IPU2_DI0
+	bool "Smooth UI transtion on HDMI, IPU2, DI0."
+	depends on MX6_CLK_FOR_BOOTUI_TRANS
+	help
+	 This is choosed to keep enable IPU related setting on HDMI panel which
+	 is connected on IPU2 DI0 port..
+
+endchoice
 
 config MACH_IMX_BLUETOOTH_RFKILL
        tristate "i.MX Bluetooth rfkill interface support"
@@ -319,11 +358,11 @@ config MACH_IMX_BLUETOOTH_RFKILL
        ---help---
 	Say Y to get the standard rfkill interface of Bluetooth
 
-config MX6_ENET_IRQ_TO_GPIO
-	bool "Route ENET interrupts to GPIO"
-	default n
+config SDMA_IRAM
+	bool "Use Internal RAM for SDMA data structures"
+	depends on IMX_SDMA && SOC_IMX6SL
 	help
-	   Enabling this will direct all the ENET interrupts to a board specific GPIO.
-	   This will allow the system to enter WAIT mode when ENET is active.
+	  SDMA buffer or control structures are stored in the IRAM/OCRAM
+
 
 endif

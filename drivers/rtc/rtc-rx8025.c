@@ -59,6 +59,7 @@
 #define RX8025_BIT_CTRL2_PON	(1 << 4)
 #define RX8025_BIT_CTRL2_XST	(1 << 5)
 #define RX8025_BIT_CTRL2_VDET	(1 << 6)
+#define RX8025_BIT_CTRL2_VDSL	(1 << 7)
 
 /* Clock precision adjustment */
 #define RX8025_ADJ_RESOLUTION	3050 /* in ppb */
@@ -124,9 +125,10 @@ static int rx8025_write_regs(struct i2c_client *client,
 	int ret = i2c_smbus_write_i2c_block_data(client, (number << 4) | 0x08,
 						 length, values);
 
-	if (ret)
+    if (ret) {
 		dev_err(&client->dev, "Unable to write registers #%d..#%d\n",
 			number, number + length - 1);
+    }
 
 	return ret;
 }
@@ -143,8 +145,7 @@ static irqreturn_t rx8025_irq(int irq, void *dev_id)
 
 static void rx8025_work(struct work_struct *work)
 {
-	struct rx8025_data *rx8025 = container_of(work, struct rx8025_data,
-						  work);
+    struct rx8025_data *rx8025 = container_of(work, struct rx8025_data, work);
 	struct i2c_client *client = rx8025->client;
 	struct mutex *lock = &rx8025->rtc->ops_lock;
 	u8 status;
@@ -169,17 +170,16 @@ static void rx8025_work(struct work_struct *work)
 	if (status & RX8025_BIT_CTRL2_DAFG) {
 		/* alarm */
 		status &= RX8025_BIT_CTRL2_DAFG;
-		if (rx8025_write_reg(client, RX8025_REG_CTRL1,
-				     rx8025->ctrl1 & ~RX8025_BIT_CTRL1_DALE))
+        if (rx8025_write_reg(client, RX8025_REG_CTRL1, rx8025->ctrl1 & ~RX8025_BIT_CTRL1_DALE))
 			goto out;
-		local_irq_disable();
+
+        local_irq_disable();
 		rtc_update_irq(rx8025->rtc, 1, RTC_AF | RTC_IRQF);
 		local_irq_enable();
 	}
 
 	/* acknowledge IRQ */
-	rx8025_write_reg(client, RX8025_REG_CTRL2,
-			 status | RX8025_BIT_CTRL2_XST);
+    rx8025_write_reg(client, RX8025_REG_CTRL2, status | RX8025_BIT_CTRL2_XST);
 
 out:
 	if (!rx8025->exiting)
@@ -268,6 +268,11 @@ static int rx8025_init_client(struct i2c_client *client, int *need_reset)
 	int need_clear = 0;
 	int err;
 
+#if 1
+    rx8025_read_regs(rx8025->client, RX8025_REG_CTRL2, 1, ctrl);
+    dev_warn(&client->dev, "ctrl: 0xf=%02x\n", ctrl[0]);
+#endif
+
 	err = rx8025_read_regs(rx8025->client, RX8025_REG_CTRL1, 2, ctrl);
 	if (err)
 		goto out;
@@ -278,18 +283,18 @@ static int rx8025_init_client(struct i2c_client *client, int *need_reset)
 	if (ctrl[1] & RX8025_BIT_CTRL2_PON) {
 		dev_warn(&client->dev, "power-on reset was detected, "
 			 "you may have to readjust the clock\n");
-		*need_reset = 1;
+        *need_reset = 1;
 	}
 
 	if (ctrl[1] & RX8025_BIT_CTRL2_VDET) {
 		dev_warn(&client->dev, "a power voltage drop was detected, "
-			 "you may have to readjust the clock\n");
-		*need_reset = 1;
+             "you may have to readjust the clock\n");
+        *need_reset = 1;
 	}
 
 	if (!(ctrl[1] & RX8025_BIT_CTRL2_XST)) {
 		dev_warn(&client->dev, "Oscillation stop was detected,"
-			 "you may have to readjust the clock\n");
+             "you may have to readjust the clock\n");
 		*need_reset = 1;
 	}
 
@@ -302,11 +307,12 @@ static int rx8025_init_client(struct i2c_client *client, int *need_reset)
 		need_clear = 1;
 
 	if (*need_reset || need_clear) {
-		ctrl2 = ctrl[0];
+        ctrl2 = ctrl[0];
 		ctrl2 &= ~(RX8025_BIT_CTRL2_PON | RX8025_BIT_CTRL2_VDET |
 			   RX8025_BIT_CTRL2_CTFG | RX8025_BIT_CTRL2_WAFG |
 			   RX8025_BIT_CTRL2_DAFG);
 		ctrl2 |= RX8025_BIT_CTRL2_XST;
+        ctrl2 |= RX8025_BIT_CTRL2_VDSL;
 
 		err = rx8025_write_reg(client, RX8025_REG_CTRL2, ctrl2);
 	}
@@ -497,13 +503,13 @@ static ssize_t rx8025_sysfs_show_clock_adjust(struct device *dev,
 					      struct device_attribute *attr,
 					      char *buf)
 {
-	int err, adj;
+    int err, adj;
 
 	err = rx8025_get_clock_adjust(dev, &adj);
 	if (err)
 		return err;
 
-	return sprintf(buf, "%d\n", adj);
+    return sprintf(buf, "%d\n", adj);
 }
 
 static ssize_t rx8025_sysfs_store_clock_adjust(struct device *dev,
@@ -526,32 +532,32 @@ static DEVICE_ATTR(clock_adjust_ppb, S_IRUGO | S_IWUSR,
 
 static int rx8025_sysfs_register(struct device *dev)
 {
-	return device_create_file(dev, &dev_attr_clock_adjust_ppb);
+    return device_create_file(dev, &dev_attr_clock_adjust_ppb);
 }
 
 static void rx8025_sysfs_unregister(struct device *dev)
 {
-	device_remove_file(dev, &dev_attr_clock_adjust_ppb);
+    device_remove_file(dev, &dev_attr_clock_adjust_ppb);
 }
 
 static int __devinit rx8025_probe(struct i2c_client *client,
-				  const struct i2c_device_id *id)
+                                  const struct i2c_device_id *id)
 {
-	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
-	struct rx8025_data *rx8025;
-	int err, need_reset = 0;
+    struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
+    struct rx8025_data *rx8025;
+    int err, need_reset = 0;
 
-	if (!i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE_DATA
-				     | I2C_FUNC_SMBUS_I2C_BLOCK)) {
-		dev_err(&adapter->dev,
-			"doesn't support required functionality\n");
-		err = -EIO;
-		goto errout;
-	}
+    if (!i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE_DATA
+                                 | I2C_FUNC_SMBUS_I2C_BLOCK)) {
+        dev_err(&adapter->dev,
+                "doesn't support required functionality\n");
+        err = -EIO;
+        goto errout;
+    }
 
-	rx8025 = kzalloc(sizeof(*rx8025), GFP_KERNEL);
-	if (!rx8025) {
-		dev_err(&adapter->dev, "failed to alloc memory\n");
+    rx8025 = kzalloc(sizeof(*rx8025), GFP_KERNEL);
+    if (!rx8025) {
+        dev_err(&adapter->dev, "failed to alloc memory\n");
 		err = -ENOMEM;
 		goto errout;
 	}
@@ -595,7 +601,7 @@ static int __devinit rx8025_probe(struct i2c_client *client,
 
 	err = rx8025_sysfs_register(&client->dev);
 	if (err)
-		goto errout_irq;
+        goto errout_irq;
 
 	return 0;
 

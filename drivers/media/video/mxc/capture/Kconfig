@@ -100,6 +100,16 @@ config MXC_TVIN_ADV7180
 	---help---
 	  If you plan to use the adv7180 video decoder with your MXC system, say Y here.
 
+#add by xym
+config MXC_TVIN_TVP5158
+	tristate "Texas Instruments tvp5158 video decoder"
+	depends on (MACH_MX35_3DS || MACH_MX51_3DS || MACH_MX6Q_SABREAUTO || MACH_MX6Q_ARM2)
+	---help---
+	  Support for the Texas Instruments TVP5158 video decoder.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called tvp5158.
+#add by xym
 
 config MXC_CAMERA_OV5640_MIPI
 	tristate "OmniVision ov5640 camera support using mipi"
@@ -128,7 +138,10 @@ config MXC_CAMERA_SENSOR_CLK
 
 choice
 	prompt "Select Overlay Rounting"
+	#edit by xym
 	default MXC_IPU_DEVICE_QUEUE_SDC
+	#default MXC_IPU_PRP_VF_SDC
+	#edit by xym
 	depends on VIDEO_MXC_IPU_CAMERA && FB_MXC_SYNC_PANEL
 
 config MXC_IPU_DEVICE_QUEUE_SDC

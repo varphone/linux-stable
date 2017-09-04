@@ -338,6 +338,9 @@ static void gpio_keys_work_func(struct work_struct *work)
 	struct gpio_button_data *bdata =
 		container_of(work, struct gpio_button_data, work);
 
+	//add by xym start
+	printk("gpio-key: code =%d\n", bdata->button->code);
+	//add by xym end
 	gpio_keys_report_event(bdata);
 }
 

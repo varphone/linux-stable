@@ -1392,7 +1392,7 @@ void vc_SAK(struct work_struct *work)
 		if (tty)
 			__do_SAK(tty);
 		reset_vc(vc);
-	}
+	}	
 	console_unlock();
 }
 

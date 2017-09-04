@@ -2717,8 +2717,9 @@ int radeonfb_pci_resume(struct pci_dev *pdev)
 	if (rinfo->no_schedule) {
 		if (!console_trylock())
 			return 0;
-	} else
+	} else {
 		console_lock();
+	}
 
 	printk(KERN_DEBUG "radeonfb (%s): resuming from state: %d...\n",
 	       pci_name(pdev), pdev->dev.power.power_state.event);

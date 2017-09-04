@@ -72,6 +72,9 @@ struct mxcfb_info {
 	bool overlay;
 	bool alpha_chan_en;
 	bool late_init;
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+	bool late_init_idmac_done;
+#endif
 	bool first_set_par;
 	dma_addr_t alpha_phy_addr0;
 	dma_addr_t alpha_phy_addr1;
@@ -299,7 +302,15 @@ static int _setup_disp_channel1(struct fb_info *fbi)
 		if (mxc_fbi->alpha_chan_en)
 			params.mem_dp_bg_sync.alpha_chan_en = true;
 	}
+
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+	if (mxc_fbi->late_init)
+		ipu_init_channel_late_init(mxc_fbi->ipu, mxc_fbi->ipu_ch, &params);
+	else
+		ipu_init_channel(mxc_fbi->ipu, mxc_fbi->ipu_ch, &params);
+#else
 	ipu_init_channel(mxc_fbi->ipu, mxc_fbi->ipu_ch, &params);
+#endif
 
 	return 0;
 }
@@ -358,6 +369,59 @@ static int _setup_disp_channel2(struct fb_info *fbi)
 		complete(&mxc_fbi->alpha_flip_complete);
 	}
 
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+	if (mxc_fbi->late_init) {
+		mxc_fbi->cur_ipu_buf = 0;
+		retval = ipu_init_channel_buffer_late_init(mxc_fbi->ipu,
+						 mxc_fbi->ipu_ch, IPU_INPUT_BUFFER,
+						 fbi_to_pixfmt(fbi),
+						 fbi->var.xres, fbi->var.yres,
+						 fb_stride,
+						 fbi->var.rotate,
+						 base,
+						 base,
+						 fbi->var.accel_flags &
+							FB_ACCEL_DOUBLE_FLAG ? 0 : base,
+						 0, 0);
+		if (retval) {
+			dev_err(fbi->device,
+				"ipu_init_channel_buffer error %d\n", retval);
+			return retval;
+		}
+
+		/* update u/v offset */
+		ipu_update_channel_offset(mxc_fbi->ipu, mxc_fbi->ipu_ch,
+				IPU_INPUT_BUFFER,
+				fbi_to_pixfmt(fbi),
+				fr_w,
+				fr_h,
+				fr_w,
+				0, 0,
+				fr_yoff,
+				fr_xoff);
+
+		if (mxc_fbi->alpha_chan_en) {
+			retval = ipu_init_channel_buffer_late_init(mxc_fbi->ipu,
+							 mxc_fbi->ipu_ch,
+							 IPU_ALPHA_IN_BUFFER,
+							 IPU_PIX_FMT_GENERIC,
+							 fbi->var.xres, fbi->var.yres,
+							 fbi->var.xres,
+							 fbi->var.rotate,
+							 mxc_fbi->alpha_phy_addr1,
+							 mxc_fbi->alpha_phy_addr0,
+							 0,
+							 0, 0);
+			if (retval) {
+				dev_err(fbi->device,
+					"ipu_init_channel_buffer error %d\n", retval);
+				return retval;
+			}
+		}
+		mxc_fbi->late_init_idmac_done = true;
+	} else
+	{
+#endif
 	retval = ipu_init_channel_buffer(mxc_fbi->ipu,
 					 mxc_fbi->ipu_ch, IPU_INPUT_BUFFER,
 					 fbi_to_pixfmt(fbi),
@@ -404,6 +468,9 @@ static int _setup_disp_channel2(struct fb_info *fbi)
 			return retval;
 		}
 	}
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+	}
+#endif
 
 	return retval;
 }
@@ -411,6 +478,23 @@ static int _setup_disp_channel2(struct fb_info *fbi)
 static bool mxcfb_need_to_set_par(struct fb_info *fbi)
 {
 	struct mxcfb_info *mxc_fbi = fbi->par;
+
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+	if (mxc_fbi->late_init) {
+		if ((mxc_fbi->cur_var.xres != fbi->var.xres) || 
+			(mxc_fbi->cur_var.yres != fbi->var.yres) ||
+			(mxc_fbi->cur_var.bits_per_pixel != fbi->var.bits_per_pixel)) {
+			mxc_fbi->late_init = false;
+
+			if (mxc_fbi->dispdrv && mxc_fbi->dispdrv->drv->late_init_done)
+				mxc_fbi->dispdrv->drv->late_init_done(mxc_fbi->dispdrv);
+			return true;
+		}
+
+		if (mxc_fbi->late_init_idmac_done)
+			return false;
+	}
+#endif
 
 	if ((fbi->var.activate & FB_ACTIVATE_FORCE) &&
 	    (fbi->var.activate & FB_ACTIVATE_MASK) == FB_ACTIVATE_NOW)
@@ -459,6 +543,30 @@ static int mxcfb_set_par(struct fb_info *fbi)
 	if (fbi->var.xres == 0 || fbi->var.yres == 0)
 		return 0;
 
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+	if (mxc_fbi->late_init) {
+		if (ovfbi_enable) {
+			ov_pos_ret = ipu_disp_get_window_pos_late_init(
+							mxc_fbi_fg->ipu, mxc_fbi_fg->ipu_ch,
+							&ov_pos_x, &ov_pos_y);
+			if (ov_pos_ret < 0)
+				dev_err(fbi->device, "Get overlay pos failed, dispdrv:%s.\n",
+						mxc_fbi->dispdrv->drv->name);
+
+			ipu_clear_irq_late_init(mxc_fbi_fg->ipu, mxc_fbi_fg->ipu_ch_irq);
+			ipu_disable_irq_late_init(mxc_fbi_fg->ipu, mxc_fbi_fg->ipu_ch_irq);
+			ipu_clear_irq_late_init(mxc_fbi_fg->ipu, mxc_fbi_fg->ipu_ch_nf_irq);
+			ipu_disable_irq_late_init(mxc_fbi_fg->ipu, mxc_fbi_fg->ipu_ch_nf_irq);
+		}
+
+		ipu_clear_irq_late_init(mxc_fbi->ipu, mxc_fbi->ipu_ch_irq);
+		ipu_disable_irq_late_init(mxc_fbi->ipu, mxc_fbi->ipu_ch_irq);
+		ipu_clear_irq_late_init(mxc_fbi->ipu, mxc_fbi->ipu_ch_nf_irq);
+		ipu_disable_irq_late_init(mxc_fbi->ipu, mxc_fbi->ipu_ch_nf_irq);
+	} else
+	{
+#endif
+
 	if (ovfbi_enable) {
 		ov_pos_ret = ipu_disp_get_window_pos(
 						mxc_fbi_fg->ipu, mxc_fbi_fg->ipu_ch,
@@ -481,13 +589,9 @@ static int mxcfb_set_par(struct fb_info *fbi)
 	ipu_disable_irq(mxc_fbi->ipu, mxc_fbi->ipu_ch_nf_irq);
 	ipu_disable_channel(mxc_fbi->ipu, mxc_fbi->ipu_ch, true);
 	ipu_uninit_channel(mxc_fbi->ipu, mxc_fbi->ipu_ch);
-
-	/*
-	 * Disable IPU hsp clock if it is enabled for an
-	 * additional time in ipu common driver.
-	 */
-	if (mxc_fbi->first_set_par && mxc_fbi->late_init)
-		ipu_disable_hsp_clk(mxc_fbi->ipu);
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+	}
+#endif
 
 	mxcfb_set_fix(fbi);
 
@@ -505,8 +609,13 @@ static int mxcfb_set_par(struct fb_info *fbi)
 		 * Clear the screen in case uboot fb pixel format is not
 		 * the same to kernel fb pixel format.
 		 */
-		if (mxc_fbi->late_init)
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+		if (!mxc_fbi->late_init) {
+#endif
 			memset((char *)fbi->screen_base, 0, fbi->fix.smem_len);
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+		}
+#endif
 
 		mxc_fbi->first_set_par = false;
 	}
@@ -574,6 +683,9 @@ static int mxcfb_set_par(struct fb_info *fbi)
 		_setup_disp_channel1(mxc_fbi->ovfbi);
 
 	if (!mxc_fbi->overlay) {
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+		if (!mxc_fbi->late_init) {
+#endif
 		uint32_t out_pixel_fmt;
 
 		memset(&sig_cfg, 0, sizeof(sig_cfg));
@@ -615,6 +727,9 @@ static int mxcfb_set_par(struct fb_info *fbi)
 				"mxcfb: Error initializing panel.\n");
 			return -EINVAL;
 		}
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+		}
+#endif
 
 		fbi->mode =
 		    (struct fb_videomode *)fb_match_mode(&fbi->var,
@@ -845,6 +960,11 @@ static int mxcfb_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
 			bg_yres = fbi_tmp->var.yres;
 		}
 
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+		if (mxc_fbi->late_init)
+			ipu_disp_get_window_pos_late_init(mxc_fbi->ipu, mxc_fbi->ipu_ch, &pos_x, &pos_y);
+		else
+#endif
 		ipu_disp_get_window_pos(mxc_fbi->ipu, mxc_fbi->ipu_ch, &pos_x, &pos_y);
 
 		if ((var->xres + pos_x) > bg_xres)
@@ -1361,6 +1481,14 @@ static int mxcfb_blank(int blank, struct fb_info *info)
 	case FB_BLANK_VSYNC_SUSPEND:
 	case FB_BLANK_HSYNC_SUSPEND:
 	case FB_BLANK_NORMAL:
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+		if (mxc_fbi->late_init) {
+			mxc_fbi->late_init = false;
+
+			if (mxc_fbi->dispdrv && mxc_fbi->dispdrv->drv->late_init_done)
+				mxc_fbi->dispdrv->drv->late_init_done(mxc_fbi->dispdrv);
+		}
+#endif
 		if (mxc_fbi->dispdrv && mxc_fbi->dispdrv->drv->disable)
 			mxc_fbi->dispdrv->drv->disable(mxc_fbi->dispdrv);
 		ipu_disable_channel(mxc_fbi->ipu, mxc_fbi->ipu_ch, true);
@@ -2019,6 +2147,7 @@ static int mxcfb_register(struct fb_info *fbi)
 	char bg1_id[] = "DISP3 BG - DI1";
 	char fg_id[] = "DISP3 FG";
 
+	
 	if (mxcfbi->ipu_di == 0) {
 		bg0_id[4] += mxcfbi->ipu_id;
 		strcpy(fbi->fix.id, bg0_id);
@@ -2040,6 +2169,34 @@ static int mxcfb_register(struct fb_info *fbi)
 	fb_var_to_videomode(&m, &fbi->var);
 	fb_add_videomode(&m, &fbi->modelist);
 
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+	if (mxcfbi->late_init) {
+		if (ipu_request_irq_late_init(mxcfbi->ipu, mxcfbi->ipu_ch_irq,
+			mxcfb_irq_handler, IPU_IRQF_ONESHOT, MXCFB_NAME, fbi) != 0) {
+			dev_err(fbi->device, "Error registering EOF irq handler.\n");
+			ret = -EBUSY;
+			goto err0;
+		}
+
+		if (ipu_request_irq_late_init(mxcfbi->ipu, mxcfbi->ipu_ch_nf_irq,
+			mxcfb_nf_irq_handler, IPU_IRQF_ONESHOT, MXCFB_NAME, fbi) != 0) {
+			dev_err(fbi->device, "Error registering NFACK irq handler.\n");
+			ret = -EBUSY;
+			goto err1;
+		}
+
+		if (mxcfbi->ipu_alp_ch_irq != -1) {
+			if (ipu_request_irq_late_init(mxcfbi->ipu, mxcfbi->ipu_alp_ch_irq,
+					mxcfb_alpha_irq_handler, IPU_IRQF_ONESHOT,
+						MXCFB_NAME, fbi) != 0) {
+				dev_err(fbi->device, "Error registering alpha irq "
+						"handler.\n");
+				ret = -EBUSY;
+				goto err3;
+			}
+		}
+	} else {
+#endif
 	if (ipu_request_irq(mxcfbi->ipu, mxcfbi->ipu_ch_irq,
 		mxcfb_irq_handler, IPU_IRQF_ONESHOT, MXCFB_NAME, fbi) != 0) {
 		dev_err(fbi->device, "Error registering EOF irq handler.\n");
@@ -2047,6 +2204,7 @@ static int mxcfb_register(struct fb_info *fbi)
 		goto err0;
 	}
 	ipu_disable_irq(mxcfbi->ipu, mxcfbi->ipu_ch_irq);
+
 	if (ipu_request_irq(mxcfbi->ipu, mxcfbi->ipu_ch_nf_irq,
 		mxcfb_nf_irq_handler, IPU_IRQF_ONESHOT, MXCFB_NAME, fbi) != 0) {
 		dev_err(fbi->device, "Error registering NFACK irq handler.\n");
@@ -2064,6 +2222,9 @@ static int mxcfb_register(struct fb_info *fbi)
 			ret = -EBUSY;
 			goto err2;
 		}
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+	}
+#endif
 
 	if (!mxcfbi->late_init) {
 		fbi->var.activate |= FB_ACTIVATE_FORCE;
@@ -2093,15 +2254,25 @@ static int mxcfb_register(struct fb_info *fbi)
 		 * has done this, then set_par() can stop the
 		 * channel neatly and re-initialize it .
 		 */
+
 		if (mxcfbi->next_blank == FB_BLANK_UNBLANK) {
 			console_lock();
 			_setup_disp_channel1(fbi);
 			ipu_enable_channel(mxcfbi->ipu, mxcfbi->ipu_ch);
 			console_unlock();
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+//			printk(KERN_ERR "xym: %s:%d\n", __func__, __LINE__);
+			//xym: something is wrong with this statement, if it's performed than it block the bind_con_driver
+//			mxcfbi->cur_var = fbi->var;
+			fbi->mode =
+				(struct fb_videomode *)fb_match_mode(&fbi->var,
+								 &fbi->modelist);
+#endif
 		}
 	}
 
 
+//	printk(KERN_ERR "xym: %s:%d\n", __func__, __LINE__);
 	ret = register_framebuffer(fbi);
 	if (ret < 0)
 		goto err5;
@@ -2149,6 +2320,9 @@ static int mxcfb_setup_overlay(struct platform_device *pdev,
 		struct fb_info *fbi_bg, struct resource *res)
 {
 	struct fb_info *ovfbi;
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+	struct ipuv3_fb_platform_data *plat_data = pdev->dev.platform_data;
+#endif
 	struct mxcfb_info *mxcfbi_bg = (struct mxcfb_info *)fbi_bg->par;
 	struct mxcfb_info *mxcfbi_fg;
 	int ret = 0;
@@ -2174,6 +2348,9 @@ static int mxcfb_setup_overlay(struct platform_device *pdev,
 	mxcfbi_fg->ipu_di_pix_fmt = mxcfbi_bg->ipu_di_pix_fmt;
 	mxcfbi_fg->overlay = true;
 	mxcfbi_fg->cur_blank = mxcfbi_fg->next_blank = FB_BLANK_POWERDOWN;
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+	mxcfbi_fg->late_init = plat_data->late_init;
+#endif
 
 	/* Need dummy values until real panel is configured */
 	ovfbi->var.xres = 240;
@@ -2259,7 +2436,11 @@ static int mxcfb_probe(struct platform_device *pdev)
 
 	mxcfbi = (struct mxcfb_info *)fbi->par;
 	mxcfbi->ipu_int_clk = plat_data->int_clk;
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
 	mxcfbi->late_init = plat_data->late_init;
+	mxcfbi->late_init_idmac_done = false;
+//	printk(KERN_ERR "xym: %s:%d,mxcfbi->late_init = %d\n", __func__, __LINE__,mxcfbi->late_init);
+#endif
 	mxcfbi->first_set_par = true;
 	ret = mxcfb_dispdrv_init(pdev, fbi);
 	if (ret < 0)
@@ -2300,14 +2481,26 @@ static int mxcfb_probe(struct platform_device *pdev)
 		else
 			mxcfbi->cur_blank = mxcfbi->next_blank = FB_BLANK_POWERDOWN;
 
+		//add by xym start
+//		printk(KERN_ERR "mxcfb_register\n");
+		//add by xym end
 		ret = mxcfb_register(fbi);
 		if (ret < 0)
 			goto mxcfb_register_failed;
 
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+		if (mxcfbi->late_init) {
+			ipu_disp_set_global_alpha_late_init(mxcfbi->ipu, mxcfbi->ipu_ch,
+						  true, 0x80);
+			ipu_disp_set_color_key_late_init(mxcfbi->ipu, mxcfbi->ipu_ch, false, 0);
+		} else {
+#endif
 		ipu_disp_set_global_alpha(mxcfbi->ipu, mxcfbi->ipu_ch,
 					  true, 0x80);
 		ipu_disp_set_color_key(mxcfbi->ipu, mxcfbi->ipu_ch, false, 0);
-
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS
+		}
+#endif
 		res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
 		ret = mxcfb_setup_overlay(pdev, fbi, res);
 

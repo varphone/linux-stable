@@ -404,6 +404,10 @@ static void cursor_timer_handler(unsigned long dev_addr)
 
 static void fbcon_add_cursor_timer(struct fb_info *info)
 {
+
+	//add by xym start
+#if 0
+	//add by xym end
 	struct fbcon_ops *ops = info->fbcon_par;
 
 	if ((!info->queue.func || info->queue.func == fb_flashcursor) &&
@@ -419,6 +423,10 @@ static void fbcon_add_cursor_timer(struct fb_info *info)
 		add_timer(&ops->cursor_timer);
 		ops->flags |= FBCON_FLAGS_CURSOR_TIMER;
 	}
+
+	//add by xym start
+#endif
+	//add by xym end
 }
 
 static void fbcon_del_cursor_timer(struct fb_info *info)
@@ -536,6 +544,7 @@ static int fbcon_takeover(int show_logo)
 	for (i = first_fb_vc; i <= last_fb_vc; i++)
 		con2fb_map[i] = info_idx;
 
+//	printk(KERN_ERR "xym: %s:%d\n", __func__, __LINE__);
 	err = take_over_console(&fb_con, first_fb_vc, last_fb_vc,
 				fbcon_is_default);
 
@@ -3099,7 +3108,7 @@ static int fbcon_fb_registered(struct fb_info *info)
 
 	idx = info->node;
 	fbcon_select_primary(info);
-
+		
 	if (info_idx == -1) {
 		for (i = first_fb_vc; i <= last_fb_vc; i++) {
 			if (con2fb_map_boot[i] == idx) {
@@ -3108,6 +3117,7 @@ static int fbcon_fb_registered(struct fb_info *info)
 			}
 		}
 
+//		printk(KERN_ERR "xym: %s:%d\n", __func__, __LINE__);
 		if (info_idx != -1)
 			ret = fbcon_takeover(1);
 	} else {
@@ -3239,6 +3249,7 @@ static int fbcon_event_notify(struct notifier_block *self,
 		ret = fbcon_fb_unbind(idx);
 		break;
 	case FB_EVENT_FB_REGISTERED:
+//		printk(KERN_ERR "xym: %s:%d\n", __func__, __LINE__);
 		ret = fbcon_fb_registered(info);
 		break;
 	case FB_EVENT_FB_UNREGISTERED:

@@ -121,6 +121,7 @@ void _ipu_ic_enable_task(struct ipu_soc *ipu, ipu_channel_t channel)
 		break;
 	}
 	ipu_ic_write(ipu, ic_conf, IC_CONF);
+//	printk("xym: set ic_conf to %x\n", ic_conf);
 }
 
 void _ipu_ic_disable_task(struct ipu_soc *ipu, ipu_channel_t channel)
@@ -421,6 +422,11 @@ void _ipu_ic_init_prpenc(struct ipu_soc *ipu, ipu_channel_params_t *params, bool
 	else
 		ic_conf |= IC_CONF_RWS_EN;
 
+	//add by xym
+//	ic_conf |= IC_CONF_CSI_MEM_WR_EN;
+//	printk("xym: set ic_conf to %x\n", ic_conf);
+	//add by xym
+	
 	ipu_ic_write(ipu, ic_conf, IC_CONF);
 }
 

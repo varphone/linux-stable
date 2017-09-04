@@ -1628,6 +1628,7 @@ static int do_register_framebuffer(struct fb_info *fb_info)
 	event.info = fb_info;
 	if (!lock_fb_info(fb_info))
 		return -ENODEV;
+//	printk(KERN_ERR "xym: %s:%d\n", __func__, __LINE__);
 	fb_notifier_call_chain(FB_EVENT_FB_REGISTERED, &event);
 	unlock_fb_info(fb_info);
 	return 0;
@@ -1707,6 +1708,7 @@ register_framebuffer(struct fb_info *fb_info)
 	int ret;
 
 	mutex_lock(&registration_lock);
+//	printk(KERN_ERR "xym: %s:%d\n", __func__, __LINE__);
 	ret = do_register_framebuffer(fb_info);
 	mutex_unlock(&registration_lock);
 

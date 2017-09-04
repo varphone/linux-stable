@@ -69,18 +69,28 @@ static int i2c_device_match(struct device *dev, struct device_driver *drv)
 {
 	struct i2c_client	*client = i2c_verify_client(dev);
 	struct i2c_driver	*driver;
+	//xym
+	int ret;
+	//xym
 
 	if (!client)
 		return 0;
 
 	/* Attempt an OF style match */
-	if (of_driver_match_device(dev, drv))
+	if (of_driver_match_device(dev, drv)) {
+//		printk("xym:of_driver_match_device match,drv->name = %s\n", drv->name);
 		return 1;
+
+	}
 
 	driver = to_i2c_driver(drv);
 	/* match on an id table if there is one */
-	if (driver->id_table)
+	if (driver->id_table){
+		ret = i2c_match_id(driver->id_table, client) != NULL;
+//		printk("xym:i2c_match_id, driver->id_table[0].name=%s, client->name= %s,ret = %d\n",driver->id_table[0].name,client->name, ret);
+//		return ret;
 		return i2c_match_id(driver->id_table, client) != NULL;
+	}
 
 	return 0;
 }

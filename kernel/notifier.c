@@ -79,6 +79,7 @@ static int __kprobes notifier_call_chain(struct notifier_block **nl,
 	struct notifier_block *nb, *next_nb;
 
 	nb = rcu_dereference_raw(*nl);
+//	printk(KERN_ERR "xym: %s:%d, nr_to_call = %d, nb = %p\n", __func__, __LINE__, nr_to_call, nb);
 
 	while (nb && nr_to_call) {
 		next_nb = rcu_dereference_raw(nb->next);
@@ -90,6 +91,10 @@ static int __kprobes notifier_call_chain(struct notifier_block **nl,
 			continue;
 		}
 #endif
+		if(nb->notifier_call == &notifier_call_chain)
+			printk(KERN_ERR "xym: %s:%d\n", __func__, __LINE__);
+
+//		printk(KERN_ERR "xym: %s:%d, nb->notifier_call = %p\n", __func__, __LINE__, nb->notifier_call);
 		ret = nb->notifier_call(nb, val, v);
 
 		if (nr_calls)
@@ -100,6 +105,7 @@ static int __kprobes notifier_call_chain(struct notifier_block **nl,
 		nb = next_nb;
 		nr_to_call--;
 	}
+//	printk(KERN_ERR "xym: %s:%d\n", __func__, __LINE__);
 	return ret;
 }
 
@@ -311,8 +317,10 @@ int __blocking_notifier_call_chain(struct blocking_notifier_head *nh,
 	 */
 	if (rcu_dereference_raw(nh->head)) {
 		down_read(&nh->rwsem);
+//		printk(KERN_ERR "xym: %s:%d\n", __func__, __LINE__);
 		ret = notifier_call_chain(&nh->head, val, v, nr_to_call,
 					nr_calls);
+//		printk(KERN_ERR "xym: %s:%d\n", __func__, __LINE__);
 		up_read(&nh->rwsem);
 	}
 	return ret;

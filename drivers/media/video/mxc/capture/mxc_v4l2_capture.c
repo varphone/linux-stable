@@ -939,6 +939,21 @@ static int mxc_v4l2_s_fmt(cam_data *cam, struct v4l2_format *f)
 		 __func__,
 		 cam->crop_current.width, cam->crop_current.height);
 
+#if 0
+	printk("xym:End of %s: v2f pix widthxheight %d x %d\n",
+		 __func__,
+		 cam->v2f.fmt.pix.width, cam->v2f.fmt.pix.height);
+	printk("xym:End of %s: crop_bounds widthxheight %d x %d\n",
+		 __func__,
+		 cam->crop_bounds.width, cam->crop_bounds.height);
+	printk("xym:End of %s: crop_defrect widthxheight %d x %d\n",
+		 __func__,
+		 cam->crop_defrect.width, cam->crop_defrect.height);
+	printk("xym:End of %s: crop_current widthxheight %d x %d\n",
+		 __func__,
+		 cam->crop_current.width, cam->crop_current.height);
+#endif
+
 	return retval;
 }
 
@@ -1044,6 +1059,36 @@ static int mxc_v4l2_g_ctrl(cam_data *cam, struct v4l2_control *c)
 			status = -ENODEV;
 		}
 		break;
+
+	//add by xym
+	case V4L2_CID_MXC_SWITCH_INPUT:
+
+		if (cam->sensor) {
+			c->value = cam->input;
+			status = vidioc_int_g_ctrl(cam->sensor, c);
+			cam->input = c->value;
+		} else {
+			pr_err("ERROR: v4l2 capture: slave not found!\n");
+			status = -ENODEV;
+		}
+
+
+		break;
+
+	case V4L2_CID_MXC_VIDEO_SIGNAL:
+
+		if (cam->sensor) {
+			//c->value = cam->video_signal;
+			status = vidioc_int_g_ctrl(cam->sensor, c);
+			//cam->video_signal = c->value;
+		} else {
+			pr_err("ERROR: v4l2 capture: slave not found!\n");
+			status = -ENODEV;
+		}
+
+		break;
+	// add by xym
+
 	default:
 		pr_err("ERROR: v4l2 capture: unsupported ioctrl!\n");
 	}
@@ -1077,17 +1122,20 @@ static int mxc_v4l2_s_ctrl(cam_data *cam, struct v4l2_control *c)
 	case V4L2_CID_HFLIP:
 		/* This is done by the IPU */
 		if (c->value == 1) {
+			//printk(KERN_ERR "%s:%d\n", __FILE__, __LINE__);
 			if ((cam->rotation != IPU_ROTATE_VERT_FLIP) &&
 			    (cam->rotation != IPU_ROTATE_180))
 				cam->rotation = IPU_ROTATE_HORIZ_FLIP;
 			else
 				cam->rotation = IPU_ROTATE_180;
 		} else {
+			//printk(KERN_ERR "%s:%d\n", __FILE__, __LINE__);
 			if (cam->rotation == IPU_ROTATE_HORIZ_FLIP)
 				cam->rotation = IPU_ROTATE_NONE;
 			if (cam->rotation == IPU_ROTATE_180)
 				cam->rotation = IPU_ROTATE_VERT_FLIP;
 		}
+		//printk(KERN_ERR "cam->rotation = %d\n", cam->rotation);
 		break;
 	case V4L2_CID_VFLIP:
 		/* This is done by the IPU */
@@ -1242,6 +1290,33 @@ static int mxc_v4l2_s_ctrl(cam_data *cam, struct v4l2_control *c)
 			vidioc_int_dev_init(cam->sensor);
 		}
 		break;
+	
+		//add by xym start
+		case V4L2_CID_MXC_SWITCH_INPUT:
+		//printk("xym:In %s:set V4L2_CID_MXC_SWITCH_INPUT\n", __func__);
+		if (cam->sensor) {
+			cam->input = c->value;
+			ret = vidioc_int_s_ctrl(cam->sensor, c);
+		} else {
+//			pr_err("ERROR: v4l2 capture: slave not found!\n");
+			ret = -ENODEV;
+		}
+
+		break;
+
+		case V4L2_CID_MXC_SEND_I2C_CMD:
+		//printk("xym:In %s:set V4L2_CID_MXC_SWITCH_INPUT\n", __func__);
+		if (cam->sensor) {
+			cam->input = c->value;
+			ret = vidioc_int_s_ctrl(cam->sensor, c);
+		} else {
+//			pr_err("ERROR: v4l2 capture: slave not found!\n");
+			ret = -ENODEV;
+		}
+
+		break;
+		// add by xym end
+
 	default:
 		pr_debug("   default case\n");
 		ret = -EINVAL;
@@ -1332,25 +1407,36 @@ static int mxc_v4l2_s_param(cam_data *cam, struct v4l2_streamparm *parm)
 	csi_param.mclk = 0;
 
 	pr_debug("   clock_curr=mclk=%d\n", ifparm.u.bt656.clock_curr);
-	if (ifparm.u.bt656.clock_curr == 0)
+	if (ifparm.u.bt656.clock_curr == 0) {
 		csi_param.clk_mode = IPU_CSI_CLK_MODE_CCIR656_INTERLACED;
-	else
+//		printk("\nxym:clk_mode = IPU_CSI_CLK_MODE_CCIR656_INTERLACED\n");
+	}
+	else {
+//		printk("\nxym:clk_mode = IPU_CSI_CLK_MODE_GATED_CLK\n");
 		csi_param.clk_mode = IPU_CSI_CLK_MODE_GATED_CLK;
+	}
 
 	csi_param.pixclk_pol = ifparm.u.bt656.latch_clk_inv;
+//	printk("xym:\npixclk_pol = %d\n", csi_param.pixclk_pol);
 
 	if (ifparm.u.bt656.mode == V4L2_IF_TYPE_BT656_MODE_NOBT_8BIT) {
 		csi_param.data_width = IPU_CSI_DATA_WIDTH_8;
+//		printk("\nxym:data_width = IPU_CSI_DATA_WIDTH_8\n");
 	} else if (ifparm.u.bt656.mode
 				== V4L2_IF_TYPE_BT656_MODE_NOBT_10BIT) {
 		csi_param.data_width = IPU_CSI_DATA_WIDTH_10;
+//		printk("\nxym:data_width = IPU_CSI_DATA_WIDTH_10\n");
 	} else {
 		csi_param.data_width = IPU_CSI_DATA_WIDTH_8;
+//		printk("\nxym:data_width = IPU_CSI_DATA_WIDTH_8\n");
 	}
 
 	csi_param.Vsync_pol = ifparm.u.bt656.nobt_vs_inv;
+//	printk("xym:Vsync_pol = %d\n",csi_param.Vsync_pol);
 	csi_param.Hsync_pol = ifparm.u.bt656.nobt_hs_inv;
+//	printk("xym:Hsync_pol = %d\n",csi_param.Hsync_pol);
 	csi_param.ext_vsync = ifparm.u.bt656.bt_sync_correct;
+//	printk("xym:ext_vsync = %d\n",csi_param.ext_vsync);
 
 	/* if the capturemode changed, the size bounds will have changed. */
 	cam_fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -1362,13 +1448,16 @@ static int mxc_v4l2_s_param(cam_data *cam, struct v4l2_streamparm *parm)
 
 	cam->crop_bounds.top = cam->crop_bounds.left = 0;
 	cam->crop_bounds.width = cam_fmt.fmt.pix.width;
+//	printk("xym:cam->crop_bounds.width = %d\n",cam->crop_bounds.width);
 	cam->crop_bounds.height = cam_fmt.fmt.pix.height;
+//	printk("xym:cam->crop_bounds.height = %d\n",cam->crop_bounds.height);
 
 	/*
 	 * Set the default current cropped resolution to be the same with
 	 * the cropping boundary(except for tvin module).
 	 */
 	if (cam->device_type != 1) {
+//		printk("xym:cam->device_type != 1\n");
 		cam->crop_current.width = cam->crop_bounds.width;
 		cam->crop_current.height = cam->crop_bounds.height;
 	}
@@ -1376,6 +1465,21 @@ static int mxc_v4l2_s_param(cam_data *cam, struct v4l2_streamparm *parm)
 	/* This essentially loses the data at the left and bottom of the image
 	 * giving a digital zoom image, if crop_current is less than the full
 	 * size of the image. */
+
+//	cam->crop_current.width = 712;
+//	cam->crop_current.height = 576;
+
+#if 0
+	printk("xym:End of %s: crop_current widthxheight %d x %d\n",
+		 __func__,
+		 cam->crop_current.width, cam->crop_current.height);
+
+	printk("xym:End of %s: crop_bounds widthxheight %d x %d\n",
+		 __func__,
+		 cam->crop_bounds.width, cam->crop_bounds.height);
+#endif
+
+
 	ipu_csi_set_window_size(cam->ipu, cam->crop_current.width,
 				cam->crop_current.height, cam->csi);
 	ipu_csi_set_window_pos(cam->ipu, cam->crop_current.left,
@@ -1420,8 +1524,8 @@ static int mxc_v4l2_s_std(cam_data *cam, v4l2_std_id e)
 	} else {
 		cam->standard.id = V4L2_STD_ALL;
 		video_index = TV_NOT_LOCKED;
-		pr_err("ERROR: unrecognized std! %Lx (PAL=%Lx, NTSC=%Lx\n",
-			e, V4L2_STD_PAL, V4L2_STD_NTSC);
+		pr_err("ERROR: unrecognized std! %Lx (PAL=%Lx, NTSC=%Lx, ALL=%Lx\n",
+			e, V4L2_STD_PAL, V4L2_STD_NTSC, V4L2_STD_ALL);
 	}
 
 	cam->standard.index = video_index;
@@ -1511,6 +1615,10 @@ static int mxc_v4l_dqueue(cam_data *cam, struct v4l2_buffer *buf)
 	spin_lock_irqsave(&cam->dqueue_int_lock, lock_flags);
 	cam->enc_counter--;
 
+	//add by xym for debug start
+    //printk(KERN_DEBUG "\nxym:%s %s %d, cam->enc_counter=%d\n", __FILE__, __func__, __LINE__,cam->enc_counter);
+	//add by xym for debug end
+
 	frame = list_entry(cam->done_q.next, struct mxc_v4l_frame, queue);
 	list_del(cam->done_q.next);
 	if (frame->buffer.flags & V4L2_BUF_FLAG_DONE) {
@@ -1531,8 +1639,8 @@ static int mxc_v4l_dqueue(cam_data *cam, struct v4l2_buffer *buf)
 	buf->flags = frame->buffer.flags;
 	buf->m = cam->frame[frame->index].buffer.m;
 	buf->timestamp = cam->frame[frame->index].buffer.timestamp;
-	spin_unlock_irqrestore(&cam->dqueue_int_lock, lock_flags);
 
+	spin_unlock_irqrestore(&cam->dqueue_int_lock, lock_flags);
 	up(&cam->busy_lock);
 	return retval;
 }
@@ -1557,6 +1665,7 @@ static int mxc_v4l_open(struct file *file)
 	pr_debug("\nIn MVC: mxc_v4l_open\n");
 	pr_debug("   device name is %s\n", dev->name);
 
+
 	if (!cam) {
 		pr_err("ERROR: v4l2 capture: Internal error, "
 			"cam_data not found!\n");
@@ -1571,8 +1680,9 @@ static int mxc_v4l_open(struct file *file)
 
 	down(&cam->busy_lock);
 	err = 0;
-	if (signal_pending(current))
+	if (signal_pending(current)) {
 		goto oops;
+	}
 
 	if (cam->open_count++ == 0) {
 		wait_event_interruptible(cam->power_queue,
@@ -1581,11 +1691,13 @@ static int mxc_v4l_open(struct file *file)
 		if (strcmp(mxc_capture_inputs[cam->current_input].name,
 			   "CSI MEM") == 0) {
 #if defined(CONFIG_MXC_IPU_CSI_ENC) || defined(CONFIG_MXC_IPU_CSI_ENC_MODULE)
+//		    printk("xym:capture input = \"CSI MEM\"\n");
 			err = csi_enc_select(cam);
 #endif
 		} else if (strcmp(mxc_capture_inputs[cam->current_input].name,
 				  "CSI IC MEM") == 0) {
 #if defined(CONFIG_MXC_IPU_PRP_ENC) || defined(CONFIG_MXC_IPU_PRP_ENC_MODULE)
+//		    printk("xym:capture input = \"CSI IC MEM\"\n");
 			err = prp_enc_select(cam);
 #endif
 		}
@@ -2064,6 +2176,7 @@ static long mxc_v4l_do_ioctl(struct file *file,
 	 */
 	case VIDIOC_S_CTRL: {
 		pr_debug("   case VIDIOC_S_CTRL\n");
+//		printk("xym:In %s:set VIDIOC_S_CTRL\n", __func__);
 		retval = mxc_v4l2_s_ctrl(cam, arg);
 		break;
 	}
@@ -2137,6 +2250,7 @@ static long mxc_v4l_do_ioctl(struct file *file,
 		pr_debug("   Cropping Input to ipu size %d x %d\n",
 				cam->crop_current.width,
 				cam->crop_current.height);
+
 		ipu_csi_set_window_size(cam->ipu, cam->crop_current.width,
 					cam->crop_current.height,
 					cam->csi);
@@ -2306,6 +2420,7 @@ static long mxc_v4l_do_ioctl(struct file *file,
 
 		if (strcmp(mxc_capture_inputs[*index].name, "CSI MEM") == 0) {
 #if defined(CONFIG_MXC_IPU_CSI_ENC) || defined(CONFIG_MXC_IPU_CSI_ENC_MODULE)
+		    //printk("\nxym:%s %s %d, capture input = \"CSI MEM\"\n", __FILE__, __func__, __LINE__);
 			retval = csi_enc_select(cam);
 			if (retval)
 				break;
@@ -2313,6 +2428,7 @@ static long mxc_v4l_do_ioctl(struct file *file,
 		} else if (strcmp(mxc_capture_inputs[*index].name,
 				  "CSI IC MEM") == 0) {
 #if defined(CONFIG_MXC_IPU_PRP_ENC) || defined(CONFIG_MXC_IPU_PRP_ENC_MODULE)
+		    //printk("\nxym:%s %s %d, capture input = \"CSI IC MEM\"\n", __FILE__, __func__, __LINE__);
 			retval = prp_enc_select(cam);
 			if (retval)
 				break;
@@ -2503,7 +2619,7 @@ static void camera_callback(u32 mask, void *dev)
 	pr_debug("In MVC:camera_callback\n");
 
 	spin_lock(&cam->queue_int_lock);
-	spin_lock(&cam->dqueue_int_lock);
+	spin_lock(&cam->dqueue_int_lock);	
 	if (!list_empty(&cam->working_q)) {
 		do_gettimeofday(&cur_time);
 
@@ -2511,9 +2627,16 @@ static void camera_callback(u32 mask, void *dev)
 					struct mxc_v4l_frame,
 					queue);
 
+		//add by xym for debug	
+//		printk("\nxym:%s:%d\n", __func__, __LINE__);
+		//add by xym for debug	
+
 		if (done_frame->ipu_buf_num != cam->local_buf_num)
 			goto next;
 
+		//add by xym for debug	
+//		printk("\nxym:%s:%d\n", __func__, __LINE__);
+		//add by xym for debug	
 		/*
 		 * Set the current time to done frame buffer's
 		 * timestamp. Users can use this information to judge
@@ -2521,17 +2644,26 @@ static void camera_callback(u32 mask, void *dev)
 		 */
 		done_frame->buffer.timestamp = cur_time;
 
+		//add by xym for debug	
+//		printk("\nxym:%s:%d\n", __func__, __LINE__);
+		//add by xym for debug	
+
 		if (done_frame->buffer.flags & V4L2_BUF_FLAG_QUEUED) {
 			done_frame->buffer.flags |= V4L2_BUF_FLAG_DONE;
 			done_frame->buffer.flags &= ~V4L2_BUF_FLAG_QUEUED;
 
 			/* Added to the done queue */
 			list_del(cam->working_q.next);
+
 			list_add_tail(&done_frame->queue, &cam->done_q);
 
 			/* Wake up the queue */
 			cam->enc_counter++;
 			wake_up_interruptible(&cam->enc_queue);
+			//add by xym for debug start
+    		//printk(KERN_DEBUG "\nxym:%s %s %d, cam->enc_counter=%d\n", __FILE__, __func__, __LINE__,cam->enc_counter);
+			//add by xym for debug end
+
 		} else
 			pr_err("ERROR: v4l2 capture: camera_callback: "
 				"buffer not queued\n");
@@ -2542,6 +2674,8 @@ next:
 		ready_frame = list_entry(cam->ready_q.next,
 					 struct mxc_v4l_frame,
 					 queue);
+
+
 		if (cam->enc_update_eba)
 			if (cam->enc_update_eba(cam->ipu, ready_frame->buffer.m.offset,
 						&cam->ping_pong_csi) == 0) {
@@ -2549,17 +2683,28 @@ next:
 				list_add_tail(&ready_frame->queue,
 					      &cam->working_q);
 				ready_frame->ipu_buf_num = cam->local_buf_num;
+
+				//add by xym for debug start
+    			//printk(KERN_DEBUG "\nxym:%s %s %d, from ready queue to working queue\n", __FILE__, __func__, __LINE__);
+				//add by xym for debug end
 			}
 	} else {
+
 		if (cam->enc_update_eba)
 			cam->enc_update_eba(
 				cam->ipu, cam->dummy_frame.buffer.m.offset,
 				&cam->ping_pong_csi);
+
+		//add by xym for debug start
+   		//printk(KERN_DEBUG "\nxym:%s %s %d, to dummy_frame\n", __FILE__, __func__, __LINE__);
+		//add by xym for debug end
 	}
 
 	cam->local_buf_num = (cam->local_buf_num == 0) ? 1 : 0;
+
 	spin_unlock(&cam->dqueue_int_lock);
 	spin_unlock(&cam->queue_int_lock);
+	pr_debug("out MVC:camera_callback\n");
 
 	return;
 }
@@ -2618,7 +2763,10 @@ static void init_camera_struct(cam_data *cam, struct platform_device *pdev)
 	cam->standard.frameperiod.denominator = 30;
 	cam->standard.frameperiod.numerator = 1;
 	cam->standard.framelines = 480;
+	//edit by xym
 	cam->standard_autodetect = true;
+//	cam->standard_autodetect = false;
+	//edit by xym
 	cam->streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	cam->streamparm.parm.capture.timeperframe = cam->standard.frameperiod;
 	cam->streamparm.parm.capture.capability = V4L2_CAP_TIMEPERFRAME;
@@ -2631,6 +2779,12 @@ static void init_camera_struct(cam_data *cam, struct platform_device *pdev)
 	cam->v2f.fmt.pix.width = 288;
 	cam->v2f.fmt.pix.height = 352;
 	cam->v2f.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;
+	//jwj	
+	//printk("jwj:::cam->rotation: %d\n", cam->rotation);
+	//printk("jwj:::cam->vf_rotation: %d\n", cam->vf_rotation);
+	cam->rotation = IPU_ROTATE_NONE;
+	cam->vf_rotation = IPU_ROTATE_NONE;
+	//jwj
 	cam->win.w.width = 160;
 	cam->win.w.height = 160;
 	cam->win.w.left = 0;
@@ -2648,7 +2802,7 @@ static void init_camera_struct(cam_data *cam, struct platform_device *pdev)
 
 	cam->self = kmalloc(sizeof(struct v4l2_int_device), GFP_KERNEL);
 	cam->self->module = THIS_MODULE;
-	sprintf(cam->self->name, "mxc_v4l2_cap%d", cam->csi);
+	sprintf(cam->self->name, "mxc_v4l2_cap%d", pdev->id);
 	cam->self->type = v4l2_int_type_master;
 	cam->self->u.master = &mxc_v4l2_master;
 }

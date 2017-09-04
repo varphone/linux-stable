@@ -98,6 +98,7 @@ ipu_csi_init_interface(struct ipu_soc *ipu, uint16_t width, uint16_t height,
 		cfg_param.data_fmt = CSI_SENS_CONF_DATA_FMT_RGB_YUV444;
 		break;
 	case IPU_PIX_FMT_GENERIC:
+	case IPU_PIX_FMT_GENERIC_16:
 		cfg_param.data_fmt = CSI_SENS_CONF_DATA_FMT_BAYER;
 		break;
 	case IPU_PIX_FMT_RGB565:
@@ -744,10 +745,21 @@ int _ipu_csi_init(struct ipu_soc *ipu, ipu_channel_t channel, uint32_t csi)
 		goto err;
 	}
 
+	//edit by xym
 	csi_sens_conf = ipu_csi_read(ipu, csi, CSI_SENS_CONF);
 	csi_sens_conf &= ~CSI_SENS_CONF_DATA_DEST_MASK;
 	ipu_csi_write(ipu, csi, csi_sens_conf | (csi_dest <<
 		CSI_SENS_CONF_DATA_DEST_SHIFT), CSI_SENS_CONF);
+
+
+	//the modified code add by xym below try to lead one sensor data to two destination,but it don't work
+	/*
+	csi_sens_conf = ipu_csi_read(ipu, csi, CSI_SENS_CONF);
+//	csi_sens_conf &= ~CSI_SENS_CONF_DATA_DEST_MASK;
+	ipu_csi_write(ipu, csi, csi_sens_conf | (csi_dest <<
+		CSI_SENS_CONF_DATA_DEST_SHIFT), CSI_SENS_CONF);
+		*/
+	//edit by xym
 err:
 	return retval;
 }

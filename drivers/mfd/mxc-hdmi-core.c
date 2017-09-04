@@ -56,7 +56,11 @@ static struct clk *iahb_clk;
 static spinlock_t irq_spinlock;
 static spinlock_t edid_spinlock;
 static unsigned int sample_rate;
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS_HDMI_IPU2_DI0
+static unsigned long pixel_clk_rate = 148500000;
+#else
 static unsigned long pixel_clk_rate;
+#endif
 static struct clk *pixel_clk;
 static int hdmi_ratio;
 int mxc_hdmi_ipu_id;
@@ -617,7 +621,9 @@ static int mxc_hdmi_core_probe(struct platform_device *pdev)
 
 	pixel_clk = NULL;
 	sample_rate = 48000;
+#ifndef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS_HDMI_IPU2_DI0
 	pixel_clk_rate = 0;
+#endif
 	hdmi_ratio = 100;
 
 	spin_lock_init(&irq_spinlock);
@@ -739,6 +745,19 @@ static struct platform_driver mxc_hdmi_core_driver = {
 	},
 	.remove = __exit_p(mxc_hdmi_core_remove),
 };
+
+#ifdef CONFIG_MX6_CLK_FOR_BOOTUI_TRANS_HDMI_IPU2_DI0
+static int __init mxc_hdmi_audio_clock_setup(char *options)
+{
+	if (!strcmp(options, "74250000"))
+		pixel_clk_rate = 74250000;
+	else if (!strcmp(options, "148500000"))
+		pixel_clk_rate = 148500000;
+
+	return 1;
+}
+__setup("hdmi_audio_clk=", mxc_hdmi_audio_clock_setup);
+#endif
 
 static int __init mxc_hdmi_core_init(void)
 {
