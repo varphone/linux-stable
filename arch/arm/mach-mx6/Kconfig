@@ -321,6 +321,27 @@ config MACH_MYIMX6EK200
 	  Include support for MYZR i.MX6 Evaluation Kit ( DIMM 200 ). This includes specific
 	  configurations for the board and its peripherals.
 
+choice
+	prompt "Custom Production Branch:"
+	default MYIMX6EK200_EVK
+	depends on MACH_MYIMX6EK200
+	help
+	  This includes specific configurations for custom productions.
+
+config MYIMX6EK200_EVK
+	bool "MYZR's EVK Board"
+	depends on MACH_MYIMX6EK200
+
+config MYIMX6EK200_CVR_MIL_V1
+	bool "TDC's CVR-MIL-V1 Board"
+	depends on MACH_MYIMX6EK200
+
+config MYIMX6EK200_CVR_MIL_V1_VGA
+	bool "TDC's CVR-MIL-V1-VGA Board"
+	depends on MACH_MYIMX6EK200
+
+endchoice
+
 config MACH_MYIMX6EK314
 	bool "Support MYZR i.MX6 Evaluation Kit ( MXM 314 )"
 	select ARCH_MX6Q
