@@ -192,6 +192,7 @@
 #define SABRESD_USER_LED	IMX_GPIO_NR(6, 11)
 #define SABRESD_RS485_DIR	IMX_GPIO_NR(3, 31)
 
+#define SABRESD_PWRON_FLAG	IMX_GPIO_NR(1, 10)
 #define SABRESD_ATMEGA_INT	IMX_GPIO_NR(1, 11)
 
 //#define MX6_ENET_IRQ		IMX_GPIO_NR(1, 6)
@@ -2044,6 +2045,22 @@ static void mx6_snvs_poweroff(void)
 	writel(value | 0x60, mx6_snvs_base + SNVS_LPCR);
 }
 
+#if defined(CONFIG_MYIMX6EK200_CVR_MIL_V1) || \
+    defined(CONFIG_MYIMX6EK200_CVR_MIL_V1_VGA)
+#define GPIO_DR		0x00
+#define GPIO_GDIR	0x04
+#define GPIO_PSR	0x08
+
+static void mx6_cvr_mil_v1_poweroff(void)
+{
+	u32 value;
+	void __iomem *mx6_gpio_base = MX6_IO_ADDRESS(GPIO1_BASE_ADDR);
+	value = readl(mx6_gpio_base + GPIO_DR);
+	/* Set GPIO1_IO10 bit to 0 */
+	writel(value & (~0x00000400), mx6_gpio_base + GPIO_DR);
+}
+#endif
+
 static const struct imx_pcie_platform_data mx6_sabresd_pcie_data __initconst = {
 //	.pcie_pwr_en	= SABRESD_PCIE_PWR_EN,
 	.pcie_rst	= SABRESD_PCIE_RST_B_REVB,
@@ -2341,6 +2358,14 @@ static void __init mx6_sabresd_board_init(void)
 	/* Register charger chips */
 //	platform_device_register(&sabresd_max8903_charger_1);
 //	pm_power_off = mx6_snvs_poweroff;
+#if defined(CONFIG_MYIMX6EK200_CVR_MIL_V1) || \
+    defined(CONFIG_MYIMX6EK200_CVR_MIL_V1_VGA)
+	/* Set power on flag to SCM */
+	gpio_request(SABRESD_PWRON_FLAG, "pwron-flag");
+	gpio_direction_output(SABRESD_PWRON_FLAG, 1);
+	/* Setup custom power off handler */
+	pm_power_off = mx6_cvr_mil_v1_poweroff;
+#endif
 	imx6q_add_busfreq();
 
 	/* Add PCIe RC interface support */
