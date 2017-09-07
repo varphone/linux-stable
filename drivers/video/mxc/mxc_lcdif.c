@@ -39,6 +39,10 @@ static struct fb_videomode lcdif_modedb[] = {
 	FB_SYNC_CLK_LAT_FALL,
 	FB_VMODE_NONINTERLACED,
 	0,},
+	{"G065V-VGA", 60, 640, 480, 39682, 48, 16, 33, 10, 96, 2,
+        0,
+        FB_VMODE_NONINTERLACED,
+        0,},
 };
 static int lcdif_modedb_sz = ARRAY_SIZE(lcdif_modedb);
 
