@@ -59,13 +59,21 @@ static struct fb_videomode mode = {
 	FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA
 };
 
+static struct fb_videomode myimx6ekxxx_mode = {
+	"MYZR-VGA", 60, 1024, 768, 15384, 180, 4, 29, 3, 136, 6,
+	  0, FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA
+};
+
 static void lcd_init_fb(struct fb_info *info)
 {
 	struct fb_var_screeninfo var;
 
 	memset(&var, 0, sizeof(var));
 
-	fb_videomode_to_var(&var, &mode);
+	if (machine_is_myimx6ek200() || machine_is_myimx6ek314())
+		fb_videomode_to_var(&var, &myimx6ekxxx_mode);
+	else
+		fb_videomode_to_var(&var, &mode);
 
 	var.activate = FB_ACTIVATE_ALL;
 
@@ -116,7 +124,7 @@ static int __devinit lcd_probe(struct device *dev)
 	int i;
 	struct mxc_lcd_platform_data *plat = dev->platform_data;
 
-	if (plat) {
+	if (plat && (!(machine_is_myimx6ek200() || machine_is_myimx6ek314()))) {
 
 		io_reg = regulator_get(dev, plat->io_reg);
 		if (!IS_ERR(io_reg)) {
@@ -263,7 +271,74 @@ u8 reg_init[][2] = {
 	{ 0x02, 0x03 },
 };
 
+u8 myimx6ekxxx_reg_init[][2] = {
+{ 0x02, 0x01 },
+{ 0x02, 0x03 },
+{ 0x03, 0x00 },
+{ 0x04, 0x39 },
+{ 0x06, 0x6B },
+{ 0x07, 0x00 },
+{ 0x08, 0x08 },
+{ 0x09, 0x80 },
+{ 0x0C, 0x80 },
+{ 0x0D, 0x89 },
+{ 0x0E, 0xE4 },
+{ 0x0F, 0x2C },
+{ 0x10, 0x00 },
+{ 0x11, 0x40 },
+{ 0x12, 0x40 },
+{ 0x13, 0x04 },
+{ 0x14, 0x88 },
+{ 0x15, 0x5B },
+{ 0x16, 0x00 },
+{ 0x17, 0x26 },
+{ 0x19, 0x03 },
+{ 0x1A, 0x06 },
+{ 0x1B, 0x2C },
+{ 0x1C, 0x00 },
+{ 0x1D, 0x40 },
+{ 0x1F, 0x04 },
+{ 0x20, 0x88 },
+{ 0x21, 0x1B },
+{ 0x22, 0x00 },
+{ 0x23, 0x26 },
+{ 0x25, 0x03 },
+{ 0x26, 0x06 },
+{ 0x37, 0x20 },
+{ 0x39, 0x20 },
+{ 0x3B, 0x20 },
+{ 0x41, 0x9A },
+{ 0x4D, 0x05 },
+{ 0x4E, 0x6A },
+{ 0x4F, 0xAA },
+{ 0x50, 0xAA },
+{ 0x51, 0x4B },
+{ 0x52, 0x12 },
+{ 0x53, 0x13 },
+{ 0x55, 0xE5 },
+{ 0x5E, 0x80 },
+{ 0x69, 0x60 },
+{ 0x7D, 0x62 },
+{ 0x04, 0x38 },
+{ 0x06, 0x69 },
+
+/*
+NOTE: The following five repeated sentences are used here to wait memory initial complete, please don't remove...(you could refer to Appendix A of programming guide document (CH7025(26)B Programming Guide Rev2.03.pdf or later version) for detailed information about memory initialization! 
+*/
+{ 0x03, 0x00 },
+{ 0x03, 0x00 },
+{ 0x03, 0x00 },
+{ 0x03, 0x00 },
+{ 0x03, 0x00 },
+
+{ 0x06, 0x68 },
+{ 0x02, 0x02 },
+{ 0x02, 0x03 },
+{ 0x04, 0x00 },
+};
+
 #define REGMAP_LENGTH (sizeof(reg_init) / (2*sizeof(u8)))
+#define MYIMX6EKxxx_REGMAP_LENGTH (sizeof(myimx6ekxxx_reg_init) / (2*sizeof(u8)))
 
 /*
  * Send init commands to L4F00242T03
@@ -283,10 +358,18 @@ static int lcd_init(void)
 	if (dat != 0x54)
 		return -ENODEV;
 
-	for (i = 0; i < REGMAP_LENGTH; ++i) {
-		if (i2c_smbus_write_byte_data
-		    (ch7026_client, reg_init[i][0], reg_init[i][1]) < 0)
-			return -EIO;
+	if (machine_is_myimx6ek200() || machine_is_myimx6ek314()) {
+		for (i = 0; i < MYIMX6EKxxx_REGMAP_LENGTH; ++i) {
+			if (i2c_smbus_write_byte_data
+			    (ch7026_client, myimx6ekxxx_reg_init[i][0], myimx6ekxxx_reg_init[i][1]) < 0)
+				return -EIO;
+		}
+	} else {
+		for (i = 0; i < REGMAP_LENGTH; ++i) {
+			if (i2c_smbus_write_byte_data
+			    (ch7026_client, reg_init[i][0], reg_init[i][1]) < 0)
+				return -EIO;
+		}
 	}
 
 	return 0;

@@ -49,6 +49,7 @@
 #include <linux/fec.h>
 
 #include <asm/cacheflush.h>
+#include <asm/mach-types.h>
 
 #ifndef CONFIG_ARM
 #include <asm/coldfire.h>
@@ -1066,7 +1067,7 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	}
 
 	/* mask with MAC supported features */
-	if (cpu_is_mx6q() || cpu_is_mx6dl())
+	if ((cpu_is_mx6q() || cpu_is_mx6dl()) && (!machine_is_myimx6ek200()))
 		phy_dev->supported &= PHY_GBIT_FEATURES;
 	else
 		phy_dev->supported &= PHY_BASIC_FEATURES;

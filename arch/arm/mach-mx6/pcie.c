@@ -37,6 +37,7 @@
 
 #include <asm/sizes.h>
 #include <asm/signal.h>
+#include <asm/mach-types.h>
 
 #include "crm_regs.h"
 #ifdef CONFIG_PCI_MSI
@@ -790,11 +791,13 @@ static void imx_pcie_enable_controller(struct device *dev)
 	struct clk *pcie_clk;
 	struct imx_pcie_platform_data *pdata = dev->platform_data;
 
-	/* Enable PCIE power */
-	gpio_request(pdata->pcie_pwr_en, "PCIE POWER_EN");
+	if (!(machine_is_myimx6ek200() || machine_is_myimx6ek314())){
+		/* Enable PCIE power */
+		gpio_request(pdata->pcie_pwr_en, "PCIE POWER_EN");
 
-	/* activate PCIE_PWR_EN */
-	gpio_direction_output(pdata->pcie_pwr_en, 1);
+		/* activate PCIE_PWR_EN */
+		gpio_direction_output(pdata->pcie_pwr_en, 1);
+	}
 
 	imx_pcie_clrset(IOMUXC_GPR1_TEST_POWERDOWN, 0 << 18, IOMUXC_GPR1);
 
@@ -869,11 +872,13 @@ static void __init add_pcie_port(void __iomem *base, void __iomem *dbi_base,
 		imx_pcie_clrset(IOMUXC_GPR1_PCIE_REF_CLK_EN, 0 << 16,
 				IOMUXC_GPR1);
 
-		/* Disable PCIE power */
-		gpio_request(pdata->pcie_pwr_en, "PCIE POWER_EN");
+	if (!(machine_is_myimx6ek200() || machine_is_myimx6ek314())){
+			/* Disable PCIE power */
+			gpio_request(pdata->pcie_pwr_en, "PCIE POWER_EN");
 
-		/* activate PCIE_PWR_EN */
-		gpio_direction_output(pdata->pcie_pwr_en, 0);
+			/* activate PCIE_PWR_EN */
+			gpio_direction_output(pdata->pcie_pwr_en, 0);
+		}
 
 		imx_pcie_clrset(IOMUXC_GPR1_TEST_POWERDOWN, 1 << 18,
 				IOMUXC_GPR1);

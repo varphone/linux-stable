@@ -72,7 +72,6 @@ _IdentifyHardware(
     gctUINT32 numConstants = 0;
     gctUINT32 bufferSize = 0;
     gctUINT32 varyingsCount = 0;
-    gctBOOL useHZ;
 
     gcmkHEADER_ARG("Os=0x%x", Os);
 
@@ -213,15 +212,6 @@ _IdentifyHardware(
                                      0x00088,
                                      &Identity->chipMinorFeatures3));
 
-            /*The BG2 chip has no compression supertiled, and the bit of GCMinorFeature3BugFixes15 is n/a*/
-            if(Identity->chipModel == gcv1000 && Identity->chipRevision == 0x5036)
-            {
-                Identity->chipMinorFeatures3
-                    = ((((gctUINT32) (Identity->chipMinorFeatures3)) & ~(((gctUINT32) (((gctUINT32) ((((1 ? 5:5) - (0 ? 5:5) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 5:5) - (0 ? 5:5) + 1))))))) << (0 ? 5:5))) | (((gctUINT32) (0x0 & ((gctUINT32) ((((1 ? 5:5) - (0 ? 5:5) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 5:5) - (0 ? 5:5) + 1))))))) << (0 ? 5:5)));
-                Identity->chipMinorFeatures3
-                    = ((((gctUINT32) (Identity->chipMinorFeatures3)) & ~(((gctUINT32) (((gctUINT32) ((((1 ? 27:27) - (0 ? 27:27) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 27:27) - (0 ? 27:27) + 1))))))) << (0 ? 27:27))) | (((gctUINT32) (0x0 & ((gctUINT32) ((((1 ? 27:27) - (0 ? 27:27) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 27:27) - (0 ? 27:27) + 1))))))) << (0 ? 27:27)));
-            }
-
             /* Read chip minor featuress register #4. */
             gcmkONERROR(
                 gckOS_ReadRegisterEx(Os, Core,
@@ -257,31 +247,14 @@ _IdentifyHardware(
     if (((Identity->chipModel == gcv1000) && ((Identity->chipRevision == 0x5035)
                                            || (Identity->chipRevision == 0x5036)
                                            || (Identity->chipRevision == 0x5037)))
-	 || ((Identity->chipModel == gcv800) && (Identity->chipRevision == 0x4612))
-     || ((Identity->chipModel == gcv860) && (Identity->chipRevision == 0x4647)))
+	 || ((Identity->chipModel == gcv800) && (Identity->chipRevision == 0x4612)))
     {
         Identity->superTileMode = 1;
     }
 
-    if (Identity->chipModel == gcv4000 && Identity->chipRevision == 0x5245)
-    {
-        useHZ = ((((gctUINT32) (Identity->chipMinorFeatures3)) >> (0 ? 26:26) & ((gctUINT32) ((((1 ? 26:26) - (0 ? 26:26) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 26:26) - (0 ? 26:26) + 1)))))) == (0x1 & ((gctUINT32) ((((1 ? 26:26) - (0 ? 26:26) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 26:26) - (0 ? 26:26) + 1)))))))
-             || ((((gctUINT32) (Identity->chipMinorFeatures3)) >> (0 ? 8:8) & ((gctUINT32) ((((1 ? 8:8) - (0 ? 8:8) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 8:8) - (0 ? 8:8) + 1)))))) == (0x1 & ((gctUINT32) ((((1 ? 8:8) - (0 ? 8:8) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 8:8) - (0 ? 8:8) + 1)))))));
-    }
-    else
-    {
-        useHZ = gcvFALSE;
-    }
 
-    if (useHZ)
-    {
-        /* Disable EZ. */
-        Identity->chipFeatures
-            = ((((gctUINT32) (Identity->chipFeatures)) & ~(((gctUINT32) (((gctUINT32) ((((1 ? 16:16) - (0 ? 16:16) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 16:16) - (0 ? 16:16) + 1))))))) << (0 ? 16:16))) | (((gctUINT32) (0x1 & ((gctUINT32) ((((1 ? 16:16) - (0 ? 16:16) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 16:16) - (0 ? 16:16) + 1))))))) << (0 ? 16:16)));
-    }
-
-    /* Disable HZ when EZ is present for older chips. */
-    else if (!((((gctUINT32) (Identity->chipFeatures)) >> (0 ? 16:16) & ((gctUINT32) ((((1 ? 16:16) - (0 ? 16:16) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 16:16) - (0 ? 16:16) + 1)))))) == (0x1 & ((gctUINT32) ((((1 ? 16:16) - (0 ? 16:16) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 16:16) - (0 ? 16:16) + 1))))))))
+	/* Disable HZ when EZ is present for older chips. */
+	if (!((((gctUINT32) (Identity->chipFeatures)) >> (0 ? 16:16) & ((gctUINT32) ((((1 ? 16:16) - (0 ? 16:16) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 16:16) - (0 ? 16:16) + 1)))))) == (0x1 & ((gctUINT32) ((((1 ? 16:16) - (0 ? 16:16) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 16:16) - (0 ? 16:16) + 1))))))))
     {
         /* Disable HIERARCHICAL_Z. */
         Identity->chipMinorFeatures
@@ -499,45 +472,6 @@ _IdentifyHardware(
      {
          Identity->varyingsCount = 8;
      }
-
-     /* For some cores, it consumes two varying for position, so the max varying vectors should minus one. */
-     if ((Identity->chipModel == gcv4000 && Identity->chipRevision == 0x5222) ||
-         (Identity->chipModel == gcv4000 && Identity->chipRevision == 0x5208) ||
-         ((Identity->chipModel == gcv2100 || Identity->chipModel == gcv2000) && Identity->chipRevision == 0x5108) ||
-         (Identity->chipModel == gcv880 && (Identity->chipRevision == 0x5107 || Identity->chipRevision == 0x5106)))
-     {
-         Identity->varyingsCount -= 1;
-     }
-
-    Identity->chip2DControl = 0;
-    if (Identity->chipModel == gcv320)
-    {
-        gctUINT32 data;
-
-        gcmkONERROR(
-            gckOS_ReadRegisterEx(Os,
-                                 Core,
-                                 0x0002C,
-                                 &data));
-
-        if ((data != 33956864) &&
-            ((Identity->chipRevision == 0x5007) ||
-            (Identity->chipRevision == 0x5220)))
-        {
-            Identity->chip2DControl |= 0xFF &
-                (Identity->chipRevision == 0x5220 ? 8 :
-                (Identity->chipRevision == 0x5007 ? 12 : 0));
-        }
-
-        if  (Identity->chipRevision == 0x5007)
-        {
-            /* Disable splitting rectangle. */
-            Identity->chip2DControl |= 0x100;
-
-            /* Enable 2D Flush. */
-            Identity->chip2DControl |= 0x200;
-        }
-    }
 
     /* Success. */
     gcmkFOOTER();
@@ -833,13 +767,6 @@ gckHARDWARE_Construct(
 
     default:
         hardware->type = gcvHARDWARE_3D;
-        if(hardware->identity.chipModel == gcv880)
-        {
-            /*set outstanding limit*/
-            gcmkONERROR(gckOS_ReadRegisterEx(Os, Core, 0x00414, &axi_ot));
-            axi_ot = (axi_ot & (~0xFF)) | 0x10;
-            gcmkONERROR(gckOS_WriteRegisterEx(Os, Core, 0x00414, axi_ot));
-        }
 
         if ((((((gctUINT32) (hardware->identity.chipFeatures)) >> (0 ? 9:9)) & ((gctUINT32) ((((1 ? 9:9) - (0 ? 9:9) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 9:9) - (0 ? 9:9) + 1)))))) ))
         {
@@ -1074,6 +1001,14 @@ gckHARDWARE_GetType(
 **
 **      Nothing.
 */
+
+/*******************************************************************************
+GPU[1](ChipModel=0x320 ChipRevision=0x5007):
+**************************
+***   GPU STATE DUMP   ***
+**************************
+*/
+
 gceSTATUS
 gckHARDWARE_InitializeHardware(
     IN gckHARDWARE Hardware
@@ -1228,31 +1163,6 @@ gckHARDWARE_InitializeHardware(
                                   ((((gctUINT32) (0x01590880)) & ~(((gctUINT32) (((gctUINT32) ((((1 ? 23:23) - (0 ? 23:23) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 23:23) - (0 ? 23:23) + 1))))))) << (0 ? 23:23))) | (((gctUINT32) ((gctUINT32) (1) & ((gctUINT32) ((((1 ? 23:23) - (0 ? 23:23) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 23:23) - (0 ? 23:23) + 1))))))) << (0 ? 23:23)))));
     }
 
-    if ((gckHARDWARE_IsFeatureAvailable(Hardware, gcvFEATURE_HALTI2) == gcvFALSE)
-     || (gckHARDWARE_IsFeatureAvailable(Hardware, gcvFEATURE_HALTI2) && (Hardware->identity.chipRevision < 0x5422))
-    )
-    {
-        gctUINT32 data;
-
-        gcmkONERROR(
-            gckOS_ReadRegisterEx(Hardware->os,
-                                 Hardware->core,
-                                 Hardware->powerBaseAddress
-                                 + 0x00104,
-                                 &data));
-
-
-        data = ((((gctUINT32) (data)) & ~(((gctUINT32) (((gctUINT32) ((((1 ? 15:15) - (0 ? 15:15) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 15:15) - (0 ? 15:15) + 1))))))) << (0 ? 15:15))) | (((gctUINT32) ((gctUINT32) (1) & ((gctUINT32) ((((1 ? 15:15) - (0 ? 15:15) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 15:15) - (0 ? 15:15) + 1))))))) << (0 ? 15:15)));
-
-
-        gcmkONERROR(
-            gckOS_WriteRegisterEx(Hardware->os,
-                                  Hardware->core,
-                                  Hardware->powerBaseAddress
-                                  + 0x00104,
-                                  data));
-    }
-
     /* Special workaround for this core
     ** Make sure FE and TX are on different buses */
     if ((Hardware->identity.chipModel == gcv2000)
@@ -1292,9 +1202,7 @@ gckHARDWARE_InitializeHardware(
     }
 
     if (Hardware->identity.chipModel >= gcv400
-    &&  Hardware->identity.chipModel != gcv420
-    &&  (((((gctUINT32) (Hardware->identity.chipMinorFeatures3)) >> (0 ? 15:15) & ((gctUINT32) ((((1 ? 15:15) - (0 ? 15:15) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 15:15) - (0 ? 15:15) + 1)))))) == (0x1 & ((gctUINT32) ((((1 ? 15:15) - (0 ? 15:15) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 15:15) - (0 ? 15:15) + 1))))))) != gcvTRUE)
-    )
+    &&  Hardware->identity.chipModel != gcv420)
     {
 		gctUINT32 data;
 
@@ -1340,30 +1248,33 @@ gckHARDWARE_InitializeHardware(
 #endif
 
     /* Limit 2D outstanding request. */
-    if(Hardware->identity.chipModel == gcv880)
-    {
-        gctUINT32 axi_ot;
-        gcmkONERROR(gckOS_ReadRegisterEx(Hardware->os, Hardware->core, 0x00414, &axi_ot));
-        axi_ot = (axi_ot & (~0xFF)) | 0x10;
-        gcmkONERROR(gckOS_WriteRegisterEx(Hardware->os, Hardware->core, 0x00414, axi_ot));
-    }
-
-    if (Hardware->identity.chip2DControl & 0xFF)
+    if ((Hardware->identity.chipModel == gcv320)
+        && ((Hardware->identity.chipRevision == 0x5007)
+        || (Hardware->identity.chipRevision == 0x5220)))
     {
 		gctUINT32 data;
 
         gcmkONERROR(
             gckOS_ReadRegisterEx(Hardware->os,
                                  Hardware->core,
-                                 0x00414,
+                                 0x0002C,
                                  &data));
-        data = ((((gctUINT32) (data)) & ~(((gctUINT32) (((gctUINT32) ((((1 ? 7:0) - (0 ? 7:0) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 7:0) - (0 ? 7:0) + 1))))))) << (0 ? 7:0))) | (((gctUINT32) ((gctUINT32) (Hardware->identity.chip2DControl & 0xFF) & ((gctUINT32) ((((1 ? 7:0) - (0 ? 7:0) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 7:0) - (0 ? 7:0) + 1))))))) << (0 ? 7:0)));
+        if (data != 33956864)
+        {
+            gcmkONERROR(
+                gckOS_ReadRegisterEx(Hardware->os,
+                                     Hardware->core,
+                                     0x00414,
+                                     &data));
 
-        gcmkONERROR(
-            gckOS_WriteRegisterEx(Hardware->os,
-                                  Hardware->core,
-                                  0x00414,
-                                  data));
+            data = ((((gctUINT32) (data)) & ~(((gctUINT32) (((gctUINT32) ((((1 ? 7:0) - (0 ? 7:0) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 7:0) - (0 ? 7:0) + 1))))))) << (0 ? 7:0))) | (((gctUINT32) ((gctUINT32) (Hardware->identity.chipRevision == 0x5220 ? 8 : (Hardware->identity.chipRevision == 0x5007 ? 16 : 0)) & ((gctUINT32) ((((1 ? 7:0) - (0 ? 7:0) + 1) == 32) ? ~0 : (~(~0 << ((1 ? 7:0) - (0 ? 7:0) + 1))))))) << (0 ? 7:0)));
+
+            gcmkONERROR(
+                gckOS_WriteRegisterEx(Hardware->os,
+                                      Hardware->core,
+                                      0x00414,
+                                      data));
+        }
     }
 
     /* Update GPU AXI cache atttribute. */
