@@ -33,6 +33,7 @@
 #include <linux/i2c.h>
 #include <linux/i2c/tsc2007.h>
 #include <linux/i2c/pca953x.h>
+#include <linux/i2c/atmega_kp.h>
 #include <linux/ata.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/map.h>
@@ -191,6 +192,7 @@
 #define SABRESD_USER_LED	IMX_GPIO_NR(6, 11)
 #define SABRESD_RS485_DIR	IMX_GPIO_NR(3, 31)
 
+#define SABRESD_ATMEGA_INT	IMX_GPIO_NR(1, 11)
 
 //#define MX6_ENET_IRQ		IMX_GPIO_NR(1, 6)
 //#define IOMUX_OBSRV_MUX1_OFFSET	0x3c
@@ -986,6 +988,20 @@ static struct fsl_mxc_lcd_platform_data vga_data = {
 	.analog_reg = "VAUDIO",
 };
 
+static unsigned short keymaps[] = {
+	KEY_ESC,
+	KEY_SPACE,
+	KEY_UP,
+	KEY_DOWN,
+	KEY_POWER,
+};
+
+static struct atmega_kp_platform_data atmega_kp_data = {
+	.keymap = keymaps,
+	.repeat = 0,
+	.debounce_time = 1,
+};
+
 static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
 //	{
 //		I2C_BOARD_INFO("sgtl5000", 0x0a),
@@ -1003,6 +1019,11 @@ static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
 	},
 	{
 		I2C_BOARD_INFO("isl1208", 0x6f),
+	},
+	{
+		I2C_BOARD_INFO("atmega-keypad", 0x7a),
+		.platform_data	= &atmega_kp_data,
+		.irq		= gpio_to_irq(SABRESD_ATMEGA_INT),
 	},
 };
 
