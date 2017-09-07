@@ -41,6 +41,10 @@
 #define V4L2_MXC_ROTATE_90_RIGHT_HFLIP		6
 #define V4L2_MXC_ROTATE_90_LEFT			7
 
+#define V4L2_CID_MXC_SWITCH_INPUT	(V4L2_CID_PRIVATE_BASE + 7)
+#define V4L2_CID_MXC_SEND_I2C_CMD	(V4L2_CID_PRIVATE_BASE + 8)
+#define V4L2_CID_MXC_VIDEO_SIGNAL	(V4L2_CID_PRIVATE_BASE + 9)
+
 struct v4l2_mxc_offset {
 	uint32_t u_offset;
 	uint32_t v_offset;
