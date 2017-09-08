@@ -1071,6 +1071,9 @@ static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
 		I2C_BOARD_INFO("tvp5158", 0x58),
 		.platform_data = (void *)&tvp5158_tvin_data,
 	},
+	{
+		I2C_BOARD_INFO("rx8025", 0x32),
+	},
 };
 
 static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
