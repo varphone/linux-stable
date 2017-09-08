@@ -88,8 +88,14 @@
 #define SABRESD_VOLUME_UP	IMX_GPIO_NR(6, 31)
 #define SABRESD_VOLUME_DN	IMX_GPIO_NR(5, 20)
 #define SABRESD_MICROPHONE_DET	IMX_GPIO_NR(3, 30)
+#if defined(CONFIG_MYIMX6EK200_CVR_MIL_V1) || \
+    defined(CONFIG_MYIMX6EK200_CVR_MIL_V1_VGA)
+#define SABRESD_CSI0_PWN	IMX_GPIO_NR(1, 16)
+#define SABRESD_CSI0_RST	IMX_GPIO_NR(1, 15)
+#else
 #define SABRESD_CSI0_PWN	IMX_GPIO_NR(1, 16)
 #define SABRESD_CSI0_RST	IMX_GPIO_NR(1, 17)
+#endif
 #define SABRESD_MIPICSI_PWN	IMX_GPIO_NR(3, 30)
 #define SABRESD_MIPICSI_RST	IMX_GPIO_NR(1, 20)
 #define SABRESD_CHARGE_UOK_B	IMX_GPIO_NR(1, 27)
@@ -1003,6 +1009,41 @@ static struct atmega_kp_platform_data atmega_kp_data = {
 	.debounce_time = 1,
 };
 
+static void mx6q_csi0_tvin_io_init(void)
+{
+	if (cpu_is_mx6q())
+		mxc_iomux_v3_setup_multiple_pads(mx6q_sabresd_csi0_tvin_pads,
+			ARRAY_SIZE(mx6q_sabresd_csi0_tvin_pads));
+	else if (cpu_is_mx6dl())
+		mxc_iomux_v3_setup_multiple_pads(mx6dl_sabresd_csi0_tvin_pads,
+			ARRAY_SIZE(mx6dl_sabresd_csi0_tvin_pads));
+
+	gpio_request(SABRESD_CSI0_RST, "tvin-reset");
+	gpio_direction_output(SABRESD_CSI0_RST, 1);
+	msleep(1);
+
+	/* enable parallel interface interface to IPU1 CSI0
+	 * @see mx6q_csi0_io_init()
+	 */
+	if (cpu_is_mx6q())
+		mxc_iomux_set_gpr_register(1, 19, 1, 1);
+	else if (cpu_is_mx6dl())
+		mxc_iomux_set_gpr_register(13, 0, 3, 4);
+}
+
+static void mx6q_csi0_tvin_reset(void)
+{
+	gpio_direction_output(SABRESD_CSI0_RST, 0);
+	msleep(5);
+	gpio_set_value(SABRESD_CSI0_RST, 1);
+}
+
+static struct fsl_mxc_tvin_platform_data tvp5158_tvin_data = {
+	.io_init = mx6q_csi0_tvin_io_init,
+	.reset = mx6q_csi0_tvin_reset,
+	.cvbs = false,
+};
+
 static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
 //	{
 //		I2C_BOARD_INFO("sgtl5000", 0x0a),
@@ -1025,6 +1066,10 @@ static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
 		I2C_BOARD_INFO("atmega-keypad", 0x7a),
 		.platform_data	= &atmega_kp_data,
 		.irq		= gpio_to_irq(SABRESD_ATMEGA_INT),
+	},
+	{
+		I2C_BOARD_INFO("tvp5158", 0x58),
+		.platform_data = (void *)&tvp5158_tvin_data,
 	},
 };
 
