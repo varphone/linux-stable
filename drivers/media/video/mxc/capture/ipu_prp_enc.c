@@ -316,8 +316,9 @@ static int prp_enc_setup(cam_data *cam)
  *
  * @return  status
  */
-static int prp_enc_eba_update(struct ipu_soc *ipu, dma_addr_t eba, int *buffer_num)
+static int prp_enc_eba_update(struct ipu_soc *ipu, dma_addr_t eba, int *buffer_num, void *private)
 {
+	cam_data *cam = (cam_data *) private;
 	int err = 0;
 
 	pr_debug("eba %x\n", eba);
