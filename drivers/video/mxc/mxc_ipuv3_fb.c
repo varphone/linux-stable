@@ -2305,9 +2305,15 @@ static int mxcfb_probe(struct platform_device *pdev)
 		if (ret < 0)
 			goto mxcfb_register_failed;
 
-		ipu_disp_set_global_alpha(mxcfbi->ipu, mxcfbi->ipu_ch,
-					  true, pdev->id == 0 ? 0x80 : 0xff);
-		ipu_disp_set_color_key(mxcfbi->ipu, mxcfbi->ipu_ch, pdev->id == 0 ? false : true, 0);
+		if (pdev->id == 0) {
+			ipu_disp_set_global_alpha(mxcfbi->ipu, mxcfbi->ipu_ch,
+						  false, 0x80);
+			ipu_disp_set_color_key(mxcfbi->ipu, mxcfbi->ipu_ch, false, 0);
+		} else {
+			ipu_disp_set_global_alpha(mxcfbi->ipu, mxcfbi->ipu_ch,
+						  false, 0x80);
+			ipu_disp_set_color_key(mxcfbi->ipu, mxcfbi->ipu_ch, true, 0);
+		}
 
 		res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
 		ret = mxcfb_setup_overlay(pdev, fbi, res);
