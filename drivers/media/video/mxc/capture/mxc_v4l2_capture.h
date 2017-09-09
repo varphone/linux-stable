@@ -127,6 +127,9 @@ typedef struct _cam_data {
 	dma_addr_t rot_enc_bufs[2];
 	void *rot_enc_bufs_vaddr[2];
 	int rot_enc_buf_size[2];
+	int rot_enc_buf_num;
+	int csi_mem_buf_num;
+	int csi_irq_pending;
 	enum v4l2_buf_type type;
 
 	/* still image capture */

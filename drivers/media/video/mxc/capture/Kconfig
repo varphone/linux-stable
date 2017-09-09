@@ -179,6 +179,15 @@ config MXC_IPU_CSI_ENC
 	  Use case IPU_CSI_ENC:
 		Get raw image with CSI from smart sensor for encoder.
 		CSI -> MEM
+
+config MXC_IPU_CSI_ROT_PP_ENC
+	tristate "IPU CSI with Rotation Encoder library"
+	depends on VIDEO_MXC_IPU_CAMERA
+	default y
+	---help---
+	  Use case IPU_CSI_ROT_PP_ENC:
+		Get rotated image with CSI from smart sensor for encoder.
+		CSI -> ROT_PP -> MEM
 endmenu
 
 endif

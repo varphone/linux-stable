@@ -39,5 +39,7 @@ int bg_overlay_sdc_deselect(void *private);
 #endif
 int prp_still_select(void *private);
 int prp_still_deselect(void *private);
+int csi_rot_pp_enc_select(void *private);
+int csi_rot_pp_enc_deselect(void *private);
 
 #endif

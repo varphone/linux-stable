@@ -48,7 +48,7 @@ static int video_nr = -1;
 
 /*! This data is used for the output to the display. */
 #define MXC_V4L2_CAPTURE_NUM_OUTPUTS	6
-#define MXC_V4L2_CAPTURE_NUM_INPUTS	2
+#define MXC_V4L2_CAPTURE_NUM_INPUTS	3
 static struct v4l2_output mxc_capture_outputs[MXC_V4L2_CAPTURE_NUM_OUTPUTS] = {
 	{
 	 .index = 0,
@@ -119,6 +119,16 @@ static struct v4l2_input mxc_capture_inputs[MXC_V4L2_CAPTURE_NUM_INPUTS] = {
 	 .std = V4L2_STD_UNKNOWN,
 	 .status = V4L2_IN_ST_NO_POWER,
 	 },
+	{
+	 .index = 2,
+	 .name = "CSI ROT_PP MEM",
+	 .type = V4L2_INPUT_TYPE_CAMERA,
+	 .audioset = 0,
+	 .tuner = 0,
+	 .std = V4L2_STD_UNKNOWN,
+	 .status = V4L2_IN_ST_NO_POWER,
+	 },
+
 };
 
 /*! List of TV input video formats supported. The video formats is corresponding
@@ -805,8 +815,10 @@ static int mxc_v4l2_s_fmt(cam_data *cam, struct v4l2_format *f)
 		 * Force the capture window resolution to be crop bounds
 		 * for CSI MEM input mode.
 		 */
-		if (strcmp(mxc_capture_inputs[cam->current_input].name,
-			   "CSI MEM") == 0) {
+		if ((strcmp(mxc_capture_inputs[cam->current_input].name,
+			   "CSI MEM") == 0) ||
+		    (strcmp(mxc_capture_inputs[cam->current_input].name,
+			   "CSI ROT_PP MEM") == 0)) {
 			f->fmt.pix.width = cam->crop_current.width;
 			f->fmt.pix.height = cam->crop_current.height;
 		}
@@ -1625,6 +1637,11 @@ static int mxc_v4l_open(struct file *file)
 #if defined(CONFIG_MXC_IPU_PRP_ENC) || defined(CONFIG_MXC_IPU_PRP_ENC_MODULE)
 			err = prp_enc_select(cam);
 #endif
+		} else if (strcmp(mxc_capture_inputs[cam->current_input].name,
+				  "CSI ROT_PP MEM") == 0) {
+#if defined(CONFIG_MXC_IPU_CSI_ROT_PP_ENC) || defined(CONFIG_MXC_IPU_CSI_ROT_PP_ENC_MODULE)
+			err = csi_rot_pp_enc_select(cam);
+#endif
 		}
 
 		cam->enc_counter = 0;
@@ -1783,6 +1800,12 @@ static int mxc_v4l_close(struct file *file)
 #if defined(CONFIG_MXC_IPU_PRP_ENC) || defined(CONFIG_MXC_IPU_PRP_ENC_MODULE)
 			err |= prp_enc_deselect(cam);
 #endif
+		} else if (strcmp(mxc_capture_inputs[cam->current_input].name,
+				  "CSI ROT_PP MEM") == 0) {
+#if defined(CONFIG_MXC_IPU_CSI_ROT_PP_ENC) || defined(CONFIG_MXC_IPU_CSI_ROT_PP_ENC_MODULE)
+			err |= csi_rot_pp_enc_deselect(cam);
+#endif
+
 		}
 
 		mxc_free_frame_buf(cam);
@@ -1801,7 +1824,9 @@ static int mxc_v4l_close(struct file *file)
 
 #if defined(CONFIG_MXC_IPU_PRP_ENC) || defined(CONFIG_MXC_IPU_CSI_ENC) || \
     defined(CONFIG_MXC_IPU_PRP_ENC_MODULE) || \
-    defined(CONFIG_MXC_IPU_CSI_ENC_MODULE)
+    defined(CONFIG_MXC_IPU_CSI_ENC_MODULE) || \
+    defined(CONFIG_MXC_IPU_CSI_ROT_PP_ENC) || \
+    defined(CONFIG_MXC_IPU_CSI_ROT_PP_ENC_MODULE)
 /*
  * V4L interface - read function
  *
@@ -2351,6 +2376,13 @@ static long mxc_v4l_do_ioctl(struct file *file,
 				  "CSI IC MEM") == 0) {
 #if defined(CONFIG_MXC_IPU_PRP_ENC) || defined(CONFIG_MXC_IPU_PRP_ENC_MODULE)
 			retval = prp_enc_select(cam);
+			if (retval)
+				break;
+#endif
+		} else if (strcmp(mxc_capture_inputs[*index].name,
+				  "CSI ROT_PP MEM") == 0) {
+#if defined(CONFIG_MXC_IPU_CSI_ROT_PP_ENC) || defined(CONFIG_MXC_IPU_CSI_ROT_PP_ENC_MODULE)
+			retval = csi_rot_pp_enc_select(cam);
 			if (retval)
 				break;
 #endif
