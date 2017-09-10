@@ -460,14 +460,14 @@ static int csi_rot_pp_enc_disabling_tasks(void *private)
 
 	if (cam->rotation != IPU_ROTATE_NONE) {
 		ipu_unlink_channels(cam->ipu, CSI_MEM, MEM_ROT_PP_MEM);
-		udelay(100);
+		usleep_range(5, 100);
 		err = ipu_disable_channel(cam->ipu, MEM_ROT_PP_MEM, true);
 		if (err < 0) {
 			pr_err("ERROR: Disable IPU Channel: MEM_ROT_PP_MEM failed, error: %d.\n", err);
 		} else {
-			udelay(100);
+			usleep_range(5, 100);
 			ipu_uninit_channel(cam->ipu, MEM_ROT_PP_MEM);
-			udelay(100);
+			usleep_range(10, 100);
 		}
 	}
 
@@ -544,6 +544,7 @@ static int csi_rot_pp_enc_disable_csi(void *private)
 		ipu_free_irq(cam->ipu, IPU_IRQ_PP_ROT_IN_EOF, cam);
 		ipu_clear_irq(cam->ipu, IPU_IRQ_PP_ROT_OUT_EOF);
 		ipu_free_irq(cam->ipu, IPU_IRQ_PP_ROT_OUT_EOF, cam);
+		usleep_range(10, 100);
 	}
 
 	/* free csi eof irq firstly.
