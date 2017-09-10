@@ -135,8 +135,8 @@ static inline uint32_t tri_cur_buf_shift(uint32_t dma_chan)
 	return ffs(mask) - 1;
 }
 
-#define idma_is_valid(ch)	(ch != NO_DMA)
-#define idma_mask(ch)		(idma_is_valid(ch) ? (1UL << (ch & 0x1F)) : 0)
+#define idma_is_valid(ch)	((ch) != NO_DMA)
+#define idma_mask(ch)		(idma_is_valid(ch) ? (1UL << ((ch) & 0x1F)) : 0)
 #define idma_is_set(ipu, reg, dma)	(ipu_idmac_read(ipu, reg(dma)) & idma_mask(dma))
 
 static int ipu_reset(struct ipu_soc *ipu)
