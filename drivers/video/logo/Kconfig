@@ -82,4 +82,14 @@ config LOGO_M32R_CLUT224
 	depends on M32R
 	default y
 
+config LOGO_CVR_MIL_V1_CLUT224
+	bool "224-color CVR_MIL_V1 Linux logo"
+	depends on MYIMX6EK200_CVR_MIL_V1
+	default y
+
+config LOGO_CVR_MIL_V1_VGA_CLUT224
+	bool "224-color CVR-MIL-V1-VGA Linux logo"
+	depends on MYIMX6EK200_CVR_MIL_V1_VGA
+	default y
+
 endif # LOGO
