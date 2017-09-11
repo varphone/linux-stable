@@ -467,7 +467,7 @@ static int csi_rot_pp_enc_disabling_tasks(void *private)
 		} else {
 			usleep_range(5, 100);
 			ipu_uninit_channel(cam->ipu, MEM_ROT_PP_MEM);
-			usleep_range(10, 100);
+			msleep(50);
 		}
 	}
 
@@ -544,7 +544,7 @@ static int csi_rot_pp_enc_disable_csi(void *private)
 		ipu_free_irq(cam->ipu, IPU_IRQ_PP_ROT_IN_EOF, cam);
 		ipu_clear_irq(cam->ipu, IPU_IRQ_PP_ROT_OUT_EOF);
 		ipu_free_irq(cam->ipu, IPU_IRQ_PP_ROT_OUT_EOF, cam);
-		usleep_range(10, 100);
+		msleep(50);
 	}
 
 	/* free csi eof irq firstly.
