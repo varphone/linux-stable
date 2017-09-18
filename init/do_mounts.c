@@ -285,6 +285,101 @@ static void __init get_fs_names(char *page)
 	*s = '\0';
 }
 
+#ifdef CONFIG_OVERLAY_FS
+/*
+ * Root Overlay parameters format: rootoverlay=<devname>:[fstype]:[ro|rw]
+ * Example: rootoverlay=/dev/sdb1:ext2:rw
+ */
+static char __initdata root_overlay_devname[48];
+static char __initdata root_overlay_fstype[16];
+static int __initdata root_overlay_mountflags;
+
+static int __init root_overlay_setup(char *str)
+{
+	char *token, *cur = str;
+	/* setup the devname */
+	token = strsep(&cur, ":");
+	if (token && token[0]) {
+		strlcpy(root_overlay_devname, token, sizeof(root_overlay_devname));
+	}
+
+	/* Setup the fstype if exists */
+	token = strsep(&cur, ":");
+	if (token && token[0])
+		strlcpy(root_overlay_fstype, token, sizeof(root_overlay_fstype));
+
+	/* Setup the mountflags if exists */
+	token = strsep(&cur, ":");
+	if (token && token[0]) {
+		if (!strcmp(token, "ro"))
+			root_overlay_mountflags |= MS_RDONLY;
+	}
+
+	return 1;
+}
+
+__setup("rootoverlay=", root_overlay_setup);
+
+static int __init do_root_overlay(void)
+{
+	int err;
+	mode_t mode;
+
+	if (!root_overlay_devname[0])
+		return 0;
+
+	create_dev("/dev/root-overlay", name_to_dev_t(root_overlay_devname));
+	sys_mkdir("/root-overlay", 0700);
+	sys_mkdir("/root-merged", 0700);
+
+	/* Mount the overlay device */
+	err = sys_mount("/dev/root-overlay", "/root-overlay",
+			root_overlay_fstype, root_overlay_mountflags, NULL);
+	if (err) {
+		printk("VFS: Mount root overlay device: \"%s\" failed: %d\n",
+		       root_overlay_devname, err);
+		return -1;
+	}
+
+	/* Check upper directory */
+	mode = fmode("/root-overlay/.upper");
+	if (mode == 0) {
+		sys_mkdir("/root-overlay/.upper", 0755);
+	} else if (!S_ISDIR(mode)) {
+		printk("VFS: \"/root-overlay/.upper\" is not a direcotry\n");
+		goto error;
+	}
+
+	/* Check work direcotry */
+	mode = fmode("/root-overlay/.work");
+	if (mode == 0) {
+		sys_mkdir("/root-overlay/.work", 0755);
+	} else if (!S_ISDIR(mode)) {
+		printk("VFS: \"/root-overlay/.work\" is not a direcotry\n");
+		goto error;
+	}
+
+	/* Mount the overlayfs */
+	err = sys_mount("overlay", "/root-merged", "overlay", 0,
+			"lowerdir=/root,upperdir=/root-overlay/.upper,workdir=/root-overlay/.work");
+	if (err) {
+		printk("VFS: Mount overlayfs failed: %d\n", err);
+		goto error;
+	}
+
+	printk("VFS: Mounted root overlay \"%s\" on \"%s\"\n",
+	       root_overlay_devname, "/root-merged");
+
+	sys_chdir("/root-merged");
+
+	return 0;
+
+error:
+	sys_umount("/root-overlay", 0);
+	return -1;
+}
+#endif /* CONFIG_OVERLAY_FS */
+
 static int __init do_mount_root(char *name, char *fs, int flags, void *data)
 {
 	int err = sys_mount(name, "/root", fs, flags, data);
@@ -514,6 +609,9 @@ void __init prepare_namespace(void)
 
 	mount_root();
 out:
+#ifdef CONFIG_OVERLAY_FS
+	do_root_overlay();
+#endif
 	devtmpfs_mount("dev");
 	sys_mount(".", "/", NULL, MS_MOVE, NULL);
 	sys_chroot((const char __user __force *)".");

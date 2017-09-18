@@ -74,3 +74,21 @@ void md_run_setup(void);
 static inline void md_run_setup(void) {}
 
 #endif
+
+#if BITS_PER_LONG == 32
+static inline mode_t fmode(char *name)
+{
+	struct stat64 stat;
+	if (sys_stat64(name, &stat) != 0)
+		return 0;
+	return stat.st_mode;
+}
+#else
+static inline mode_t fmode(char *name)
+{
+	struct stat stat;
+	if (sys_newstat(name, &stat) != 0)
+		return 0;
+	return stat.st_mode;
+}
+#endif
