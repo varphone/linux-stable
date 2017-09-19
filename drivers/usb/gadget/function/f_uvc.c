@@ -805,31 +805,32 @@ uvc_function_bind(struct usb_configuration *c, struct usb_function *f)
 	}
 
 	if (!bulk_streaming_ep) {
-		uvc_fs_streaming_ep.wMaxPacketSize = min(opts->streaming_maxpacket,
-							 1023U);
+		uvc_fs_streaming_ep.wMaxPacketSize =
+			cpu_to_le16(min(opts->streaming_maxpacket, 1023U));
 		uvc_fs_streaming_ep.bInterval = opts->streaming_interval;
 
-		uvc_hs_streaming_ep.wMaxPacketSize = max_packet_size;
-		uvc_hs_streaming_ep.wMaxPacketSize |= ((max_packet_mult - 1)
-							<< 11);
+		uvc_hs_streaming_ep.wMaxPacketSize = cpu_to_le16(max_packet_size);
+		uvc_hs_streaming_ep.wMaxPacketSize =
+			cpu_to_le16(max_packet_size | ((max_packet_mult - 1) << 11));
 		uvc_hs_streaming_ep.bInterval = opts->streaming_interval;
 
-		uvc_ss_streaming_ep.wMaxPacketSize = max_packet_size;
+		uvc_ss_streaming_ep.wMaxPacketSize = cpu_to_le16(max_packet_size);
 		uvc_ss_streaming_ep.bInterval = opts->streaming_interval;
 		uvc_ss_streaming_comp.bmAttributes = max_packet_mult - 1;
 		uvc_ss_streaming_comp.bMaxBurst = opts->streaming_maxburst;
 		uvc_ss_streaming_comp.wBytesPerInterval =
-			max_packet_size * max_packet_mult * (opts->streaming_maxburst + 1);
+			cpu_to_le16(max_packet_size * max_packet_mult *
+				    (opts->streaming_maxburst + 1));
 	} else {
 		uvc_fs_bulk_streaming_ep.wMaxPacketSize =
-					min(opts->streaming_maxpacket, 64U);
+			cpu_to_le16(min(opts->streaming_maxpacket, 64U));
 
 		uvc_hs_bulk_streaming_ep.wMaxPacketSize =
-					min(opts->streaming_maxpacket, 512U);
-		uvc_ss_bulk_streaming_ep.wMaxPacketSize = max_packet_size;
+			cpu_to_le16(min(opts->streaming_maxpacket, 512U));
+		uvc_ss_bulk_streaming_ep.wMaxPacketSize = cpu_to_le16(max_packet_size);
 		uvc_ss_streaming_comp.bMaxBurst = opts->streaming_maxburst;
 		uvc_ss_streaming_comp.wBytesPerInterval =
-			max_packet_size * (opts->streaming_maxburst + 1);
+			cpu_to_le16(max_packet_size * (opts->streaming_maxburst + 1));
 	}
 
 	/* Allocate endpoints. */
