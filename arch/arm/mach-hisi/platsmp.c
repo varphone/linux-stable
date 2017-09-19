@@ -10,7 +10,6 @@
 #include <linux/smp.h>
 #include <linux/io.h>
 #include <linux/of_address.h>
-
 #include <asm/cacheflush.h>
 #include <asm/smp_plat.h>
 #include <asm/smp_scu.h>
@@ -18,7 +17,13 @@
 #include "core.h"
 
 #define HIX5HD2_BOOT_ADDRESS		0xffff0000
+#define HI3519_BOOT_ADDRESS		0x00000000
+#define HI3559_BOOT_ADDRESS		0x00000000
+#define HI3516AV200_BOOT_ADDRESS	0x00000000
 
+static void __iomem *hi3519_bootaddr;
+static void __iomem *hi3559_bootaddr;
+static void __iomem *hi3516av200_bootaddr;
 static void __iomem *ctrl_base;
 
 void hi3xxx_set_cpu_jump(int cpu, void *jump_addr)
@@ -132,5 +137,156 @@ struct smp_operations hix5hd2_smp_ops __initdata = {
 #endif
 };
 
+void hi3519_set_cpu_jump(unsigned int cpu, phys_addr_t jumpaddr)
+{
+	/* only cortex-a17 boot from phys 0 address */
+	if (cpu != 1)
+		return;
+	/* ldr pc, [rc, #-4] */
+	writel_relaxed(0xe51ff004, hi3519_bootaddr);
+	/* pc jump phy address */
+	writel_relaxed(jumpaddr, hi3519_bootaddr + 4);
+
+	dsb();
+}
+
+void hi3516av200_set_cpu_jump(unsigned int cpu, phys_addr_t jumpaddr)
+{
+	/* only cortex-a17 boot from phys 0 address */
+	if (cpu != 1)
+		return;
+	/* ldr pc, [rc, #-4] */
+	writel_relaxed(0xe51ff004, hi3516av200_bootaddr);
+	/* pc jump phy address */
+	writel_relaxed(jumpaddr, hi3516av200_bootaddr + 4);
+
+	dsb();
+}
+
+void hi3559_set_cpu_jump(unsigned int cpu, phys_addr_t jumpaddr)
+{
+	/* only cortex-a17 boot from phys 0 address */
+	if (cpu != 1)
+		return;
+	/* ldr pc, [rc, #-4] */
+	writel_relaxed(0xe51ff004, hi3559_bootaddr);
+	/* pc jump phy address */
+	writel_relaxed(jumpaddr, hi3559_bootaddr + 4);
+
+	dsb();
+}
+
+static void __init hi3519_smp_prepare_cpus(unsigned int max_cpus)
+{
+	if (!hi3519_bootaddr)
+		hi3519_bootaddr = ioremap(HI3519_BOOT_ADDRESS, PAGE_SIZE);
+
+	sync_cache_w(&hi3519_bootaddr);
+}
+
+static void __init hi3516av200_smp_prepare_cpus(unsigned int max_cpus)
+{
+	if (!hi3516av200_bootaddr)
+		hi3516av200_bootaddr = ioremap(HI3516AV200_BOOT_ADDRESS, PAGE_SIZE);
+
+	sync_cache_w(&hi3516av200_bootaddr);
+}
+
+static void __init hi3559_smp_prepare_cpus(unsigned int max_cpus)
+{
+	if (!hi3559_bootaddr)
+		hi3559_bootaddr = ioremap(HI3559_BOOT_ADDRESS, PAGE_SIZE);
+
+	sync_cache_w(&hi3559_bootaddr);
+}
+
+static int hi3519_boot_secondary(unsigned int cpu, struct task_struct *idle)
+{
+	flush_cache_all();
+
+	hi3519_set_cpu_jump(cpu, virt_to_phys(hi3519_secondary_startup));
+
+	hi_pmc_power_up();
+
+	return 0;
+}
+
+static int hi3516av200_boot_secondary(unsigned int cpu, struct task_struct *idle)
+{
+	flush_cache_all();
+
+	hi3516av200_set_cpu_jump(cpu, virt_to_phys(hi3516av200_secondary_startup));
+
+	hi_pmc_power_up();
+
+	return 0;
+}
+
+static int hi3559_boot_secondary(unsigned int cpu, struct task_struct *idle)
+{
+	flush_cache_all();
+
+	hi3559_set_cpu_jump(cpu, virt_to_phys(hi3559_secondary_startup));
+
+	hi_pmc_power_up();
+
+	return 0;
+}
+
+static void HI3519_secondary_init(unsigned int cpu)
+{
+/*
+	hi_pmc_power_up_done();
+*/
+}
+
+static void HI3516av200_secondary_init(unsigned int cpu)
+{
+/*
+	hi_pmc_power_up_done();
+*/
+}
+
+static void HI3559_secondary_init(unsigned int cpu)
+{
+/*
+	hi_pmc_power_up_done();
+*/
+}
+
+struct smp_operations hi3519_smp_ops __initdata = {
+	.smp_prepare_cpus	= hi3519_smp_prepare_cpus,
+	.smp_boot_secondary	= hi3519_boot_secondary,
+	.smp_secondary_init	= HI3519_secondary_init,
+#ifdef CONFIG_HOTPLUG_CPU
+	.cpu_die		= hi3519_cpu_die,
+	.cpu_kill		= hi3519_cpu_kill,
+#endif
+};
+
+struct smp_operations hi3516av200_smp_ops __initdata = {
+	.smp_prepare_cpus	= hi3516av200_smp_prepare_cpus,
+	.smp_boot_secondary	= hi3516av200_boot_secondary,
+	.smp_secondary_init	= HI3516av200_secondary_init,
+#ifdef CONFIG_HOTPLUG_CPU
+	.cpu_die		= hi3516av200_cpu_die,
+	.cpu_kill		= hi3516av200_cpu_kill,
+#endif
+};
+
+struct smp_operations hi3559_smp_ops __initdata = {
+	.smp_prepare_cpus	= hi3559_smp_prepare_cpus,
+	.smp_boot_secondary	= hi3559_boot_secondary,
+	.smp_secondary_init	= HI3559_secondary_init,
+#ifdef CONFIG_HOTPLUG_CPU
+	.cpu_die		= hi3559_cpu_die,
+	.cpu_kill		= hi3559_cpu_kill,
+#endif
+};
+
+
 CPU_METHOD_OF_DECLARE(hi3xxx_smp, "hisilicon,hi3620-smp", &hi3xxx_smp_ops);
 CPU_METHOD_OF_DECLARE(hix5hd2_smp, "hisilicon,hix5hd2-smp", &hix5hd2_smp_ops);
+CPU_METHOD_OF_DECLARE(hi3519_smp, "hisilicon,hi3519-smp", &hi3519_smp_ops);
+CPU_METHOD_OF_DECLARE(hi3559_smp, "hisilicon,hi3559-smp", &hi3559_smp_ops);
+CPU_METHOD_OF_DECLARE(hi3516av200_smp, "hisilicon,hi3516av200-smp", &hi3516av200_smp_ops);

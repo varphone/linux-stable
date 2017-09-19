@@ -720,6 +720,7 @@ uvc_function_bind(struct usb_configuration *c, struct usb_function *f)
 	/* Avoid letting this gadget enumerate until the userspace server is
 	 * active.
 	 */
+
 	if ((ret = usb_function_deactivate(f)) < 0)
 		goto error;
 

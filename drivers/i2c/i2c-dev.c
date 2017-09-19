@@ -148,6 +148,9 @@ static ssize_t i2cdev_read(struct file *file, char __user *buf, size_t count,
 	if (tmp == NULL)
 		return -ENOMEM;
 
+#ifdef CONFIG_HI_I2C
+	copy_from_user(tmp, buf, count);
+#endif
 	pr_debug("i2c-dev: i2c-%d reading %zu bytes.\n",
 		iminor(file_inode(file)), count);
 
@@ -431,8 +434,13 @@ static long i2cdev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		 * the PEC flag already set, the i2c-dev driver won't see
 		 * (or use) this setting.
 		 */
+#ifdef CONFIG_HI_I2C
+		if ((arg > 0x3ff) ||
+		    (((client->flags & I2C_M_TEN) == 0) && arg > 0xfe))
+#else
 		if ((arg > 0x3ff) ||
 		    (((client->flags & I2C_M_TEN) == 0) && arg > 0x7f))
+#endif
 			return -EINVAL;
 		if (cmd == I2C_SLAVE && i2cdev_check_addr(client->adapter, arg))
 			return -EBUSY;
@@ -450,6 +458,18 @@ static long i2cdev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			client->flags |= I2C_CLIENT_PEC;
 		else
 			client->flags &= ~I2C_CLIENT_PEC;
+		return 0;
+	case I2C_16BIT_REG:
+		if (arg)
+			client->flags |= I2C_M_16BIT_REG;
+		else
+			client->flags &= ~I2C_M_16BIT_REG;
+		return 0;
+	case I2C_16BIT_DATA:
+		if (arg)
+			client->flags |= I2C_M_16BIT_DATA;
+		else
+			client->flags &= ~I2C_M_16BIT_DATA;
 		return 0;
 	case I2C_FUNCS:
 		funcs = i2c_get_functionality(client->adapter);

@@ -36,6 +36,9 @@
 #define USB_VENDOR_GENESYS_LOGIC		0x05e3
 #define HUB_QUIRK_CHECK_PORT_AUTOSUSPEND	0x01
 
+int otg_usbdev_stat;
+EXPORT_SYMBOL(otg_usbdev_stat);
+
 /* Protect struct usb_device->state and ->children members
  * Note: Both are also protected by ->dev.sem, except that ->state can
  * change to USB_STATE_NOTATTACHED even when the semaphore isn't held. */
@@ -4953,9 +4956,19 @@ static void port_event(struct usb_hub *hub, int port1)
 		dev_dbg(&port_dev->dev, "do warm reset\n");
 		if (!udev || !(portstatus & USB_PORT_STAT_CONNECTION)
 				|| udev->state == USB_STATE_NOTATTACHED) {
-			if (hub_port_reset(hub, port1, NULL,
-					HUB_BH_RESET_TIME, true) < 0)
+			int ret;
+
+			ret = hub_port_reset(hub, port1, NULL,
+					HUB_BH_RESET_TIME, true);
+			if (ret < 0)
 				hub_port_disable(hub, port1, 1);
+			ret = hub_port_status(hub, port1,
+					&portstatus, &portchange);
+			if (ret < 0)
+				return;
+		if ((portstatus & USB_PORT_STAT_CONNECTION) && !udev &&
+				portstatus & USB_PORT_STAT_ENABLE)
+			connect_change = 1;
 		} else
 			reset_device = 1;
 	}
@@ -4984,6 +4997,10 @@ static void port_event(struct usb_hub *hub, int port1)
 
 	if (connect_change)
 		hub_port_connect_change(hub, port1, portstatus, portchange);
+
+	if (!(portstatus & USB_PORT_STAT_CONNECTION)
+			&& (hdev->parent == NULL))
+		otg_usbdev_stat = 0;
 }
 
 static void hub_event(struct work_struct *work)
@@ -5060,6 +5077,7 @@ static void hub_event(struct work_struct *work)
 			 * (powered-off), we leave it in that state, run
 			 * an abbreviated port_event(), and move on.
 			 */
+			otg_usbdev_stat = 1;
 			pm_runtime_get_noresume(&port_dev->dev);
 			pm_runtime_barrier(&port_dev->dev);
 			usb_lock_port(port_dev);

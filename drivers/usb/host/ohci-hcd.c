@@ -97,7 +97,9 @@ static void io_watchdog_func(unsigned long _ohci);
 #define IRQ_NOTMINE	IRQ_NONE
 #endif
 
-
+#ifdef CONFIG_ARCH_HI3516CV300
+void usb2_low_power(int);
+#endif
 /* Some boards misreport power switching/overcurrent */
 static bool distrust_firmware = 1;
 module_param (distrust_firmware, bool, 0);
@@ -900,6 +902,16 @@ static irqreturn_t ohci_irq (struct usb_hcd *hcd)
 	}
 
 	if (ints & OHCI_INTR_RHSC) {
+#ifdef CONFIG_ARCH_HI3516CV300
+		unsigned        i = ohci->num_ports;
+
+		while (i--) {
+			int pstatus;
+
+			pstatus = roothub_portstatus (ohci, i);
+			usb2_low_power(pstatus);
+		}
+#endif
 		ohci_dbg(ohci, "rhsc\n");
 		ohci->next_statechange = jiffies + STATECHANGE_DELAY;
 		ohci_writel(ohci, OHCI_INTR_RD | OHCI_INTR_RHSC,
