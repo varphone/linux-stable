@@ -810,7 +810,7 @@ uvc_function_bind(struct usb_configuration *c, struct usb_function *f)
 		uvc_ss_streaming_comp.bmAttributes = max_packet_mult - 1;
 		uvc_ss_streaming_comp.bMaxBurst = opts->streaming_maxburst;
 		uvc_ss_streaming_comp.wBytesPerInterval =
-			max_packet_size * max_packet_mult * (opts->streaming_maxburst);
+			max_packet_size * max_packet_mult * (opts->streaming_maxburst + 1);
 	} else {
 		uvc_fs_bulk_streaming_ep.wMaxPacketSize =
 					min(opts->streaming_maxpacket, 64U);
@@ -820,7 +820,7 @@ uvc_function_bind(struct usb_configuration *c, struct usb_function *f)
 		uvc_ss_bulk_streaming_ep.wMaxPacketSize = max_packet_size;
 		uvc_ss_streaming_comp.bMaxBurst = opts->streaming_maxburst;
 		uvc_ss_streaming_comp.wBytesPerInterval =
-			max_packet_size * (opts->streaming_maxburst);
+			max_packet_size * (opts->streaming_maxburst + 1);
 	}
 
 	/* Allocate endpoints. */
