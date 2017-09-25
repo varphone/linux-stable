@@ -32,6 +32,7 @@
 #include <linux/regulator/consumer.h>
 #include <linux/fsl_devices.h>
 #include <linux/mipi_csi2.h>
+#include <linux/v4l2-controls.h>
 #include <media/v4l2-chip-ident.h>
 #include "v4l2-int-device.h"
 #include "mxc_v4l2_capture.h"
@@ -272,6 +273,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		// Default setting
 		isl7998x_write_reg(0xFF, 0x00);
 		isl7998x_write_reg(0x03, 0x00);
+		isl7998x_write_reg(0x0C, 0xC9);
 		isl7998x_write_reg(0x0D, 0xC9);
 		isl7998x_write_reg(0x0E, 0xC9);
 		isl7998x_write_reg(0x10, 0x01);
@@ -370,6 +372,8 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x1D, 0x0F);
 		isl7998x_write_reg(0x1E, 0x8C);
 		isl7998x_write_reg(0x23, 0x0A);
+		isl7998x_write_reg(0x24, 0x03);
+		isl7998x_write_reg(0x25, 0xc0);
 		isl7998x_write_reg(0x26, 0x08);
 		isl7998x_write_reg(0x28, 0x01);
 		isl7998x_write_reg(0x29, 0x0E);
@@ -587,6 +591,105 @@ static int ioctl_try_fmt_cap(struct v4l2_int_device *s, struct v4l2_format *f)
 	return 0;
 }
 
+static int get_brightness(void)
+{
+	int ret = 0;
+	isl7998x_write_reg(0xFF, 0x01);
+	ret = isl7998x_read_reg(0x10);
+	return ret;
+}
+
+static int get_contrast(void)
+{
+	int ret = 0;
+	isl7998x_write_reg(0xFF, 0x01);
+	ret = isl7998x_read_reg(0x11);
+	return ret;
+}
+
+static int get_hue(void)
+{
+	int ret = 0;
+	isl7998x_write_reg(0xFF, 0x01);
+	ret = isl7998x_read_reg(0x15);
+	return ret;
+}
+
+static int get_saturation_u(void)
+{
+	int ret = 0;
+	isl7998x_write_reg(0xFF, 0x0F);
+	ret = isl7998x_read_reg(0x13);
+	return ret;
+}
+
+static int get_saturation_v(void)
+{
+	int ret = 0;
+	isl7998x_write_reg(0xFF, 0x0F);
+	ret = isl7998x_read_reg(0x14);
+	return ret;
+}
+
+static int get_sharpness(void)
+{
+	int ret = 0;
+	isl7998x_write_reg(0x08, 0x14);
+	ret = isl7998x_read_reg(0x012);
+	if (ret > 0)
+		ret = ret & 0x3f;
+	return ret;
+}
+
+static int set_brightness(int value)
+{
+	int ret = 0;
+	isl7998x_write_reg(0xFF, 0x0F);
+	ret = isl7998x_write_reg(0x10, value);
+	return ret;
+}
+
+static int set_contrast(int value)
+{
+	int ret = 0;
+	isl7998x_write_reg(0xFF, 0x0F);
+	ret = isl7998x_write_reg(0x11, value);
+	return ret;
+}
+
+static int set_hue(int value)
+{
+	int ret = 0;
+	isl7998x_write_reg(0xFF, 0x0F);
+	ret = isl7998x_write_reg(0x15, value);
+	return ret;
+}
+
+static int set_saturation_u(int value)
+{
+	int ret = 0;
+	isl7998x_write_reg(0xFF, 0x0F);
+	ret = isl7998x_write_reg(0x13, value);
+	return ret;
+}
+
+static int set_saturation_v(int value)
+{
+	int ret = 0;
+	isl7998x_write_reg(0xFF,0x0F);
+	ret = isl7998x_write_reg(0x14, value);
+	return ret;
+}
+
+static int set_sharpness(int value)
+{
+	int ret = 0;
+	isl7998x_write_reg(0xFF, 0x0F);
+	value = value & 0x3f;
+	ret = isl7998x_write_reg(0x12, value);
+	return ret;
+}
+
 /*!
  * ioctl_g_ctrl - V4L2 sensor interface handler for VIDIOC_G_CTRL ioctl
  * @s: pointer to standard V4L2 device structure
@@ -599,9 +702,27 @@ static int ioctl_try_fmt_cap(struct v4l2_int_device *s, struct v4l2_format *f)
 static int ioctl_g_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
 {
 	int ret = 0;
-
-	ret = -EINVAL;
-
+	switch (vc->id) {
+	case V4L2_CID_BRIGHTNESS:
+		vc->value = get_brightness();
+		break;
+	case V4L2_CID_CONTRAST:
+		vc->value = get_contrast();
+		break;
+	case V4L2_CID_HUE:
+		vc->value = get_hue();
+		break;
+	case V4L2_CID_SATURATION:
+		vc->value = get_saturation_u();
+		break;
+	case V4L2_CID_SHARPNESS:
+		vc->value = get_sharpness();
+		break;
+	default:
+		pr_debug("  type is unknow - %d\n",vc->id);
+		ret = -EINVAL;
+		break;
+	}
 	return ret;
 }
 
@@ -617,6 +738,28 @@ static int ioctl_g_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
 static int ioctl_s_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
 {
 	int ret = 0;
+	switch (vc->id) {
+	case V4L2_CID_BRIGHTNESS:
+		ret = set_brightness(vc->value);
+		break;
+	case V4L2_CID_CONTRAST:
+		ret = set_contrast(vc->value);
+		break;
+	case V4L2_CID_HUE:
+		ret = set_hue(vc->value);
+		break;
+	case V4L2_CID_SATURATION:
+		ret  = set_saturation_u(vc->value);
+		ret |= set_saturation_v(vc->value);
+		break;
+	case V4L2_CID_SHARPNESS:
+		ret = set_sharpness(vc->value);
+		break;
+	default:
+		pr_debug("  tpye is unknow - %d\n",vc->id);
+		ret = -EINVAL;
+		break;
+	}
 	return ret;
 }
 
