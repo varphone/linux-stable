@@ -47,7 +47,7 @@
 #define APDS9306_ALS_THRES_VAR		0x27	//ALS interrupt variance threshold
 
 #define APDS9306_POWER_ON_STATUS	0x20	
-/* Power on/off value for APDS9306_MAIN_CTRL register */     //over zbl
+/* Power on/off value for APDS9306_MAIN_CTRL register */
 #define APDS9306_POWER_ON	0x02
 #define APDS9306_POWER_OFF	0x10
 /* Interrupts */
@@ -59,6 +59,8 @@
 
 
 #define APDS9306_THRESH_MAX	0xfffff /* Max threshold value */
+
+static const int clear_als_it_value[] = {0,0,0,0,0,0};
 
 extern struct iio_dev *devm_iio_device_alloc(struct device *dev, int sizeof_priv);
 extern void iio_device_unregister(struct iio_dev *indio_dev);
@@ -340,9 +342,31 @@ static int apds9306_write_interrupt_config(struct iio_dev *indio_dev,
 	return ret;
 }
 
+static ssize_t apds9306_get_it_available(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{	int i, n, len;
+	n = ARRAY_SIZE(clear_als_it_value);
+	for(i = 0,len = 0; i < n; i++)
+		len +=sprintf(buf + len,"0x%d ",clear_als_it_value[i]);
+	return len + sprintf(buf + len, "\n");
+}
+
+static IIO_DEVICE_ATTR(in_illuminance_integration_time_available,
+	S_IRUGO, apds9306_get_it_available, NULL, 0);
+
+static struct attribute *apds9306_attributes[] = {
+	&iio_dev_attr_in_illuminance_integration_time_available.dev_attr.attr,
+	NULL,
+};
+
+static const struct attribute_group apds9306_attribute_group = {
+	.attrs		= apds9306_attributes
+};
+
 static const struct iio_info apds9306_info_no_irq = {			
 	.driver_module	= THIS_MODULE,
 	.read_raw	= apds9306_read_raw,
+	.attrs		= &apds9306_attribute_group,
 };
 
 static const struct iio_info apds9306_info = {					
@@ -350,6 +374,7 @@ static const struct iio_info apds9306_info = {
 	.read_raw		= apds9306_read_raw,
 	.read_event_value	= apds9306_read_thresh,
 	.write_event_value	= apds9306_write_thresh,
+	.attrs			= &apds9306_attribute_group,
 	.read_event_config	= apds9306_read_interrupt_config,
 	.write_event_config	= apds9306_write_interrupt_config,
 };
@@ -419,7 +444,7 @@ static int apds9306_probe(struct i2c_client *client,
 		return -ENOMEM;
 	
 	data = iio_priv(indio_dev);
-	i2c_set_clientdata(client, indio_dev);// 将设备的数据结构挂到  i2c_client.dev->driver_data下
+	i2c_set_clientdata(client, indio_dev);
 	data->client = client;
 	
 	ret = apds9306_chip_init(data);
