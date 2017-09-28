@@ -116,7 +116,12 @@
 #define SABRESD_USB_H1_PWR	IMX_GPIO_NR(7, 0)
 #define SABRESD_CHARGE_CHG_1_B	IMX_GPIO_NR(3, 23)
 #define SABRESD_TS_INT		IMX_GPIO_NR(3, 26)
+#if defined(CONFIG_MYIMX6EK200_CVR_MIL_V1) || \
+    defined(CONFIG_MYIMX6EK200_CVR_MIL_V1_VGA)
+#define SABRESD_POWER_OFF	IMX_GPIO_NR(1, 12)
+#else
 #define SABRESD_POWER_OFF	IMX_GPIO_NR(1, 4)
+#endif
 
 #define SABRESD_ECSPI1_CS1 	IMX_GPIO_NR(3, 19)
 #define SABRESD_ECSPI2_CS0	IMX_GPIO_NR(2, 26)
@@ -2003,9 +2008,14 @@ static void __init imx6q_add_device_gpio_leds(void) {}
 }
 
 static struct gpio_keys_button imx6q_buttons[] = {
+#if defined(CONFIG_MYIMX6EK200_CVR_MIL_V1) || \
+    defined(CONFIG_MYIMX6EK200_CVR_MIL_V1_VGA)
+	GPIO_BUTTON(SABRESD_POWER_OFF, KEY_DELETE, 1, "power", 1, 1),
+#else
 	GPIO_BUTTON(SABRESD_VOLUME_UP, KEY_VOLUMEUP, 1, "volume-up", 0, 1),
 	GPIO_BUTTON(SABRESD_VOLUME_DN, KEY_VOLUMEDOWN, 1, "volume-down", 0, 1),
 	GPIO_BUTTON(SABRESD_POWER_OFF, KEY_POWER, 1, "power", 1, 1),
+#endif
 };
 
 static struct gpio_keys_platform_data imx6q_button_data = {
