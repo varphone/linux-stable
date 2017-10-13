@@ -28,7 +28,7 @@
 #define APDS9306_MAIN_CTRL		0x00 	/* Control of basic functions */
 #define APDS9306_ALS_MEAS_RATE  	0x04 	//ALS measurement rate and resolution in Active mode
 #define APDS9306_ALS_GAIN		0x05 	//ALS analog gain range
-#define APDS9306_Part_ID		0x06	//Part number ID and revision ID
+#define APDS9306_PART_ID		0x06	//Part number ID and revision ID
 #define APDS9306_MAIN_STATUS		0x07	//Power-on status, interrupt status, data status
 #define APDS9306_CLEAR_DATA_0		0x0A	//Clear ADC measurement data - LSB
 #define APDS9306_CLEAR_DATA_1		0x0B	//Clear ADC measurement data
@@ -439,7 +439,7 @@ static int apds9306_probe(struct i2c_client *client,
 	struct iio_dev *indio_dev;
 	int ret;
 
-	ret = i2c_smbus_read_byte_data(client, APDS9306_Part_ID);
+	ret = i2c_smbus_read_byte_data(client, APDS9306_PART_ID);
 	if (ret == 0xB1) {
 		dev_info(&client->dev, "APDS-9306 found.");
 	}
