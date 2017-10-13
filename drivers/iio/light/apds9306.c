@@ -25,18 +25,18 @@
 
 
 /* Register set */
-#define APDS9306_MAIN_CTRL			0x00 	/* Control of basic functions */
+#define APDS9306_MAIN_CTRL		0x00 	/* Control of basic functions */
 #define APDS9306_ALS_MEAS_RATE  	0x04 	//ALS measurement rate and resolution in Active mode
-#define APDS9306_ALS_GAIN			0x05 	//ALS analog gain range
-#define APDS9306_Part_ID			0x06	//Part number ID and revision ID
+#define APDS9306_ALS_GAIN		0x05 	//ALS analog gain range
+#define APDS9306_Part_ID		0x06	//Part number ID and revision ID
 #define APDS9306_MAIN_STATUS		0x07	//Power-on status, interrupt status, data status
 #define APDS9306_CLEAR_DATA_0		0x0A	//Clear ADC measurement data - LSB
 #define APDS9306_CLEAR_DATA_1		0x0B	//Clear ADC measurement data
 #define APDS9306_CLEAR_DATA_2		0x0C	//Clear ADC measurement data - MSB
-#define APDS9306_ALS_DATA_0			0x0D	//ALS ADC measurement data - LSB
-#define APDS9306_ALS_DATA_1			0x0E	//ALS ADC measurement data
-#define APDS9306_ALS_DATA_2			0x0F	//ALS ADC measurement data - MSB
-#define APDS9306_INT_CFG			0x19	//Interrupt configuration
+#define APDS9306_ALS_DATA_0		0x0D	//ALS ADC measurement data - LSB
+#define APDS9306_ALS_DATA_1		0x0E	//ALS ADC measurement data
+#define APDS9306_ALS_DATA_2		0x0F	//ALS ADC measurement data - MSB
+#define APDS9306_INT_CFG		0x19	//Interrupt configuration
 #define APDS9306_INT_PERSISTENCE	0x1A	//Interrupt persist setting
 #define APDS9306_ALS_THRES_UP_0		0x21	//ALS interrupt upper threshold, LSB
 #define APDS9306_ALS_THRES_UP_1		0x22	//ALS interrupt upper threshold
@@ -48,13 +48,13 @@
 
 #define APDS9306_POWER_ON_STATUS	0x20	
 /* Power on/off value for APDS9306_MAIN_CTRL register */
-#define APDS9306_POWER_ON	0x02
-#define APDS9306_POWER_OFF	0x10
+#define APDS9306_POWER_ON		0x02
+#define APDS9306_POWER_OFF		0x10
 /* Interrupts */
 
 #define APDS9306_INTR_SEL		0x10
 #define APDS9306_INTR_MODE		0x08
-#define APDS9306_INTR_ENABLE	0x04
+#define APDS9306_INTR_ENABLE		0x04
 
 
 
