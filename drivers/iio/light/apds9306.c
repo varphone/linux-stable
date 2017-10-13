@@ -439,6 +439,18 @@ static int apds9306_probe(struct i2c_client *client,
 	struct iio_dev *indio_dev;
 	int ret;
 
+	ret = i2c_smbus_read_byte_data(client, APDS9306_Part_ID);
+	if (ret == 0xB1) {
+		dev_info(&client->dev, "APDS-9306 found.");
+	}
+	else if (ret == 0xB3) {
+		dev_info(&client->dev, "APDS-9306-065 found.");
+	}
+	else {
+		dev_err(&client->dev, "APDS-9306/9306-065 not found.");
+		return -ENODEV;
+	}
+
 	indio_dev = devm_iio_device_alloc(&client->dev, sizeof(*data));
 	if (!indio_dev)
 		return -ENOMEM;
