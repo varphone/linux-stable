@@ -392,9 +392,10 @@ static int atm88pa_probe(struct i2c_client* client,
 
 	atm->dev = &client->dev;
 	atm->i2c = client;
+	atm->chip_ver = atm88pa_get_sw_ver(atm);
 
 	/* Check software version, current: 5.01 */
-	if (atm88pa_get_sw_ver(atm) != 501) {
+	if (atm->chip_ver != 501) {
 		dev_err(atm->dev, "ATMEGA88PA not found.\n");
 		return -ENODEV;
 	}
