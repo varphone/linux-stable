@@ -43,6 +43,7 @@ struct atm88pa {
 	struct miscdevice	misc; /* Misc device */
 	struct atm88pa_power	power; /* Power off */
 	u8			old_status; /* Prev status value */
+	u16			chip_ver; /* Cached chip version */
 };
 
 #define dev_to_i2c_client(d)	container_of(d, struct i2c_client, dev)
