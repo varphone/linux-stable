@@ -203,6 +203,137 @@ static ssize_t atm88pa_set_cam_switch_attr(struct device *dev,
 	return -EINVAL;
 }
 
+static ssize_t atm88pa_get_cam_b_pwr_attr(struct device *dev,
+					  struct device_attribute *attr,
+					  char *buf)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int ctrl;
+
+	ctrl = atm88pa_read(atm, ATM88PA_REG_BC_PWR_CTRL);
+
+	return scnprintf(buf, PAGE_SIZE, "%u\n", ctrl);
+}
+
+static ssize_t atm88pa_set_cam_b_pwr_attr(struct device *dev,
+					  struct device_attribute *attr,
+					  const char *buf, size_t count)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int ctrl;
+
+	if (sscanf(buf, "%u", &ctrl) == 1) {
+		atm88pa_write(atm, ATM88PA_REG_BC_PWR_CTRL, (u8)ctrl);
+		return count;
+	}
+	return -EINVAL;
+}
+
+static ssize_t atm88pa_get_cam_f_pwr_attr(struct device *dev,
+					  struct device_attribute *attr,
+					  char *buf)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int ctrl;
+
+	ctrl = atm88pa_read(atm, ATM88PA_REG_FC_PWR_CTRL);
+
+	return scnprintf(buf, PAGE_SIZE, "%u\n", ctrl);
+}
+
+static ssize_t atm88pa_set_cam_f_pwr_attr(struct device *dev,
+					  struct device_attribute *attr,
+					  const char *buf, size_t count)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int ctrl;
+
+	if (sscanf(buf, "%u", &ctrl) == 1) {
+		atm88pa_write(atm, ATM88PA_REG_FC_PWR_CTRL, (u8)ctrl);
+		return count;
+	}
+	return -EINVAL;
+}
+
+static ssize_t atm88pa_get_cam_l_pwr_attr(struct device *dev,
+					  struct device_attribute *attr,
+					  char *buf)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int ctrl;
+
+	ctrl = atm88pa_read(atm, ATM88PA_REG_LC_PWR_CTRL);
+
+	return scnprintf(buf, PAGE_SIZE, "%u\n", ctrl);
+}
+
+static ssize_t atm88pa_set_cam_l_pwr_attr(struct device *dev,
+					  struct device_attribute *attr,
+					  const char *buf, size_t count)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int ctrl;
+
+	if (sscanf(buf, "%u", &ctrl) == 1) {
+		atm88pa_write(atm, ATM88PA_REG_LC_PWR_CTRL, (u8)ctrl);
+		return count;
+	}
+	return -EINVAL;
+}
+
+static ssize_t atm88pa_get_cam_r_pwr_attr(struct device *dev,
+					  struct device_attribute *attr,
+					  char *buf)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int ctrl;
+
+	ctrl = atm88pa_read(atm, ATM88PA_REG_RC_PWR_CTRL);
+
+	return scnprintf(buf, PAGE_SIZE, "%u\n", ctrl);
+}
+
+static ssize_t atm88pa_set_cam_r_pwr_attr(struct device *dev,
+					  struct device_attribute *attr,
+					  const char *buf, size_t count)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int ctrl;
+
+	if (sscanf(buf, "%u", &ctrl) == 1) {
+		atm88pa_write(atm, ATM88PA_REG_RC_PWR_CTRL, (u8)ctrl);
+		return count;
+	}
+	return -EINVAL;
+}
+
+static ssize_t atm88pa_get_lcd_pwr_attr(struct device *dev,
+					struct device_attribute *attr,
+					char *buf)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int ctrl;
+
+	ctrl = atm88pa_read(atm, ATM88PA_REG_LCD_PWR_CTRL);
+
+	return scnprintf(buf, PAGE_SIZE, "%u\n", ctrl);
+}
+
+static ssize_t atm88pa_set_lcd_pwr_attr(struct device *dev,
+					struct device_attribute *attr,
+					const char *buf, size_t count)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int ctrl;
+
+	if (sscanf(buf, "%u", &ctrl) == 1) {
+		atm88pa_write(atm, ATM88PA_REG_LCD_PWR_CTRL, (u8)ctrl);
+		return count;
+	}
+	return -EINVAL;
+}
+
+
 static ssize_t atm88pa_get_lcd_light_attr(struct device *dev,
 					  struct device_attribute *attr,
 					  char *buf)
@@ -280,6 +411,11 @@ static ssize_t atm88pa_get_version_attr(struct device *dev,
 
 DEVICE_ATTR(amb_light, S_IRUGO, atm88pa_get_amb_light_attr, NULL);
 DEVICE_ATTR(cam_switch, S_IRUGO | S_IWUSR, atm88pa_get_cam_switch_attr, atm88pa_set_cam_switch_attr);
+DEVICE_ATTR(cam_b_pwr, S_IRUGO | S_IWUSR, atm88pa_get_cam_b_pwr_attr, atm88pa_set_cam_b_pwr_attr);
+DEVICE_ATTR(cam_f_pwr, S_IRUGO | S_IWUSR, atm88pa_get_cam_f_pwr_attr, atm88pa_set_cam_f_pwr_attr);
+DEVICE_ATTR(cam_l_pwr, S_IRUGO | S_IWUSR, atm88pa_get_cam_l_pwr_attr, atm88pa_set_cam_l_pwr_attr);
+DEVICE_ATTR(cam_r_pwr, S_IRUGO | S_IWUSR, atm88pa_get_cam_r_pwr_attr, atm88pa_set_cam_r_pwr_attr);
+DEVICE_ATTR(lcd_pwr, S_IRUGO | S_IWUSR, atm88pa_get_lcd_pwr_attr, atm88pa_set_lcd_pwr_attr);
 DEVICE_ATTR(lcd_light, S_IRUGO | S_IWUSR, atm88pa_get_lcd_light_attr, atm88pa_set_lcd_light_attr);
 DEVICE_ATTR(status, S_IRUGO, atm88pa_get_status_attr, NULL);
 DEVICE_ATTR(sucap_volt, S_IRUGO, atm88pa_get_sucap_volt_attr, NULL);
@@ -289,6 +425,11 @@ DEVICE_ATTR(version, S_IRUGO, atm88pa_get_version_attr, NULL);
 static struct attribute *atm88pa_attrs[] = {
 	&dev_attr_amb_light.attr,
 	&dev_attr_cam_switch.attr,
+	&dev_attr_cam_b_pwr.attr,
+	&dev_attr_cam_f_pwr.attr,
+	&dev_attr_cam_l_pwr.attr,
+	&dev_attr_cam_r_pwr.attr,
+	&dev_attr_lcd_pwr.attr,
 	&dev_attr_lcd_light.attr,
 	&dev_attr_status.attr,
 	&dev_attr_sucap_volt.attr,
@@ -394,8 +535,13 @@ static int atm88pa_probe(struct i2c_client* client,
 	atm->i2c = client;
 	atm->chip_ver = atm88pa_get_sw_ver(atm);
 
-	/* Check software version, current: 5.01 */
-	if (atm->chip_ver != 501) {
+	/*
+	 * Check software version, current:
+         *   5.01 for CVR-MIL-V2
+	 *   6.00 for CVR-MIL-V2-A
+	 */
+	if (atm->chip_ver != 501 ||
+	    atm->chip_ver != 600) {
 		dev_err(atm->dev, "ATMEGA88PA not found.\n");
 		return -ENODEV;
 	}
