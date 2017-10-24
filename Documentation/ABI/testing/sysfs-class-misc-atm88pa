@@ -1,0 +1,124 @@
+What:		/sys/class/misc/atm88pa/
+Date:		October 2017
+KernelVersion:	4.1.44
+Contact:	Varphone Wong <varphone@qq.com>
+Description:
+		The misc class directory belongs to ATMega88PA SMC controller
+		for CVR-MIL-V2, CVR-MIL-V2-A devices.
+
+What:		/sys/class/misc/atm88pa/amb_light
+Date:		October 2017
+KernelVersion:	4.1.44
+Contact:	Varphone Wong <varphone@qq.com>
+Description:
+		Ambient light adc value provided by ATM88PA.
+
+		Value range     : 0 ~ 0xffff
+		Value precision : undefined
+
+What:		/sys/class/misc/atm88pa/cam_switch
+Date:		October 2017
+KernelVersion:	4.1.44
+Contact:	Varphone Wong <varphone@qq.com>
+Description:
+		Front/Back camera switch.
+
+		0 - Front
+		1 - Back
+
+What:		/sys/class/misc/atm88pa/lcd_pwr
+Date:		October 2017
+KernelVersion:	4.1.44
+Contact:	Varphone Wong <varphone@qq.com>
+Description:
+		Display power control.
+
+		0 - Power off
+		1 - Power on
+
+What:		/sys/class/misc/atm88pa/lcd_light
+Date:		October 2017
+KernelVersion:	4.1.44
+Contact:	Varphone Wong <varphone@qq.com>
+Description:
+		Display brightness control.
+
+		Value range : 1 ~ 100
+
+What:		/sys/class/misc/atm88pa/status
+Date:		October 2017
+KernelVersion:	4.1.44
+Contact:	Varphone Wong <varphone@qq.com>
+Description:
+		ATM88PA SMC controller status raw bits.
+
+What:		/sys/class/misc/atm88pa/sucap_volt
+Date:		October 2017
+KernelVersion:	4.1.44
+Contact:	Varphone Wong <varphone@qq.com>
+Description:
+		Voltage of super capacitor.
+
+		Value range     : 0 ~ 65535
+		Value precision : 0.01V
+
+What:		/sys/class/misc/atm88pa/temperature
+Date:		October 2017
+KernelVersion:	4.1.44
+Contact:	Varphone Wong <varphone@qq.com>
+Description:
+		Ambient temperature.
+
+		Value range     : -32768  ~ +32767
+		Value precision : 0.1 Celsius
+
+What:		/sys/class/misc/atm88pa/version
+Date:		October 2017
+KernelVersion:	4.1.44
+Contact:	Varphone Wong <varphone@qq.com>
+Description:
+		Chip version.
+
+		501 : Ver 5.01, for CVR-MIL-V2 devices
+		600 : Ver 6.00, for CVR_MIL-V2-A devices
+
+What:		/sys/class/leds/camera-sl/brightness
+Date:		October 2017
+KernelVersion:	4.1.44
+Contact:	Varphone Wong <varphone@qq.com>
+Description:
+		Camera supplement light brightness.
+
+		Value range : 0 ~ 100
+
+What:		/sys/class/leds/camera-sl/max_brightness
+Date:		October 2017
+KernelVersion:	4.1.44
+Contact:	Varphone Wong <varphone@qq.com>
+Description:
+		Camera supplement light brightness limit.
+
+		Value : 100
+
+What:		/sys/class/leds/fault/brightness
+Date:		October 2017
+KernelVersion:	4.1.44
+Contact:	Varphone Wong <varphone@qq.com>
+Description:
+		Fault led indicator.
+
+		0 = Turn off
+		1 = Turn on
+
+What:		/sys/class/leds/keypad-bl/brightness
+Date:		October 2017
+KernelVersion:	4.1.44
+Contact:	Varphone Wong <varphone@qq.com>
+Description:
+		Keypad backlight brightness.
+
+		Value range: 0 ~ 100
+
+		0 = Turn off
+		1 ~ 100 = Turn on and set brightness
+
