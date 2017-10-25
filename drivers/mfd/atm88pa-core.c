@@ -540,7 +540,7 @@ static int atm88pa_probe(struct i2c_client* client,
          *   5.01 for CVR-MIL-V2
 	 *   6.00 for CVR-MIL-V2-A
 	 */
-	if (atm->chip_ver != 501 ||
+	if (atm->chip_ver != 501 &&
 	    atm->chip_ver != 600) {
 		dev_err(atm->dev, "ATMEGA88PA not found.\n");
 		return -ENODEV;
