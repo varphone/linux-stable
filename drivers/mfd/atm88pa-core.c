@@ -384,6 +384,32 @@ static ssize_t atm88pa_get_sucap_volt_attr(struct device *dev,
 	return scnprintf(buf, PAGE_SIZE, "%u\n", volt);
 }
 
+static ssize_t atm88pa_get_sup_light_attr(struct device *dev,
+					  struct device_attribute *attr,
+					  char *buf)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int val;
+
+	val = atm88pa_read(atm, ATM88PA_REG_SUP_LIGHT);
+
+	return scnprintf(buf, PAGE_SIZE, "%u\n", val);
+}
+
+static ssize_t atm88pa_set_sup_light_attr(struct device *dev,
+					  struct device_attribute *attr,
+					  const char *buf, size_t count)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int val;
+
+	if (sscanf(buf, "%u", &val) == 1) {
+		atm88pa_write(atm, ATM88PA_REG_SUP_LIGHT, (u8)val);
+		return count;
+	}
+	return -EINVAL;
+}
+
 static ssize_t atm88pa_get_temperature_attr(struct device *dev,
 					    struct device_attribute *attr,
 					    char *buf)
@@ -419,6 +445,7 @@ DEVICE_ATTR(lcd_pwr, S_IRUGO | S_IWUSR, atm88pa_get_lcd_pwr_attr, atm88pa_set_lc
 DEVICE_ATTR(lcd_light, S_IRUGO | S_IWUSR, atm88pa_get_lcd_light_attr, atm88pa_set_lcd_light_attr);
 DEVICE_ATTR(status, S_IRUGO, atm88pa_get_status_attr, NULL);
 DEVICE_ATTR(sucap_volt, S_IRUGO, atm88pa_get_sucap_volt_attr, NULL);
+DEVICE_ATTR(sup_light, S_IRUGO | S_IWUSR, atm88pa_get_sup_light_attr, atm88pa_set_sup_light_attr);
 DEVICE_ATTR(temperature, S_IRUGO, atm88pa_get_temperature_attr, NULL);
 DEVICE_ATTR(version, S_IRUGO, atm88pa_get_version_attr, NULL);
 
@@ -433,6 +460,7 @@ static struct attribute *atm88pa_attrs[] = {
 	&dev_attr_lcd_light.attr,
 	&dev_attr_status.attr,
 	&dev_attr_sucap_volt.attr,
+	&dev_attr_sup_light.attr,
 	&dev_attr_temperature.attr,
 	&dev_attr_version.attr,
 	NULL
