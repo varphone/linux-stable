@@ -591,100 +591,100 @@ static int ioctl_try_fmt_cap(struct v4l2_int_device *s, struct v4l2_format *f)
 	return 0;
 }
 
-static int get_brightness(void)
+static int get_brightness(int channel)
 {
 	int ret = 0;
-	isl7998x_write_reg(0xFF, 0x01);
+	isl7998x_write_reg(0xFF, channel);
 	ret = isl7998x_read_reg(0x10);
 	return ret;
 }
 
-static int get_contrast(void)
+static int get_contrast(int channel)
 {
 	int ret = 0;
-	isl7998x_write_reg(0xFF, 0x01);
+	isl7998x_write_reg(0xFF, channel);
 	ret = isl7998x_read_reg(0x11);
 	return ret;
 }
 
-static int get_hue(void)
+static int get_hue(int channel)
 {
 	int ret = 0;
-	isl7998x_write_reg(0xFF, 0x01);
+	isl7998x_write_reg(0xFF, channel);
 	ret = isl7998x_read_reg(0x15);
 	return ret;
 }
 
-static int get_saturation_u(void)
+static int get_saturation_u(int channel)
 {
 	int ret = 0;
-	isl7998x_write_reg(0xFF, 0x0F);
+	isl7998x_write_reg(0xFF, channel);
 	ret = isl7998x_read_reg(0x13);
 	return ret;
 }
 
-static int get_saturation_v(void)
+static int get_saturation_v(int channel)
 {
 	int ret = 0;
-	isl7998x_write_reg(0xFF, 0x0F);
+	isl7998x_write_reg(0xFF, channel);
 	ret = isl7998x_read_reg(0x14);
 	return ret;
 }
 
-static int get_sharpness(void)
+static int get_sharpness(int channel)
 {
 	int ret = 0;
-	isl7998x_write_reg(0x08, 0x14);
-	ret = isl7998x_read_reg(0x012);
+	isl7998x_write_reg(0xFF, channel);
+	ret = isl7998x_read_reg(0x12);
 	if (ret > 0)
 		ret = ret & 0x3f;
 	return ret;
 }
 
-static int set_brightness(int value)
+static int set_brightness(int value, int channel)
 {
 	int ret = 0;
-	isl7998x_write_reg(0xFF, 0x0F);
+	isl7998x_write_reg(0xFF, channel);
 	ret = isl7998x_write_reg(0x10, value);
 	return ret;
 }
 
-static int set_contrast(int value)
+static int set_contrast(int value, int channel)
 {
 	int ret = 0;
-	isl7998x_write_reg(0xFF, 0x0F);
+	isl7998x_write_reg(0xFF, channel);
 	ret = isl7998x_write_reg(0x11, value);
 	return ret;
 }
 
-static int set_hue(int value)
+static int set_hue(int value, int channel)
 {
 	int ret = 0;
-	isl7998x_write_reg(0xFF, 0x0F);
+	isl7998x_write_reg(0xFF, channel);
 	ret = isl7998x_write_reg(0x15, value);
 	return ret;
 }
 
-static int set_saturation_u(int value)
+static int set_saturation_u(int value, int channel)
 {
 	int ret = 0;
-	isl7998x_write_reg(0xFF, 0x0F);
+	isl7998x_write_reg(0xFF, channel);
 	ret = isl7998x_write_reg(0x13, value);
 	return ret;
 }
 
-static int set_saturation_v(int value)
+static int set_saturation_v(int value, int channel)
 {
 	int ret = 0;
-	isl7998x_write_reg(0xFF,0x0F);
+	isl7998x_write_reg(0xFF, channel);
 	ret = isl7998x_write_reg(0x14, value);
 	return ret;
 }
 
-static int set_sharpness(int value)
+static int set_sharpness(int value, int channel)
 {
 	int ret = 0;
-	isl7998x_write_reg(0xFF, 0x0F);
+	isl7998x_write_reg(0xFF, channel);
 	value = value & 0x3f;
 	ret = isl7998x_write_reg(0x12, value);
 	return ret;
@@ -701,22 +701,24 @@ static int set_sharpness(int value)
  */
 static int ioctl_g_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
 {
+	struct sensor_data *sensor = s->priv;
 	int ret = 0;
+	int vch = sensor->v_channel + 1; /* The channel in isl7998x is base on 1 */
 	switch (vc->id) {
 	case V4L2_CID_BRIGHTNESS:
-		vc->value = get_brightness();
+		vc->value = get_brightness(vch);
 		break;
 	case V4L2_CID_CONTRAST:
-		vc->value = get_contrast();
+		vc->value = get_contrast(vch);
 		break;
 	case V4L2_CID_HUE:
-		vc->value = get_hue();
+		vc->value = get_hue(vch);
 		break;
 	case V4L2_CID_SATURATION:
-		vc->value = get_saturation_u();
+		vc->value = get_saturation_u(vch);
 		break;
 	case V4L2_CID_SHARPNESS:
-		vc->value = get_sharpness();
+		vc->value = get_sharpness(vch);
 		break;
 	default:
 		pr_debug("  type is unknow - %d\n",vc->id);
@@ -737,23 +739,25 @@ static int ioctl_g_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
  */
 static int ioctl_s_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
 {
+	struct sensor_data *sensor = s->priv;
 	int ret = 0;
+	int vch = sensor->v_channel + 1; /* The channel in isl7998x is base on 1 */
 	switch (vc->id) {
 	case V4L2_CID_BRIGHTNESS:
-		ret = set_brightness(vc->value);
+		ret = set_brightness(vc->value, vch);
 		break;
 	case V4L2_CID_CONTRAST:
-		ret = set_contrast(vc->value);
+		ret = set_contrast(vc->value, vch);
 		break;
 	case V4L2_CID_HUE:
-		ret = set_hue(vc->value);
+		ret = set_hue(vc->value, vch);
 		break;
 	case V4L2_CID_SATURATION:
-		ret  = set_saturation_u(vc->value);
-		ret |= set_saturation_v(vc->value);
+		ret  = set_saturation_u(vc->value, vch);
+		ret |= set_saturation_v(vc->value, vch);
 		break;
 	case V4L2_CID_SHARPNESS:
-		ret = set_sharpness(vc->value);
+		ret = set_sharpness(vc->value, vch);
 		break;
 	default:
 		pr_debug("  tpye is unknow - %d\n",vc->id);
