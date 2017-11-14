@@ -49,6 +49,7 @@ unsigned int g_isl7998x_frame_height = 480;
 /*!
  * Maintains the information on the current state of the sesor.
  */
+static int isl7998x_state[SENSOR_NUM];
 static struct sensor_data isl7998x_data[SENSOR_NUM];
 static unsigned int chip_id = 0;
 
@@ -432,6 +433,17 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 	return retval;
 }
 
+/* True if all channel power offed */
+static int isl7998x_can_reset(void)
+{
+	int i = 0;
+	for (; i < SENSOR_NUM; i++) {
+		if (isl7998x_state[i])
+			return false;
+	}
+	return true;
+}
+
 /* --------------- IOCTL functions from v4l2_int_ioctl_desc --------------- */
 
 static int ioctl_g_ifparm(struct v4l2_int_device *s, struct v4l2_ifparm *p)
@@ -466,6 +478,10 @@ static int ioctl_s_power(struct v4l2_int_device *s, int on)
 	struct sensor_data *sensor = s->priv;
 
 	sensor->on = on;
+
+	/* Reset channel state if power off */
+	if (!on)
+		isl7998x_state[sensor->v_channel] = false;
 
 	return 0;
 }
@@ -875,6 +891,11 @@ static int ioctl_dev_init(struct v4l2_int_device *s)
 	int ret = 0;
 	void *mipi_csi2_info;
 
+	if (!isl7998x_can_reset()) {
+		printk(KERN_NOTICE "isl7998x_mipi: in used, skip reset\n");
+		goto done;
+	}
+
 	sensor->on = true;
 
 	if (sensor->i2c_client != NULL) {
@@ -891,6 +912,9 @@ static int ioctl_dev_init(struct v4l2_int_device *s)
 
 		ret = isl7998x_hardware_init(sensor);
 	}
+
+done:
+	isl7998x_state[sensor->v_channel] = true;
 
 	return ret;
 }
@@ -1023,6 +1047,7 @@ static int isl7998x_probe(struct i2c_client *client,
 	int retval;
 
 	/* Set initial values for the sensor struct. */
+	memset(&isl7998x_state, 0, sizeof(isl7998x_state));
 	memset(&isl7998x_data[0], 0, sizeof(isl7998x_data[0]));
 	isl7998x_data[0].sensor_clk = devm_clk_get(dev, "csi_mclk");
 	if (IS_ERR(isl7998x_data[0].sensor_clk)) {
