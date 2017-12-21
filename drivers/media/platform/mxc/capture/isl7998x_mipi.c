@@ -43,8 +43,8 @@
 #define SENSOR_NUM 4
 
 unsigned int g_isl7998x_width = 720;
-unsigned int g_isl7998x_field_height = 240;
-unsigned int g_isl7998x_frame_height = 480;
+unsigned int g_isl7998x_field_height = 288;
+unsigned int g_isl7998x_frame_height = 576;
 
 /*!
  * Maintains the information on the current state of the sesor.
@@ -177,26 +177,50 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 
 		// Page 1
 		isl7998x_write_reg(0xFF, 0x01);
-		isl7998x_write_reg(0x2F, 0xE6);
-		isl7998x_write_reg(0x33, 0x85);
+		isl7998x_write_reg(0x07, 0x12); // VA_HI[5:4]=1, HA_HI[1:0]=2
+		isl7998x_write_reg(0x08, 0x12); // VD_LO
+		isl7998x_write_reg(0x09, 0x20); // VA_LO
+		isl7998x_write_reg(0x0A, 0x0A); // HD_LO
+		isl7998x_write_reg(0x0B, 0xD0); // HA_LO
+		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
+		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
+		isl7998x_write_reg(0x3D, 0x00); // Data conversion
 		isl7998x_write_reg(0xFF, 0x01);
 
 		// Page 2
 		isl7998x_write_reg(0xFF, 0x02);
+		isl7998x_write_reg(0x07, 0x12);
+		isl7998x_write_reg(0x08, 0x12);
+		isl7998x_write_reg(0x09, 0x20);
+		isl7998x_write_reg(0x0A, 0x0A);
+		isl7998x_write_reg(0x0B, 0xD0);
 		isl7998x_write_reg(0x2F, 0xE6);
-		isl7998x_write_reg(0x33, 0x85);
+		isl7998x_write_reg(0x33, 0xF2);
+		isl7998x_write_reg(0x3D, 0x00);
 		isl7998x_write_reg(0xFF, 0x02);
 
 		// Page 3
 		isl7998x_write_reg(0xFF, 0x03);
+		isl7998x_write_reg(0x07, 0x12);
+		isl7998x_write_reg(0x08, 0x12);
+		isl7998x_write_reg(0x09, 0x20);
+		isl7998x_write_reg(0x0A, 0x0A);
+		isl7998x_write_reg(0x0B, 0xD0);
 		isl7998x_write_reg(0x2F, 0xE6);
-		isl7998x_write_reg(0x33, 0x85);
+		isl7998x_write_reg(0x33, 0xF2);
+		isl7998x_write_reg(0x3D, 0x00);
 		isl7998x_write_reg(0xFF, 0x03);
 
 		// Page 4
 		isl7998x_write_reg(0xFF, 0x04);
+		isl7998x_write_reg(0x07, 0x12);
+		isl7998x_write_reg(0x08, 0x12);
+		isl7998x_write_reg(0x09, 0x20);
+		isl7998x_write_reg(0x0A, 0x0A);
+		isl7998x_write_reg(0x0B, 0xD0);
 		isl7998x_write_reg(0x2F, 0xE6);
-		isl7998x_write_reg(0x33, 0x85);
+		isl7998x_write_reg(0x33, 0xF2);
+		isl7998x_write_reg(0x3D, 0x00);
 		isl7998x_write_reg(0xFF, 0x04);
 
 		// Page 5
@@ -205,7 +229,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x02, 0xA0);
 		isl7998x_write_reg(0x03, 0x08);
 		isl7998x_write_reg(0x04, 0xE4);
-		isl7998x_write_reg(0x05, 0x00);
+		isl7998x_write_reg(0x05, 0x60);
 		isl7998x_write_reg(0x06, 0x00);
 		isl7998x_write_reg(0x07, 0x46);
 		isl7998x_write_reg(0x08, 0x02);
@@ -334,6 +358,74 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 			isl7998x_write_reg(0x0B, 0x41);
 		else
 			isl7998x_write_reg(0x0B, 0x40);
+
+		// Page 1
+		isl7998x_write_reg(0xFF, 0x01);
+		isl7998x_write_reg(0x02, 0x48); // 27MHz Input
+		isl7998x_write_reg(0x07, 0x12); // VA_HI[5:4]=1, HA_HI[1:0]=2
+		isl7998x_write_reg(0x08, 0x18); // VD_LO
+		isl7998x_write_reg(0x09, 0x20); // VA_LO
+		isl7998x_write_reg(0x0A, 0x08); // HD_LO
+		isl7998x_write_reg(0x0B, 0xD0); // HA_LO
+		isl7998x_write_reg(0x0C, 0xCC); // CNTRL1
+		isl7998x_write_reg(0x1C, 0x07); // Standard Auto Detection
+		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
+		isl7998x_write_reg(0x28, 0x08); // Use search VMODE
+		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
+		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
+		isl7998x_write_reg(0x3D, 0x00); // Data conversion
+		isl7998x_write_reg(0xFF, 0x01);
+
+		// Page 2
+		isl7998x_write_reg(0xFF, 0x02);
+		isl7998x_write_reg(0x02, 0x48); // 27MHz Input
+		isl7998x_write_reg(0x07, 0x12); // VA_HI[5:4]=1, HA_HI[1:0]=2
+		isl7998x_write_reg(0x08, 0x18); // VD_LO
+		isl7998x_write_reg(0x09, 0x20); // VA_LO
+		isl7998x_write_reg(0x0A, 0x08); // HD_LO
+		isl7998x_write_reg(0x0B, 0xD0); // HA_LO
+		isl7998x_write_reg(0x0C, 0xCC); // CNTRL1
+		isl7998x_write_reg(0x1C, 0x07); // Standard Auto Detection
+		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
+		isl7998x_write_reg(0x28, 0x08); // Use search VMODE
+		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
+		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
+		isl7998x_write_reg(0x3D, 0x00); // Data conversion
+		isl7998x_write_reg(0xFF, 0x02);
+
+		// Page 3
+		isl7998x_write_reg(0xFF, 0x03);
+		isl7998x_write_reg(0x02, 0x48); // 27MHz Input
+		isl7998x_write_reg(0x07, 0x12); // VA_HI[5:4]=1, HA_HI[1:0]=2
+		isl7998x_write_reg(0x08, 0x18); // VD_LO
+		isl7998x_write_reg(0x09, 0x20); // VA_LO
+		isl7998x_write_reg(0x0A, 0x08); // HD_LO
+		isl7998x_write_reg(0x0B, 0xD0); // HA_LO
+		isl7998x_write_reg(0x0C, 0xCC); // CNTRL1
+		isl7998x_write_reg(0x1C, 0x07); // Standard Auto Detection
+		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
+		isl7998x_write_reg(0x28, 0x08); // Use search VMODE
+		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
+		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
+		isl7998x_write_reg(0x3D, 0x00); // Data conversion
+		isl7998x_write_reg(0xFF, 0x03);
+
+		// Page 4
+		isl7998x_write_reg(0xFF, 0x04);
+		isl7998x_write_reg(0x02, 0x48); // 27MHz Input
+		isl7998x_write_reg(0x07, 0x12); // VA_HI[5:4]=1, HA_HI[1:0]=2
+		isl7998x_write_reg(0x08, 0x18); // VD_LO
+		isl7998x_write_reg(0x09, 0x20); // VA_LO
+		isl7998x_write_reg(0x0A, 0x08); // HD_LO
+		isl7998x_write_reg(0x0B, 0xD0); // HA_LO
+		isl7998x_write_reg(0x0C, 0xCC); // CNTRL1
+		isl7998x_write_reg(0x1C, 0x07); // Standard Auto Detection
+		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
+		isl7998x_write_reg(0x28, 0x08); // Use search VMODE
+		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
+		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
+		isl7998x_write_reg(0x3D, 0x00); // Data conversion
+		isl7998x_write_reg(0xFF, 0x04);
 
 		// Page 5
 		isl7998x_write_reg(0xFF, 0x05);
@@ -827,7 +919,7 @@ static int ioctl_enum_frameintervals(struct v4l2_int_device *s,
 
 	fival->type = V4L2_FRMIVAL_TYPE_DISCRETE;
 	fival->discrete.numerator = 1;
-	fival->discrete.denominator = 30;
+	fival->discrete.denominator = 25;
 
 	return 0;
 }
@@ -1083,7 +1175,7 @@ static int isl7998x_probe(struct i2c_client *client,
 	isl7998x_data[0].i2c_client = client;
 	isl7998x_data[0].pix.pixelformat = V4L2_PIX_FMT_UYVY;
 	isl7998x_data[0].streamcap.capturemode = 0;
-	isl7998x_data[0].streamcap.timeperframe.denominator = 30;
+	isl7998x_data[0].streamcap.timeperframe.denominator = 25;
 	isl7998x_data[0].streamcap.timeperframe.numerator = 1;
 	isl7998x_data[0].is_mipi = 1;
 
