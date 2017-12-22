@@ -723,19 +723,11 @@ static int isl7998x_get_hue(int channel)
 	return ret;
 }
 
-static int isl7998x_get_saturation_u(int channel)
+static int isl7998x_get_saturation(int channel)
 {
 	int ret = 0;
 	isl7998x_write_reg(0xFF, channel);
 	ret = isl7998x_read_reg(0x13);
-	return ret;
-}
-
-static int isl7998x_get_saturation_v(int channel)
-{
-	int ret = 0;
-	isl7998x_write_reg(0xFF, channel);
-	ret = isl7998x_read_reg(0x14);
 	return ret;
 }
 
@@ -773,19 +765,12 @@ static int isl7998x_set_hue(int value, int channel)
 	return ret;
 }
 
-static int isl7998x_set_saturation_u(int value, int channel)
+static int isl7998x_set_saturation(int value, int channel)
 {
 	int ret = 0;
 	isl7998x_write_reg(0xFF, channel);
-	ret = isl7998x_write_reg(0x13, value);
-	return ret;
-}
-
-static int isl7998x_set_saturation_v(int value, int channel)
-{
-	int ret = 0;
-	isl7998x_write_reg(0xFF, channel);
-	ret = isl7998x_write_reg(0x14, value);
+	ret  = isl7998x_write_reg(0x13, value);
+	ret |= isl7998x_write_reg(0x14, value);
 	return ret;
 }
 
@@ -823,7 +808,7 @@ static int ioctl_g_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
 		vc->value = isl7998x_get_hue(vch);
 		break;
 	case V4L2_CID_SATURATION:
-		vc->value = isl7998x_get_saturation_u(vch);
+		vc->value = isl7998x_get_saturation(vch);
 		break;
 	case V4L2_CID_SHARPNESS:
 		vc->value = isl7998x_get_sharpness(vch);
@@ -861,8 +846,7 @@ static int ioctl_s_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
 		ret = isl7998x_set_hue(vc->value, vch);
 		break;
 	case V4L2_CID_SATURATION:
-		ret  = isl7998x_set_saturation_u(vc->value, vch);
-		ret |= isl7998x_set_saturation_v(vc->value, vch);
+		ret = isl7998x_set_saturation(vc->value, vch);
 		break;
 	case V4L2_CID_SHARPNESS:
 		ret = isl7998x_set_sharpness(vc->value, vch);
