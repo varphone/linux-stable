@@ -73,6 +73,10 @@
 #define MTY065X_RGB_LED_PWM_R		0x55
 #define MTY065X_RGB_LED_PWM_W		0x54
 
+/* RGB LED MAX PWM */
+#define MTY065X_RGB_LED_MAX_PWM_R	0x5d
+#define MTY065X_RGB_LED_MAX_PWM_W	0x5c
+
 /* Test Pattern Select */
 #define MTY065X_TEST_PATTERN_R		0x0c
 #define MTY065X_TEST_PATTERN_W		0x0b
@@ -123,6 +127,7 @@ struct mty065x_props {
 	struct ks_projection	ks_projection;
 	u8			rgb_led_ctrl;
 	struct rgb_led_pwm	rgb_led_pwm;
+	struct rgb_led_pwm	rgb_led_max_pwm;
 	u8			test_pattern;
 };
 
@@ -538,6 +543,30 @@ static void mty065x_set_rgb_led_pwm(struct mty065x *mty)
 					    sizeof(struct rgb_led_pwm), data);
 	if (ret < 0) {
 		dev_warn(mty->dev, "write rgb_led_pwm failed, err: %d\n", ret);
+	}
+}
+
+static void mty065x_get_rgb_led_max_pwm(struct mty065x *mty)
+{
+	int ret;
+	u8* data = (u8*)&mty->props.rgb_led_max_pwm;
+
+	ret = i2c_smbus_read_i2c_block_data(mty->i2c, MTY065X_RGB_LED_PWM_R,
+					    sizeof(struct rgb_led_pwm), data);
+	if (ret < 0) {
+		dev_warn(mty->dev, "read rgb_led_max_pwm failed, err: %d\n", ret);
+	}
+}
+
+static void mty065x_set_rgb_led_max_pwm(struct mty065x *mty)
+{
+	int ret;
+	u8* data = (u8*)&mty->props.rgb_led_max_pwm;
+
+	ret = i2c_smbus_write_i2c_block_data(mty->i2c, MTY065X_RGB_LED_MAX_PWM_W,
+					     sizeof(struct rgb_led_pwm), data);
+	if (ret < 0) {
+		dev_warn(mty->dev, "write rgb_led_max_pwm failed, err: %d\n", ret);
 	}
 }
 
@@ -1083,6 +1112,37 @@ static ssize_t mty065x_set_rgb_led_pwm_attr(struct device *dev,
 	return -EINVAL;
 }
 
+static ssize_t mty065x_get_rgb_led_max_pwm_attr(struct device *dev,
+						struct device_attribute *attr,
+						char *buf)
+{
+	struct mty065x* mty = dev_to_mty065x(dev);
+
+	mty065x_get_rgb_led_max_pwm(mty);
+	return scnprintf(buf, PAGE_SIZE, "%u %u %u\n",
+			 mty->props.rgb_led_max_pwm.red,
+			 mty->props.rgb_led_max_pwm.green,
+			 mty->props.rgb_led_max_pwm.blue);
+
+}
+
+static ssize_t mty065x_set_rgb_led_max_pwm_attr(struct device *dev,
+						struct device_attribute *attr,
+						const char *buf, size_t count)
+{
+	struct mty065x* mty = dev_to_mty065x(dev);
+	unsigned int red, green, blue;
+
+	if (sscanf(buf, "%u %u %u", &red, &green, &blue) == 3) {
+		mty->props.rgb_led_max_pwm.red = red;
+		mty->props.rgb_led_max_pwm.green = green;
+		mty->props.rgb_led_max_pwm.blue = blue;
+		mty065x_set_rgb_led_max_pwm(mty);
+		return count;
+	}
+
+	return -EINVAL;
+}
 
 static ssize_t mty065x_get_test_pattern_attr(struct device *dev,
 					     struct device_attribute *attr,
@@ -1175,6 +1235,7 @@ DEVICE_ATTR(ks_projection, 0644, mty065x_get_ks_projection_attr, mty065x_set_ks_
 DEVICE_ATTR(led_pwm_level, 0644, mty065x_get_led_pwm_level_attr, mty065x_set_led_pwm_level_attr);
 DEVICE_ATTR(rgb_led_ctrl, 0644, mty065x_get_rgb_led_ctrl_attr, mty065x_set_rgb_led_ctrl_attr);
 DEVICE_ATTR(rgb_led_pwm, 0644, mty065x_get_rgb_led_pwm_attr, mty065x_set_rgb_led_pwm_attr);
+DEVICE_ATTR(rgb_led_max_pwm, 0644, mty065x_get_rgb_led_max_pwm_attr, mty065x_set_rgb_led_max_pwm_attr);
 DEVICE_ATTR(test_pattern, 0644, mty065x_get_test_pattern_attr, mty065x_set_test_pattern_attr);
 DEVICE_ATTR(restore, 0644, NULL, mty065x_set_restore_attr);
 DEVICE_ATTR(save, 0644, mty065x_get_save_attr, mty065x_set_save_attr);
@@ -1193,6 +1254,7 @@ static struct attribute *mty065x_attrs[] = {
 	&dev_attr_led_pwm_level.attr,
 	&dev_attr_rgb_led_ctrl.attr,
 	&dev_attr_rgb_led_pwm.attr,
+	&dev_attr_rgb_led_max_pwm.attr,
 	&dev_attr_test_pattern.attr,
 	&dev_attr_restore.attr,
 	&dev_attr_save.attr,
