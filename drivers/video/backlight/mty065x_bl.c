@@ -25,7 +25,7 @@
 
 /* The default mappings for led pwm level */
 static u16 mty065x_led_pwm_level_default_map[] = {
-	1, 40, 70, 100, 130, 180, 220, 260, 300, 350,
+	41, 60, 80, 110, 140, 180, 220, 260, 350, 600,
 };
 
 /* Max test pattern number */
