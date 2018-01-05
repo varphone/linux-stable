@@ -552,6 +552,15 @@ static int atm88pa_probe(struct i2c_client* client,
 		return err;
 	}
 
+	/* Clear interrupts */
+	atm88pa_read(atm, ATM88PA_REG_INT_CTRL);
+
+	/* Save current status */
+	atm->old_status = atm88pa_read(atm, ATM88PA_REG_STATUS);
+
+	/* Save current keys */
+	atm->keypad.old_keys = atm88pa_read(atm, ATM88PA_REG_KEYS);
+
 	err = atm88pa_misc_register(atm);
 	if (err) {
 		goto misc_error;
