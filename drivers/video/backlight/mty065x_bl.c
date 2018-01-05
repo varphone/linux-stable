@@ -515,16 +515,38 @@ static void mty065x_set_rgb_led_pwm(struct mty065x *mty);
 
 static void mty065x_get_led_pwm_level(struct mty065x *mty, int *level)
 {
+	int i, v;
+	u16 *map;
+
 	mty065x_get_rgb_led_pwm(mty);
-	*level = mty->props.rgb_led_pwm.red / 70;
+	v = mty->props.rgb_led_pwm.red;
+	if (v == 0) {
+		*level = 0;
+		return;
+	}
+
+	map = mty->props.led_pwm_level_map;
+	for (i = 0; i < MTY065X_LED_PWM_LEVEL_MAX -1; i++) {
+		if (v >= map[i] && v < map[i+1])
+			break;
+	}
+
+	*level = i;
 }
 
 static void mty065x_set_led_pwm_level(struct mty065x *mty, int level)
 {
+	int pwm;
 	level = level > MTY065X_LED_PWM_LEVEL_MAX ? MTY065X_LED_PWM_LEVEL_MAX : level;
-	mty->props.rgb_led_pwm.red = level * 70;
-	mty->props.rgb_led_pwm.green = level * 70;
-	mty->props.rgb_led_pwm.blue = level * 70;
+
+	/* Skip level 0 */
+	if (level <= 0)
+		return;
+
+	pwm = mty->props.led_pwm_level_map[level -1];
+	mty->props.rgb_led_pwm.red = pwm;
+	mty->props.rgb_led_pwm.green = pwm;
+	mty->props.rgb_led_pwm.blue = pwm;
 	mty065x_set_rgb_led_pwm(mty);
 }
 
