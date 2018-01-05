@@ -21,7 +21,7 @@
 #include <linux/delay.h>
 
 /* Max led pwm level number */
-#define MTY065X_LED_PWM_LEVEL_MAX	5
+#define MTY065X_LED_PWM_LEVEL_MAX	10
 
 /* The default mappings for led pwm level */
 static u16 mty065x_led_pwm_level_default_map[] = {
