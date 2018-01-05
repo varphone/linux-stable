@@ -23,6 +23,11 @@
 /* Max led pwm level number */
 #define MTY065X_LED_PWM_LEVEL_MAX	5
 
+/* The default mappings for led pwm level */
+static u16 mty065x_led_pwm_level_default_map[] = {
+	1, 40, 70, 100, 130, 180, 220, 260, 300, 350,
+};
+
 /* Max test pattern number */
 #define MTY065X_TEST_PATTERN_MAX	9
 
@@ -125,6 +130,7 @@ struct mty065x_props {
 	u16			input_size[2];
 	struct ks_correction 	ks_correction;
 	struct ks_projection	ks_projection;
+	u16			led_pwm_level_map[MTY065X_LED_PWM_LEVEL_MAX+1];
 	u8			rgb_led_ctrl;
 	struct rgb_led_pwm	rgb_led_pwm;
 	struct rgb_led_pwm	rgb_led_max_pwm;
@@ -1054,6 +1060,46 @@ static ssize_t mty065x_set_led_pwm_level_attr(struct device *dev,
 	return -EINVAL;
 }
 
+static ssize_t mty065x_get_led_pwm_level_map_attr(struct device *dev,
+						  struct device_attribute *attr,
+						  char *buf)
+{
+	int i, n, s, t;
+	char *p;
+	struct mty065x* mty = dev_to_mty065x(dev);
+
+	s = PAGE_SIZE;
+	t = 0;
+	p = buf;
+
+	/* The level 0 if special, actual level from 1 */
+	for (i = 0; i < MTY065X_LED_PWM_LEVEL_MAX; i++) {
+		n = scnprintf(p, s, "%u ", mty->props.led_pwm_level_map[i]);
+		s -= n;
+		p += n;
+		t += n;
+	}
+	return t + scnprintf(p, s, "\n");
+}
+
+static ssize_t mty065x_set_led_pwm_level_map_attr(struct device *dev,
+						  struct device_attribute *attr,
+						  const char *buf, size_t count)
+{
+	int i, n;
+	struct mty065x* mty = dev_to_mty065x(dev);
+	unsigned int map[10];
+
+	n = sscanf(buf, "%u %u %u %u %u %u %u %u %u %u",
+		   &map[0], &map[1], &map[2], &map[3], &map[4],
+		   &map[5], &map[6], &map[7], &map[8], &map[9]);
+	for (i = 0; i < n && i < MTY065X_LED_PWM_LEVEL_MAX; i++) {
+		mty->props.led_pwm_level_map[i] = map[i];
+	}
+
+	return count;
+}
+
 static ssize_t mty065x_get_rgb_led_ctrl_attr(struct device *dev,
 					     struct device_attribute *attr,
 					     char *buf)
@@ -1233,6 +1279,7 @@ DEVICE_ATTR(input_size, 0644, mty065x_get_input_size_attr, mty065x_set_input_siz
 DEVICE_ATTR(ks_correction, 0644, mty065x_get_ks_correction_attr, mty065x_set_ks_correction_attr);
 DEVICE_ATTR(ks_projection, 0644, mty065x_get_ks_projection_attr, mty065x_set_ks_projection_attr);
 DEVICE_ATTR(led_pwm_level, 0644, mty065x_get_led_pwm_level_attr, mty065x_set_led_pwm_level_attr);
+DEVICE_ATTR(led_pwm_level_map, 0644, mty065x_get_led_pwm_level_map_attr, mty065x_set_led_pwm_level_map_attr);
 DEVICE_ATTR(rgb_led_ctrl, 0644, mty065x_get_rgb_led_ctrl_attr, mty065x_set_rgb_led_ctrl_attr);
 DEVICE_ATTR(rgb_led_pwm, 0644, mty065x_get_rgb_led_pwm_attr, mty065x_set_rgb_led_pwm_attr);
 DEVICE_ATTR(rgb_led_max_pwm, 0644, mty065x_get_rgb_led_max_pwm_attr, mty065x_set_rgb_led_max_pwm_attr);
@@ -1252,6 +1299,7 @@ static struct attribute *mty065x_attrs[] = {
 	&dev_attr_ks_correction.attr,
 	&dev_attr_ks_projection.attr,
 	&dev_attr_led_pwm_level.attr,
+	&dev_attr_led_pwm_level_map.attr,
 	&dev_attr_rgb_led_ctrl.attr,
 	&dev_attr_rgb_led_pwm.attr,
 	&dev_attr_rgb_led_max_pwm.attr,
@@ -1268,6 +1316,7 @@ static struct attribute_group mty065x_attr_group = {
 #if defined(CONFIG_OF)
 static void mty065x_parse_dt(struct mty065x *mty)
 {
+	int i;
 	int ret;
 	struct device_node *node = mty->i2c->dev.of_node;
 
@@ -1293,6 +1342,12 @@ static void mty065x_parse_dt(struct mty065x *mty)
 		mty->props.input_size[0] = mty->props.image_crop[2];
 		mty->props.input_size[1] = mty->props.image_crop[3];
 	}
+
+	/* FIXME: Add led_pwm_level_map support to dts */
+	for (i = 0; i < MTY065X_LED_PWM_LEVEL_MAX; i++) {
+		mty->props.led_pwm_level_map[i] =
+			mty065x_led_pwm_level_default_map[i];
+	}
 }
 #else
 static void mty065x_parse_dt(struct mty065x *mty)
@@ -1307,6 +1362,12 @@ static void mty065x_parse_dt(struct mty065x *mty)
 	mty->props.input_select = 0;
 	mty->props.input_size[0] = 1280;
 	mty->props.input_size[1] = 720;
+
+	/* FIXME: Add led_pwm_level_map support to dts */
+	for (i = 0; i < MTY065X_LED_PWM_LEVEL_MAX; i++) {
+		mty->props.led_pwm_level_map[i] =
+			mty065x_led_pwm_level_default_map[i];
+	}
 }
 #endif
 
