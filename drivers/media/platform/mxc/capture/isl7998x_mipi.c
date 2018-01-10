@@ -49,6 +49,7 @@ unsigned int g_isl7998x_frame_height = 576;
 /*!
  * Maintains the information on the current state of the sesor.
  */
+static int isl7998x_started = 0;
 static int isl7998x_state[SENSOR_NUM];
 static struct sensor_data isl7998x_data[SENSOR_NUM];
 static unsigned int chip_id = 0;
@@ -974,7 +975,7 @@ static int ioctl_dev_init(struct v4l2_int_device *s)
 
 	sensor->on = true;
 
-	if (sensor->i2c_client != NULL) {
+	if (!isl7998x_started) {
 		mipi_csi2_info = mipi_csi2_get_info();
 
 		/* enable mipi csi2 */
@@ -987,6 +988,7 @@ static int ioctl_dev_init(struct v4l2_int_device *s)
 		}
 
 		ret = isl7998x_hardware_init(sensor);
+		isl7998x_started = 1;
 	}
 
 done:
@@ -1006,13 +1008,20 @@ static int ioctl_dev_exit(struct v4l2_int_device *s)
 	struct sensor_data *sensor = s->priv;
 	void *mipi_csi2_info;
 
-	if (sensor->i2c_client != NULL) {
+	if (!isl7998x_can_reset()) {
+		printk(KERN_NOTICE "isl7998x_mipi: in used, skip reset\n");
+		return 0;
+	}
+
+	if (isl7998x_started) {
 		mipi_csi2_info = mipi_csi2_get_info();
 
 		/* disable mipi csi2 */
 		if (mipi_csi2_info)
 			if (mipi_csi2_get_status(mipi_csi2_info))
 				mipi_csi2_disable(mipi_csi2_info);
+
+		isl7998x_started = 0;
 	}
 
 	return 0;
