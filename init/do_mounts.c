@@ -32,6 +32,7 @@
 #include <linux/nfs_fs.h>
 #include <linux/nfs_fs_sb.h>
 #include <linux/nfs_mount.h>
+#include <linux/namei.h>
 
 #include "do_mounts.h"
 
@@ -368,6 +369,10 @@ static void __init get_fs_names(char *page)
 static char __initdata root_overlay_devname[48];
 static char __initdata root_overlay_fstype[16];
 static int __initdata root_overlay_mountflags;
+static int __initdata root_overlay_fsck;
+#define ROOT_OVERLAY_FSCK_NONE    0
+#define ROOT_OVERLAY_FSCK_AUTO    1
+#define ROOT_OVERLAY_FSCK_FORCE   2
 
 static int __init root_overlay_setup(char *str)
 {
@@ -393,7 +398,95 @@ static int __init root_overlay_setup(char *str)
 	return 1;
 }
 
+/*
+ * Root Overlay fsck parameters format: rootoverlay.fsck=<auto|force>
+ * Example: rootoverlay.fsck=force
+ */
+static int __init root_overlay_fsck_setup(char *str)
+{
+	if (!str)
+		return 0;
+	if (*str == 0)
+		return 0;
+
+	if (!strcmp(str, "auto"))
+		root_overlay_fsck = ROOT_OVERLAY_FSCK_AUTO;
+	else if (!strcmp(str, "force"))
+		root_overlay_fsck = ROOT_OVERLAY_FSCK_FORCE;
+	else
+		root_overlay_fsck = ROOT_OVERLAY_FSCK_NONE;
+
+	return 1;
+}
+
 __setup("rootoverlay=", root_overlay_setup);
+__setup("rootoverlay.fsck=", root_overlay_fsck_setup);
+
+static int __init do_root_overlay_fsck(void)
+{
+	int ret;
+	struct path old_root;
+	struct path new_root;
+
+	static char *argv[] = {
+		"/sbin/fsck",
+		"-a",
+		root_overlay_devname,
+		NULL
+	};
+
+	static char *envp[] = {
+		"HOME=/",
+		"TERM=linux",
+		"PATH=/sbin:/bin:/usr/sbin:/usr/bin",
+		NULL
+	};
+
+	/* Save current root path */
+	old_root = current->fs->root;
+
+	/* Get path of the "/root" */
+	ret = kern_path("/root", LOOKUP_DIRECTORY, &new_root);
+	if (ret) {
+		printk("VFS: The \"/root\" does not exists\n");
+		return -1;
+	}
+
+	/* The userspace need the /proc */
+	sys_mount("devtmpfs", "/root/dev", "devtmpfs", MS_SILENT, NULL);
+	sys_mount("proc", "/root/proc", "proc", MS_SILENT, NULL);
+
+	/* Switch to new root */
+	spin_lock(&current->fs->lock);
+	current->fs->root = new_root;
+	spin_unlock(&current->fs->lock);
+
+	/* Perform userspace fsck on the overlay device */
+	ret = call_usermodehelper(argv[0], argv, envp, UMH_WAIT_EXEC);
+	if (ret == 0) {
+		printk("VFS: Fsck root overlay device: \"%s\" done\n",
+		       root_overlay_devname);
+	}
+	else {
+		printk("VFS: Fsck root overlay device: \"%s\" failed: %d\n",
+		       root_overlay_devname, ret);
+	}
+
+	/* Restore to old root */
+	spin_lock(&current->fs->lock);
+	current->fs->root = old_root;
+	spin_unlock(&current->fs->lock);
+
+	/* The /dev and /proc are not needed */
+	sys_umount("/root/proc", MNT_DETACH);
+	sys_umount("/root/dev", MNT_DETACH);
+
+	/* Drop refcount obtained by kern_path(). */
+	if (new_root.dentry)
+		path_put(&new_root);
+
+	return ret;
+}
 
 static int __init do_root_overlay(void)
 {
@@ -402,6 +495,9 @@ static int __init do_root_overlay(void)
 
 	if (!root_overlay_devname[0])
 		return 0;
+
+	if (root_overlay_fsck != ROOT_OVERLAY_FSCK_NONE)
+		do_root_overlay_fsck();
 
 	create_dev("/dev/root-overlay", name_to_dev_t(root_overlay_devname));
 	sys_mkdir("/root-overlay", 0700);
