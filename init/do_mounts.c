@@ -500,8 +500,18 @@ static int __init do_root_overlay(void)
 		do_root_overlay_fsck();
 
 	create_dev("/dev/root-overlay", name_to_dev_t(root_overlay_devname));
-	sys_mkdir("/root-overlay", 0700);
-	sys_mkdir("/root-merged", 0700);
+
+	err = sys_mkdir("/root-overlay", 0700);
+	if (err) {
+		printk("VFS: mkdir /root-overlay failed: %d\n", err);
+		return -1;
+	}
+
+	err = sys_mkdir("/root-merged", 0700);
+	if (err) {
+		printk("VFS: mkdir /root-merged failed: %d\n", err);
+		return -1;
+	}
 
 	/* Mount the overlay device */
 	err = sys_mount("/dev/root-overlay", "/root-overlay",
