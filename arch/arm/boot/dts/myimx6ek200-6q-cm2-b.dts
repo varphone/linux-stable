@@ -16,9 +16,42 @@
 &ldb {
 	lvds-channel@0 {
 		crtc = "ipu2-di0";
+
+		display-timings {
+			native-mode = <&timing0>;
+			/* 800x600p60 for NLB084SV01L */
+			timing0: hsd100pxn1 {
+				clock-frequency = <35596800>;
+				hactive = <800>;
+				vactive = <600>;
+				hback-porch = <80>;
+				hfront-porch = <48>;
+				vback-porch = <11>;
+				vfront-porch = <3>;
+				hsync-len = <32>;
+				vsync-len = <4>;
+			};
+		};
 	};
 	lvds-channel@1 {
 		crtc = "ipu2-di1";
+
+		display-timings {
+			native-mode = <&timing1>;
+			/* 800x600p60 for NLB084SV01L */
+			timing1: hsd100pxn1 {
+				clock-frequency = <35596800>;
+				hactive = <800>;
+				vactive = <600>;
+				hback-porch = <80>;
+				hfront-porch = <48>;
+				vback-porch = <11>;
+				vfront-porch = <3>;
+				hsync-len = <32>;
+				vsync-len = <4>;
+			};
+		};
+
 	};
 };
 
