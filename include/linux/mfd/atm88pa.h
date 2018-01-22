@@ -57,7 +57,7 @@
 #define ATM88PA_REG_AMB_LIGHT	0x06 /* R/W */
 
 /* Uart1 switch, 0 = internal, 1 = external */
-#define ATM88PA_REG_UART1_SWITCH	0x07 /* R/W */
+#define ATM88PA_REG_UART1_SWITCH	0x06 /* R/W */
 
 /* Camera switch, 1 back, 0 front */
 #define ATM88PA_REG_CAM_SWITCH	0x08 /* R/W */
@@ -107,7 +107,7 @@
 #define ATM88PA_REG_RC_PWR_CTRL	0x13 /* R/W */
 
 /* Keypad light, 0 ~ 255 */
-#define ATM88PA_REG_KEYPAD_LIGHT	0x14 /* R/W */
+#define ATM88PA_REG_KEYPAD_LIGHT	0x0A /* R/W */
 
 /*
  * Software version, 16 bit unsigned
