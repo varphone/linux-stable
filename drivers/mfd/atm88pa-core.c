@@ -172,6 +172,10 @@ static ssize_t atm88pa_get_amb_light_attr(struct device *dev,
 	struct atm88pa *atm = miscdev_to_atm88pa(dev);
 	int light;
 
+	/* The v1.00 does not supportted */
+	if (atm->chip_ver == 100)
+		return -ENXIO;
+
 	light = atm88pa_read_word(atm, ATM88PA_REG_AMB_LIGHT);
 
 	return scnprintf(buf, PAGE_SIZE, "%u\n", light);
@@ -307,6 +311,41 @@ static ssize_t atm88pa_set_cam_r_pwr_attr(struct device *dev,
 	return -EINVAL;
 }
 
+static ssize_t atm88pa_get_keypad_light_attr(struct device *dev,
+					     struct device_attribute *attr,
+					     char *buf)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int val;
+
+	/* Only for v1.00 */
+	if (atm->chip_ver != 100)
+		return -ENXIO;
+
+	val = atm88pa_read(atm, ATM88PA_REG_KEYPAD_LIGHT);
+
+	return scnprintf(buf, PAGE_SIZE, "%u\n", val);
+}
+
+static ssize_t atm88pa_set_keypad_light_attr(struct device *dev,
+					     struct device_attribute *attr,
+					     const char *buf, size_t count)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int val;
+
+	/* Only for v1.00 */
+	if (atm->chip_ver != 100)
+		return -ENXIO;
+
+	if (sscanf(buf, "%u", &val) == 1) {
+		atm88pa_write(atm, ATM88PA_REG_KEYPAD_LIGHT, (u8)val);
+		return count;
+	}
+
+	return -EINVAL;
+}
+
 static ssize_t atm88pa_get_lcd_pwr_attr(struct device *dev,
 					struct device_attribute *attr,
 					char *buf)
@@ -422,6 +461,41 @@ static ssize_t atm88pa_get_temperature_attr(struct device *dev,
 	return scnprintf(buf, PAGE_SIZE, "%d\n", temperature);
 }
 
+static ssize_t atm88pa_get_uart1_switch_attr(struct device *dev,
+					     struct device_attribute *attr,
+					     char *buf)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int val;
+
+	/* Only for v1.00 */
+	if (atm->chip_ver != 100)
+		return -ENXIO;
+
+	val = atm88pa_read(atm, ATM88PA_REG_UART1_SWITCH);
+
+	return scnprintf(buf, PAGE_SIZE, "%u\n", val);
+}
+
+static ssize_t atm88pa_set_uart1_switch_attr(struct device *dev,
+					     struct device_attribute *attr,
+					     const char *buf, size_t count)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int val;
+
+	/* Only for v1.00 */
+	if (atm->chip_ver != 100)
+		return -ENXIO;
+
+	if (sscanf(buf, "%u", &val) == 1) {
+		atm88pa_write(atm, ATM88PA_REG_UART1_SWITCH, (u8)val);
+		return count;
+	}
+
+	return -EINVAL;
+}
+
 static ssize_t atm88pa_get_version_attr(struct device *dev,
 					struct device_attribute *attr,
 					char *buf)
@@ -441,12 +515,14 @@ DEVICE_ATTR(cam_b_pwr, S_IRUGO | S_IWUSR, atm88pa_get_cam_b_pwr_attr, atm88pa_se
 DEVICE_ATTR(cam_f_pwr, S_IRUGO | S_IWUSR, atm88pa_get_cam_f_pwr_attr, atm88pa_set_cam_f_pwr_attr);
 DEVICE_ATTR(cam_l_pwr, S_IRUGO | S_IWUSR, atm88pa_get_cam_l_pwr_attr, atm88pa_set_cam_l_pwr_attr);
 DEVICE_ATTR(cam_r_pwr, S_IRUGO | S_IWUSR, atm88pa_get_cam_r_pwr_attr, atm88pa_set_cam_r_pwr_attr);
+DEVICE_ATTR(keypad_light, S_IRUGO | S_IWUSR, atm88pa_get_keypad_light_attr, atm88pa_set_keypad_light_attr);
 DEVICE_ATTR(lcd_pwr, S_IRUGO | S_IWUSR, atm88pa_get_lcd_pwr_attr, atm88pa_set_lcd_pwr_attr);
 DEVICE_ATTR(lcd_light, S_IRUGO | S_IWUSR, atm88pa_get_lcd_light_attr, atm88pa_set_lcd_light_attr);
 DEVICE_ATTR(status, S_IRUGO, atm88pa_get_status_attr, NULL);
 DEVICE_ATTR(sucap_volt, S_IRUGO, atm88pa_get_sucap_volt_attr, NULL);
 DEVICE_ATTR(sup_light, S_IRUGO | S_IWUSR, atm88pa_get_sup_light_attr, atm88pa_set_sup_light_attr);
 DEVICE_ATTR(temperature, S_IRUGO, atm88pa_get_temperature_attr, NULL);
+DEVICE_ATTR(uart1_switch, S_IRUGO | S_IWUSR, atm88pa_get_uart1_switch_attr, atm88pa_set_uart1_switch_attr);
 DEVICE_ATTR(version, S_IRUGO, atm88pa_get_version_attr, NULL);
 
 static struct attribute *atm88pa_attrs[] = {
@@ -456,12 +532,14 @@ static struct attribute *atm88pa_attrs[] = {
 	&dev_attr_cam_f_pwr.attr,
 	&dev_attr_cam_l_pwr.attr,
 	&dev_attr_cam_r_pwr.attr,
+	&dev_attr_keypad_light.attr,
 	&dev_attr_lcd_pwr.attr,
 	&dev_attr_lcd_light.attr,
 	&dev_attr_status.attr,
 	&dev_attr_sucap_volt.attr,
 	&dev_attr_sup_light.attr,
 	&dev_attr_temperature.attr,
+	&dev_attr_uart1_switch.attr,
 	&dev_attr_version.attr,
 	NULL
 };
@@ -568,7 +646,8 @@ static int atm88pa_probe(struct i2c_client* client,
          *   5.01 for CVR-MIL-V2
 	 *   6.00 for CVR-MIL-V2-A
 	 */
-	if (atm->chip_ver != 501 &&
+	if (atm->chip_ver != 100 &&
+	    atm->chip_ver != 501 &&
 	    atm->chip_ver != 600) {
 		dev_err(atm->dev, "ATMEGA88PA not found.\n");
 		return -ENODEV;
