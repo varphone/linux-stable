@@ -461,9 +461,9 @@ static ssize_t atm88pa_get_temperature_attr(struct device *dev,
 	return scnprintf(buf, PAGE_SIZE, "%d\n", temperature);
 }
 
-static ssize_t atm88pa_get_uart1_switch_attr(struct device *dev,
-					     struct device_attribute *attr,
-					     char *buf)
+static ssize_t atm88pa_get_ttymxc1_switch_attr(struct device *dev,
+					       struct device_attribute *attr,
+					       char *buf)
 {
 	struct atm88pa *atm = miscdev_to_atm88pa(dev);
 	int val;
@@ -472,14 +472,14 @@ static ssize_t atm88pa_get_uart1_switch_attr(struct device *dev,
 	if (atm->chip_ver != 100)
 		return -ENXIO;
 
-	val = atm88pa_read(atm, ATM88PA_REG_UART1_SWITCH);
+	val = atm88pa_read(atm, ATM88PA_REG_TTYMXC1_SWITCH);
 
 	return scnprintf(buf, PAGE_SIZE, "%u\n", val);
 }
 
-static ssize_t atm88pa_set_uart1_switch_attr(struct device *dev,
-					     struct device_attribute *attr,
-					     const char *buf, size_t count)
+static ssize_t atm88pa_set_ttymxc1_switch_attr(struct device *dev,
+					       struct device_attribute *attr,
+					       const char *buf, size_t count)
 {
 	struct atm88pa *atm = miscdev_to_atm88pa(dev);
 	int val;
@@ -489,7 +489,7 @@ static ssize_t atm88pa_set_uart1_switch_attr(struct device *dev,
 		return -ENXIO;
 
 	if (sscanf(buf, "%u", &val) == 1) {
-		atm88pa_write(atm, ATM88PA_REG_UART1_SWITCH, (u8)val);
+		atm88pa_write(atm, ATM88PA_REG_TTYMXC1_SWITCH, (u8)val);
 		return count;
 	}
 
@@ -522,7 +522,7 @@ DEVICE_ATTR(status, S_IRUGO, atm88pa_get_status_attr, NULL);
 DEVICE_ATTR(sucap_volt, S_IRUGO, atm88pa_get_sucap_volt_attr, NULL);
 DEVICE_ATTR(sup_light, S_IRUGO | S_IWUSR, atm88pa_get_sup_light_attr, atm88pa_set_sup_light_attr);
 DEVICE_ATTR(temperature, S_IRUGO, atm88pa_get_temperature_attr, NULL);
-DEVICE_ATTR(uart1_switch, S_IRUGO | S_IWUSR, atm88pa_get_uart1_switch_attr, atm88pa_set_uart1_switch_attr);
+DEVICE_ATTR(ttymxc1_switch, S_IRUGO | S_IWUSR, atm88pa_get_ttymxc1_switch_attr, atm88pa_set_ttymxc1_switch_attr);
 DEVICE_ATTR(version, S_IRUGO, atm88pa_get_version_attr, NULL);
 
 static struct attribute *atm88pa_attrs[] = {
@@ -539,7 +539,7 @@ static struct attribute *atm88pa_attrs[] = {
 	&dev_attr_sucap_volt.attr,
 	&dev_attr_sup_light.attr,
 	&dev_attr_temperature.attr,
-	&dev_attr_uart1_switch.attr,
+	&dev_attr_ttymxc1_switch.attr,
 	&dev_attr_version.attr,
 	NULL
 };
