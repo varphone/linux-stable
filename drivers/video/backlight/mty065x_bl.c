@@ -1409,6 +1409,14 @@ static int mty065x_bl_probe(struct i2c_client *client,
 	mty->dev = &client->dev;
 	mty->i2c = client;
 
+	ret = i2c_smbus_read_byte_data(mty->i2c, MTY065X_CHIP_ID_R);
+	if (ret < 0) {
+		dev_err(mty->dev, "MTY065X not found.\n");
+		return -ENODEV;
+	}
+
+	mty->chip_id = ret;
+
 	mty065x_current(mty);
 	mty065x_parse_dt(mty);
 
