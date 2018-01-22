@@ -56,8 +56,8 @@
 /* Ambient light, 16 bit unsigned, precision: undefined */
 #define ATM88PA_REG_AMB_LIGHT	0x06 /* R/W */
 
-/* Uart1 switch, 0 = internal, 1 = external */
-#define ATM88PA_REG_UART1_SWITCH	0x08 /* R/W */
+/* ttymxc1 switch, 0 = internal, 1 = external */
+#define ATM88PA_REG_TTYMXC1_SWITCH	0x08 /* R/W */
 
 /* Camera switch, 1 back, 0 front */
 #define ATM88PA_REG_CAM_SWITCH	0x08 /* R/W */
