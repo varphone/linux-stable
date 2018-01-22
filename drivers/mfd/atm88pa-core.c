@@ -72,7 +72,7 @@ void atm88pa_update_status(struct atm88pa *atm)
 		}
 
 		/* Check hall flags */
-		if (diff_status & 0x18) {
+		if (atm->chip_ver == 501 && (diff_status & 0x18)) {
 			/* If cover closed, send KEY_SLEEP event */
 			if ((new_status & 0x18) == 0x18) {
 				/* Simulate KEY_SLEEP pressed and released */
