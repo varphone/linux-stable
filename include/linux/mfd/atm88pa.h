@@ -56,6 +56,9 @@
 /* Ambient light, 16 bit unsigned, precision: undefined */
 #define ATM88PA_REG_AMB_LIGHT	0x06 /* R/W */
 
+/* Uart1 switch, 0 = internal, 1 = external */
+#define ATM88PA_REG_UART1_SWITCH	0x07 /* R/W */
+
 /* Camera switch, 1 back, 0 front */
 #define ATM88PA_REG_CAM_SWITCH	0x08 /* R/W */
 
@@ -103,11 +106,15 @@
 /* Right camera power control, 1 on, 0 off */
 #define ATM88PA_REG_RC_PWR_CTRL	0x13 /* R/W */
 
+/* Keypad light, 0 ~ 255 */
+#define ATM88PA_REG_KEYPAD_LIGHT	0x14 /* R/W */
+
 /*
  * Software version, 16 bit unsigned
  * NOTE:
  *   501 = Ver 5.01, for CVR-MIL-V2 devices
  *   600 = Ver 6.00, for CVR-MIL-V2-A devices
+ *   100 = Ver 1.00, for CVR-MIL-V2-B devices
  */
 #define ATM88PA_REG_SW_VER	0x20 /* R */
 
