@@ -54,6 +54,15 @@ static int isl7998x_state[SENSOR_NUM];
 static struct sensor_data isl7998x_data[SENSOR_NUM];
 static unsigned int chip_id = 0;
 
+static int g_isl7998x_ch1_std = -1;
+static int g_isl7998x_ch2_std = -1;
+static int g_isl7998x_ch3_std = -1;
+static int g_isl7998x_ch4_std = -1;
+module_param_named(ch1_std, g_isl7998x_ch1_std, int, S_IRUSR | S_IWUSR);
+module_param_named(ch2_std, g_isl7998x_ch2_std, int, S_IRUSR | S_IWUSR);
+module_param_named(ch3_std, g_isl7998x_ch3_std, int, S_IRUSR | S_IWUSR);
+module_param_named(ch4_std, g_isl7998x_ch4_std, int, S_IRUSR | S_IWUSR);
+
 static int isl7998x_probe(struct i2c_client *adapter,
 				const struct i2c_device_id *device_id);
 static int isl7998x_remove(struct i2c_client *client);
@@ -369,7 +378,10 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x0A, 0x08); // HD_LO
 		isl7998x_write_reg(0x0B, 0xD0); // HA_LO
 		isl7998x_write_reg(0x0C, 0xCC); // CNTRL1
-		isl7998x_write_reg(0x1C, 0x07); // Standard Auto Detection
+		if (g_isl7998x_ch1_std >= 0)
+			isl7998x_write_reg(0x1C, g_isl7998x_ch1_std);
+		else
+			isl7998x_write_reg(0x1C, 0x07); // Standard Auto Detection
 		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
 		isl7998x_write_reg(0x28, 0x08); // Use search VMODE
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
@@ -386,7 +398,10 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x0A, 0x08); // HD_LO
 		isl7998x_write_reg(0x0B, 0xD0); // HA_LO
 		isl7998x_write_reg(0x0C, 0xCC); // CNTRL1
-		isl7998x_write_reg(0x1C, 0x07); // Standard Auto Detection
+		if (g_isl7998x_ch2_std >= 0)
+			isl7998x_write_reg(0x1C, g_isl7998x_ch2_std);
+		else
+			isl7998x_write_reg(0x1C, 0x07); // Standard Auto Detection
 		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
 		isl7998x_write_reg(0x28, 0x08); // Use search VMODE
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
@@ -403,7 +418,10 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x0A, 0x08); // HD_LO
 		isl7998x_write_reg(0x0B, 0xD0); // HA_LO
 		isl7998x_write_reg(0x0C, 0xCC); // CNTRL1
-		isl7998x_write_reg(0x1C, 0x07); // Standard Auto Detection
+		if (g_isl7998x_ch3_std >= 0)
+			isl7998x_write_reg(0x1C, g_isl7998x_ch3_std);
+		else
+			isl7998x_write_reg(0x1C, 0x07); // Standard Auto Detection
 		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
 		isl7998x_write_reg(0x28, 0x08); // Use search VMODE
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
@@ -420,7 +438,10 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x0A, 0x08); // HD_LO
 		isl7998x_write_reg(0x0B, 0xD0); // HA_LO
 		isl7998x_write_reg(0x0C, 0xCC); // CNTRL1
-		isl7998x_write_reg(0x1C, 0x07); // Standard Auto Detection
+		if (g_isl7998x_ch4_std >= 0)
+			isl7998x_write_reg(0x1C, g_isl7998x_ch4_std);
+		else
+			isl7998x_write_reg(0x1C, 0x07); // Standard Auto Detection
 		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
 		isl7998x_write_reg(0x28, 0x08); // Use search VMODE
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
