@@ -100,6 +100,7 @@ unsigned int hdmi_set_blank_state(unsigned int state)
 }
 EXPORT_SYMBOL(hdmi_set_blank_state);
 
+#ifdef CONFIG_SND_PCM
 static void hdmi_audio_abort_stream(struct snd_pcm_substream *substream)
 {
 	unsigned long flags;
@@ -118,6 +119,12 @@ static void hdmi_audio_abort_stream(struct snd_pcm_substream *substream)
 
 	snd_pcm_stream_unlock_irqrestore(substream, flags);
 }
+#else
+static void hdmi_audio_abort_stream(struct snd_pcm_substream *substream)
+{
+	hdmi_abort_state = 0;
+}
+#endif
 
 int mxc_hdmi_abort_stream(void)
 {
@@ -148,6 +155,7 @@ int check_hdmi_state(void)
 }
 EXPORT_SYMBOL(check_hdmi_state);
 
+#ifdef CONFIG_SND_PCM
 int mxc_hdmi_register_audio(struct snd_pcm_substream *substream)
 {
 	unsigned long flags, flags1;
@@ -175,7 +183,9 @@ int mxc_hdmi_register_audio(struct snd_pcm_substream *substream)
 	return ret;
 }
 EXPORT_SYMBOL(mxc_hdmi_register_audio);
+#endif
 
+#ifdef CONFIG_SND_PCM
 void mxc_hdmi_unregister_audio(struct snd_pcm_substream *substream)
 {
 	unsigned long flags;
@@ -186,6 +196,7 @@ void mxc_hdmi_unregister_audio(struct snd_pcm_substream *substream)
 	spin_unlock_irqrestore(&hdmi_audio_lock, flags);
 }
 EXPORT_SYMBOL(mxc_hdmi_unregister_audio);
+#endif
 
 u8 hdmi_readb(unsigned int reg)
 {
