@@ -513,6 +513,9 @@ static int __init do_root_overlay(void)
 		return -1;
 	}
 
+	/* Disable file and directory access time update */
+	root_overlay_mountflags |= MS_NOATIME|MS_NODIRATIME;
+
 	/* Mount the overlay device */
 	err = sys_mount("/dev/root-overlay", "/root-overlay",
 			root_overlay_fstype, root_overlay_mountflags, NULL);
@@ -541,7 +544,7 @@ static int __init do_root_overlay(void)
 	}
 
 	/* Mount the overlayfs */
-	err = sys_mount("overlay", "/root-merged", "overlay", 0,
+	err = sys_mount("overlay", "/root-merged", "overlay", MS_NOATIME|MS_NODIRATIME,
 			"lowerdir=/root,upperdir=/root-overlay/.upper,workdir=/root-overlay/.work");
 	if (err) {
 		printk("VFS: Mount overlayfs failed: %d\n", err);
