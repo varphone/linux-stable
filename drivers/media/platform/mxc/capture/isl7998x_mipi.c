@@ -386,6 +386,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x28, 0x08); // Use search VMODE
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
 		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
+		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
 		isl7998x_write_reg(0x3D, 0x00); // Data conversion
 		isl7998x_write_reg(0xFF, 0x01);
 
@@ -406,6 +407,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x28, 0x08); // Use search VMODE
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
 		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
+		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
 		isl7998x_write_reg(0x3D, 0x00); // Data conversion
 		isl7998x_write_reg(0xFF, 0x02);
 
@@ -426,6 +428,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x28, 0x08); // Use search VMODE
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
 		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
+		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
 		isl7998x_write_reg(0x3D, 0x00); // Data conversion
 		isl7998x_write_reg(0xFF, 0x03);
 
@@ -446,6 +449,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x28, 0x08); // Use search VMODE
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
 		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
+		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
 		isl7998x_write_reg(0x3D, 0x00); // Data conversion
 		isl7998x_write_reg(0xFF, 0x04);
 
