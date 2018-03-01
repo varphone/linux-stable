@@ -697,6 +697,11 @@ static int atm88pa_probe(struct i2c_client* client,
 		goto irq_error;
 	}
 
+	/* Turn on lcd power for CVR-MIL-V2-B */
+	if (atm->chip_ver == 100) {
+		atm88pa_write(atm, ATM88PA_REG_LCD_PWR_CTRL, (u8)1);
+	}
+
 	dev_info(atm->dev, "probed.\n");
 
 	return 0;
