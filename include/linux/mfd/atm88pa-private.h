@@ -14,6 +14,7 @@
 #include <linux/input.h>
 #include <linux/leds.h>
 #include <linux/miscdevice.h>
+#include <linux/hrtimer.h>
 
 #define ATM88PA_MAX_KEYS	8
 #define ATM88PA_MAX_LEDS	4
@@ -44,6 +45,9 @@ struct atm88pa {
 	struct atm88pa_power	power; /* Power off */
 	u8			old_status; /* Prev status value */
 	u16			chip_ver; /* Cached chip version */
+	struct hrtimer		timer;
+	struct work_struct	timer_work;
+	struct workqueue_struct *timer_wq;
 };
 
 #define dev_to_i2c_client(d)	container_of(d, struct i2c_client, dev)
