@@ -177,6 +177,11 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 	} else
 		pr_err("currently this sensor format can not be supported!\n");
 
+	/* Reset the chip */
+	isl7998x_write_reg(0xFF, 0x00);
+	isl7998x_write_reg(0x02, 0x80);
+	msleep(10);
+
 	// Init the isl7998x
 	if (chip_id == CHIP_ID_79985) {
 		// Page 0
