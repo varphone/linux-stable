@@ -96,8 +96,13 @@ static struct i2c_driver isl7998x_i2c_driver = {
 static inline int isl7998x_read_reg(u8 reg)
 {
 	int val;
+	int retries = 3;
 
-	val = i2c_smbus_read_byte_data(isl7998x_data[0].i2c_client, reg);
+	while (retries-- > 0) {
+		val = i2c_smbus_read_byte_data(isl7998x_data[0].i2c_client, reg);
+		if (val >= 0)
+			break;
+	}
 	if (val < 0) {
 		dev_info(&isl7998x_data[0].i2c_client->dev,
 			"%s:read reg error: reg=%2x\n", __func__, reg);
@@ -115,8 +120,13 @@ static inline int isl7998x_read_reg(u8 reg)
 static int isl7998x_write_reg(u8 reg, u8 val)
 {
 	s32 ret;
+	int retries = 3;
 
-	ret = i2c_smbus_write_byte_data(isl7998x_data[0].i2c_client, reg, val);
+	while (retries-- > 0) {
+		ret = i2c_smbus_write_byte_data(isl7998x_data[0].i2c_client, reg, val);
+		if (ret >= 0)
+			break;
+	}
 	if (ret < 0) {
 		dev_info(&isl7998x_data[0].i2c_client->dev,
 			"%s:write reg error:reg=%2x,val=%2x\n", __func__,
