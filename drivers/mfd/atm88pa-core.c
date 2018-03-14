@@ -22,22 +22,50 @@
 
 int atm88pa_read(struct atm88pa *atm, u8 reg)
 {
-	return i2c_smbus_read_byte_data(atm->i2c, reg);
+	int ret;
+	int retries = 3;
+	while (retries-- > 0) {
+		ret = i2c_smbus_read_byte_data(atm->i2c, reg);
+		if (ret >= 0)
+			break;
+	}
+	return ret;
 }
 
 int atm88pa_read_word(struct atm88pa *atm, u8 reg)
 {
-	return i2c_smbus_read_word_data(atm->i2c, reg);
+	int ret;
+	int retries = 3;
+	while (retries-- > 0) {
+		ret = i2c_smbus_read_word_data(atm->i2c, reg);
+		if (ret >= 0)
+			break;
+	}
+	return ret;
 }
 
 int atm88pa_write(struct atm88pa *atm, u8 reg, u8 val)
 {
-	return i2c_smbus_write_byte_data(atm->i2c, reg, val);
+	int ret;
+	int retries = 3;
+	while (retries-- > 0) {
+		ret = i2c_smbus_write_byte_data(atm->i2c, reg, val);
+		if (ret >= 0)
+			break;
+	}
+	return ret;
 }
 
 int atm88pa_write_word(struct atm88pa *atm, u8 reg, u16 val)
 {
-	return i2c_smbus_write_word_data(atm->i2c, reg, val);
+	int ret;
+	int retries = 3;
+	while (retries-- > 0) {
+		ret = i2c_smbus_write_word_data(atm->i2c, reg, val);
+		if (ret >= 0)
+			break;
+	}
+	return ret;
 }
 
 int atm88pa_get_sw_ver(struct atm88pa *atm)
