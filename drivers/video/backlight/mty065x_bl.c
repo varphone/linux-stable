@@ -154,6 +154,68 @@ static void mty065x_get_led_pwm_level(struct mty065x *mty, int *level);
 static void mty065x_set_led_pwm_level(struct mty065x *mty, int level);
 static void mty065x_set_rgb_led_ctrl_value(struct mty065x *mty, u8 value);
 
+static int mty065x_read_byte_data(struct mty065x *mty, u8 command)
+{
+	int retries = 3;
+	int val;
+	while (retries-- > 0) {
+		val = i2c_smbus_read_byte_data(mty->i2c, command);
+		if (val >= 0)
+			break;
+	}
+	if (val < 0) {
+		dev_warn(mty->dev, "i2c_smbus_read_byte_data() error: %d", val);
+	}
+	return val;
+}
+
+static int mty065x_read_i2c_block_data(struct mty065x *mty, u8 command,
+				       u8 length, u8 *values)
+{
+	int retries = 3;
+	int val;
+	while (retries-- > 0) {
+		val = i2c_smbus_read_i2c_block_data(mty->i2c, command, length, values);
+		if (val >= length)
+			break;
+	}
+	if (val < length) {
+		dev_warn(mty->dev, "i2c_smbus_read_i2c_block_data() error: %d", val);
+	}
+	return val;
+}
+
+static int mty065x_write_byte_data(struct mty065x *mty, u8 command, u8 value)
+{
+	int retries = 3;
+	int val;
+	while (retries-- > 0) {
+		val = i2c_smbus_write_byte_data(mty->i2c, command, value);
+		if (val >= 0)
+			break;
+	}
+	if (val < 0) {
+		dev_warn(mty->dev, "i2c_smbus_write_byte_data() error: %d", val);
+	}
+	return val;
+}
+
+static int mty065x_write_i2c_block_data(struct mty065x *mty, u8 command,
+					u8 length, u8 *values)
+{
+	int retries = 3;
+	int val;
+	while (retries-- > 0) {
+		val = i2c_smbus_write_i2c_block_data(mty->i2c, command, length, values);
+		if (val >= 0)
+			break;
+	}
+	if (val < 0) {
+		dev_warn(mty->dev, "i2c_smbus_write_i2c_block_data() error: %d", val);
+	}
+	return val;
+}
+
 static void mty065x_set_backlight(struct mty065x *data, int brightness)
 {
 	mty065x_set_led_pwm_level(data, brightness);
@@ -296,7 +358,7 @@ static void mty065x_get_image_curtain(struct mty065x *mty)
 {
 	int ret;
 
-	ret = i2c_smbus_read_byte_data(mty->i2c, MTY065X_IMAGE_CURTAIN_R);
+	ret = mty065x_read_byte_data(mty, MTY065X_IMAGE_CURTAIN_R);
 	if (ret < 0) {
 		dev_warn(mty->dev, "read image curtain failed, err: %d\n", ret);
 	} else {
@@ -310,7 +372,7 @@ static void mty065x_set_image_curtain(struct mty065x *mty)
 	int ret;
 	u8 *val = (u8*)&mty->props.image_curtain;
 
-	ret = i2c_smbus_write_byte_data(mty->i2c, MTY065X_IMAGE_CURTAIN_W, *val);
+	ret = mty065x_write_byte_data(mty, MTY065X_IMAGE_CURTAIN_W, *val);
 	if (ret < 0) {
 		dev_warn(mty->dev, "write image curtain failed, err: %d\n", ret);
 	}
@@ -320,7 +382,7 @@ static void mty065x_get_image_freeze(struct mty065x *mty)
 {
 	int ret;
 
-	ret = i2c_smbus_read_byte_data(mty->i2c, MTY065X_IMAGE_FREEZE_R);
+	ret = mty065x_read_byte_data(mty, MTY065X_IMAGE_FREEZE_R);
 	if (ret < 0 ) {
 		dev_warn(mty->dev, "read image freeze failed, err: %d\n", ret);
 	} else {
@@ -332,7 +394,7 @@ static void mty065x_set_image_freeze_value(struct mty065x *mty, u8 freeze)
 {
 	int ret;
 
-	ret = i2c_smbus_write_byte_data(mty->i2c, MTY065X_IMAGE_FREEZE_W, freeze);
+	ret = mty065x_write_byte_data(mty, MTY065X_IMAGE_FREEZE_W, freeze);
 	if (ret < 0 ) {
 		dev_warn(mty->dev, "write image freeze failed, err: %d\n", ret);
 	}
@@ -347,7 +409,7 @@ static void mty065x_get_input_format(struct mty065x *mty)
 {
 	int ret;
 
-	ret = i2c_smbus_read_byte_data(mty->i2c, MTY065X_INPUT_FORMAT_R);
+	ret = mty065x_read_byte_data(mty, MTY065X_INPUT_FORMAT_R);
 	if (ret < 0 ) {
 		dev_warn(mty->dev, "read input format failed, err: %d\n", ret);
 	} else {
@@ -361,7 +423,7 @@ static void mty065x_set_input_format(struct mty065x *mty)
 
 	dev_dbg(mty->dev, "input format: %d\n", mty->props.input_format);
 
-	ret = i2c_smbus_write_byte_data(mty->i2c, MTY065X_INPUT_FORMAT_W, mty->props.input_format);
+	ret = mty065x_write_byte_data(mty, MTY065X_INPUT_FORMAT_W, mty->props.input_format);
 	if (ret < 0 ) {
 		dev_warn(mty->dev, "write input format failed, err: %d\n", ret);
 	}
@@ -371,7 +433,7 @@ static void mty065x_get_input_select(struct mty065x *mty)
 {
 	int ret;
 
-	ret = i2c_smbus_read_byte_data(mty->i2c, MTY065X_INPUT_SELECT_R);
+	ret = mty065x_read_byte_data(mty, MTY065X_INPUT_SELECT_R);
 	if (ret < 0 ) {
 		dev_warn(mty->dev, "read input select failed, err: %d\n", ret);
 	} else {
@@ -385,7 +447,7 @@ static void mty065x_set_input_select_value(struct mty065x *mty, u8 sel)
 
 	dev_dbg(mty->dev, "input select: %d\n", sel);
 
-	ret = i2c_smbus_write_byte_data(mty->i2c, MTY065X_INPUT_SELECT_W, sel);
+	ret = mty065x_write_byte_data(mty, MTY065X_INPUT_SELECT_W, sel);
 	if (ret < 0 ) {
 		dev_warn(mty->dev, "write input select failed, err: %d\n", ret);
 	}
@@ -401,8 +463,8 @@ static void mty065x_get_input_size(struct mty065x *mty)
 	int ret;
 	u16 data[2];
 
-	ret = i2c_smbus_read_i2c_block_data(mty->i2c, MTY065X_INPUT_SIZE_R,
-					    sizeof(data), (u8*)&data[0]);
+	ret = mty065x_read_i2c_block_data(mty, MTY065X_INPUT_SIZE_R,
+					  sizeof(data), (u8*)&data[0]);
 	if (ret < 0) {
 		dev_warn(mty->dev, "read input size failed, err: %d\n", ret);
 	} else {
@@ -422,8 +484,8 @@ static void mty065x_set_input_size_value(struct mty065x *mty, u16 size[2])
 	data[0] = cpu_to_le16(size[0]);
 	data[1] = cpu_to_le16(size[1]);
 
-	ret = i2c_smbus_write_i2c_block_data(mty->i2c, MTY065X_INPUT_SIZE_W,
-					     sizeof(data), (u8*)&data[0]);
+	ret = mty065x_write_i2c_block_data(mty, MTY065X_INPUT_SIZE_W,
+					   sizeof(data), (u8*)&data[0]);
 	if (ret < 0) {
 		dev_warn(mty->dev, "write input size failed, err: %d\n", ret);
 	}
@@ -439,8 +501,8 @@ static void mty065x_get_ks_correction(struct mty065x *mty)
 	int ret;
 	u8* data = (u8*)&mty->props.ks_correction;
 	
-	ret = i2c_smbus_read_i2c_block_data(mty->i2c, MTY065X_KS_CORRECTION_R,
-					    sizeof(struct ks_correction), data);
+	ret = mty065x_read_i2c_block_data(mty, MTY065X_KS_CORRECTION_R,
+					  sizeof(struct ks_correction), data);
 	if (ret < 0) {
 		dev_warn(mty->dev, "read keystone correction failed, err: %d\n", ret);
 	}
@@ -451,8 +513,8 @@ static void mty065x_set_ks_correction(struct mty065x *mty)
 	int ret;
 	u8* data = (u8*)&mty->props.ks_correction;
 	
-	ret = i2c_smbus_write_i2c_block_data(mty->i2c, MTY065X_KS_CORRECTION_W,
-					    sizeof(struct ks_correction), data);
+	ret = mty065x_write_i2c_block_data(mty, MTY065X_KS_CORRECTION_W,
+					   sizeof(struct ks_correction), data);
 	if (ret < 0) {
 		dev_warn(mty->dev, "write keystone correction failed, err: %d\n", ret);
 	}
@@ -463,8 +525,8 @@ static void mty065x_get_ks_projection(struct mty065x *mty)
 	int ret;
 	u8* data = (u8*)&mty->props.ks_projection;
 	
-	ret = i2c_smbus_read_i2c_block_data(mty->i2c, MTY065X_KS_PROJECTION_R,
-					    sizeof(struct ks_projection), data);
+	ret = mty065x_read_i2c_block_data(mty, MTY065X_KS_PROJECTION_R,
+					  sizeof(struct ks_projection), data);
 	if (ret < 0) {
 		dev_warn(mty->dev, "read keystone projection failed, err: %d\n", ret);
 	}
@@ -475,8 +537,8 @@ static void mty065x_set_ks_projection(struct mty065x *mty)
 	int ret;
 	u8* data = (u8*)&mty->props.ks_projection;
 	
-	ret = i2c_smbus_write_i2c_block_data(mty->i2c, MTY065X_KS_PROJECTION_W,
-					    sizeof(struct ks_projection), data);
+	ret = mty065x_write_i2c_block_data(mty, MTY065X_KS_PROJECTION_W,
+					   sizeof(struct ks_projection), data);
 	if (ret < 0) {
 		dev_warn(mty->dev, "write keystone projection failed, err: %d\n", ret);
 	}
@@ -486,7 +548,7 @@ static void mty065x_get_rgb_led_ctrl(struct mty065x *mty)
 {
 	int ret;
 
-	ret = i2c_smbus_read_byte_data(mty->i2c, MTY065X_RGB_LED_CTRL_R);
+	ret = mty065x_read_byte_data(mty, MTY065X_RGB_LED_CTRL_R);
 	if (ret < 0) {
 		dev_warn(mty->dev, "read rgb led control failed, err: %d\n", ret);
 	} else {
@@ -498,8 +560,7 @@ static void mty065x_set_rgb_led_ctrl_value(struct mty065x *mty, u8 value)
 {
 	int ret;
 
-	ret = i2c_smbus_write_byte_data(mty->i2c, MTY065X_RGB_LED_CTRL_W,
-					value);
+	ret = mty065x_write_byte_data(mty, MTY065X_RGB_LED_CTRL_W, value);
 	if (ret < 0) {
 		dev_warn(mty->dev, "write rgb led control failed, err: %d\n", ret);
 	}
@@ -555,8 +616,8 @@ static void mty065x_get_rgb_led_pwm(struct mty065x *mty)
 	int ret;
 	u8* data = (u8*)&mty->props.rgb_led_pwm;
 
-	ret = i2c_smbus_read_i2c_block_data(mty->i2c, MTY065X_RGB_LED_PWM_R,
-					    sizeof(struct rgb_led_pwm), data);
+	ret = mty065x_read_i2c_block_data(mty, MTY065X_RGB_LED_PWM_R,
+					  sizeof(struct rgb_led_pwm), data);
 	if (ret < 0) {
 		dev_warn(mty->dev, "read rgb led pwm failed, err: %d\n", ret);
 	}
@@ -567,8 +628,8 @@ static void mty065x_set_rgb_led_pwm(struct mty065x *mty)
 	int ret;
 	u8* data = (u8*)&mty->props.rgb_led_pwm;
 
-	ret = i2c_smbus_write_i2c_block_data(mty->i2c, MTY065X_RGB_LED_PWM_W,
-					    sizeof(struct rgb_led_pwm), data);
+	ret = mty065x_write_i2c_block_data(mty, MTY065X_RGB_LED_PWM_W,
+					   sizeof(struct rgb_led_pwm), data);
 	if (ret < 0) {
 		dev_warn(mty->dev, "write rgb_led_pwm failed, err: %d\n", ret);
 	}
@@ -579,8 +640,8 @@ static void mty065x_get_rgb_led_max_pwm(struct mty065x *mty)
 	int ret;
 	u8* data = (u8*)&mty->props.rgb_led_max_pwm;
 
-	ret = i2c_smbus_read_i2c_block_data(mty->i2c, MTY065X_RGB_LED_PWM_R,
-					    sizeof(struct rgb_led_pwm), data);
+	ret = mty065x_read_i2c_block_data(mty, MTY065X_RGB_LED_PWM_R,
+					  sizeof(struct rgb_led_pwm), data);
 	if (ret < 0) {
 		dev_warn(mty->dev, "read rgb_led_max_pwm failed, err: %d\n", ret);
 	}
@@ -591,8 +652,8 @@ static void mty065x_set_rgb_led_max_pwm(struct mty065x *mty)
 	int ret;
 	u8* data = (u8*)&mty->props.rgb_led_max_pwm;
 
-	ret = i2c_smbus_write_i2c_block_data(mty->i2c, MTY065X_RGB_LED_MAX_PWM_W,
-					     sizeof(struct rgb_led_pwm), data);
+	ret = mty065x_write_i2c_block_data(mty, MTY065X_RGB_LED_MAX_PWM_W,
+					   sizeof(struct rgb_led_pwm), data);
 	if (ret < 0) {
 		dev_warn(mty->dev, "write rgb_led_max_pwm failed, err: %d\n", ret);
 	}
@@ -603,8 +664,8 @@ static void mty065x_get_test_pattern(struct mty065x *mty)
 	int ret;
 	u8 block[6];
 
-	ret = i2c_smbus_read_i2c_block_data(mty->i2c, MTY065X_TEST_PATTERN_R,
-					    sizeof(block), block);
+	ret = mty065x_read_i2c_block_data(mty, MTY065X_TEST_PATTERN_R,
+					  sizeof(block), block);
 	if (ret < 0) {
 		dev_warn(mty->dev, "read test pattern failed, err: %d\n", ret);
 	} else {
@@ -697,8 +758,8 @@ static void mty065x_set_test_pattern_value(struct mty065x *mty, u8 pattern)
 	}
 
 	/* Update test pattern registers */
-	ret = i2c_smbus_write_i2c_block_data(mty->i2c, MTY065X_TEST_PATTERN_W,
-					     len, block);
+	ret = mty065x_write_i2c_block_data(mty, MTY065X_TEST_PATTERN_W,
+					   len, block);
 	if (ret < 0) {
 		dev_warn(mty->dev, "write test pattern failed, err: %d\n", ret);
 	}
@@ -1409,7 +1470,7 @@ static int mty065x_bl_probe(struct i2c_client *client,
 	mty->dev = &client->dev;
 	mty->i2c = client;
 
-	ret = i2c_smbus_read_byte_data(mty->i2c, MTY065X_CHIP_ID_R);
+	ret = mty065x_read_byte_data(mty, MTY065X_CHIP_ID_R);
 	if (ret < 0) {
 		dev_err(mty->dev, "MTY065X not found.\n");
 		return -ENODEV;
