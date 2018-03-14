@@ -63,6 +63,15 @@ module_param_named(ch2_std, g_isl7998x_ch2_std, int, S_IRUSR | S_IWUSR);
 module_param_named(ch3_std, g_isl7998x_ch3_std, int, S_IRUSR | S_IWUSR);
 module_param_named(ch4_std, g_isl7998x_ch4_std, int, S_IRUSR | S_IWUSR);
 
+static int g_isl7998x_ch1_rst_en = 0;
+static int g_isl7998x_ch2_rst_en = 0;
+static int g_isl7998x_ch3_rst_en = 0;
+static int g_isl7998x_ch4_rst_en = 0;
+module_param_named(ch1_rst_en, g_isl7998x_ch1_rst_en, int, S_IRUSR | S_IWUSR);
+module_param_named(ch2_rst_en, g_isl7998x_ch2_rst_en, int, S_IRUSR | S_IWUSR);
+module_param_named(ch3_rst_en, g_isl7998x_ch3_rst_en, int, S_IRUSR | S_IWUSR);
+module_param_named(ch4_rst_en, g_isl7998x_ch4_rst_en, int, S_IRUSR | S_IWUSR);
+
 static int isl7998x_probe(struct i2c_client *adapter,
 				const struct i2c_device_id *device_id);
 static int isl7998x_remove(struct i2c_client *client);
@@ -133,6 +142,27 @@ static int isl7998x_write_reg(u8 reg, u8 val)
 			reg, val);
 		return -1;
 	}
+	return 0;
+}
+
+/* Reset decoder only
+ * @param channel	The decoder index, from 1 to 4
+ * @return 0 for success, negative for error
+ */
+static int isl7998x_reset_channel(int channel)
+{
+	if (channel < 1)
+		return -EINVAL;
+
+	isl7998x_write_reg(0xFF, 0x00);
+	/* Reset the decoder's logic */
+	isl7998x_write_reg(0x02, 1 << (channel -1));
+	/* Wait for reset */
+	msleep(10);
+	/* Exit reset state */
+	isl7998x_write_reg(0x02, 0x00);
+	isl7998x_write_reg(0xFF, 0x00);
+
 	return 0;
 }
 
@@ -1007,6 +1037,7 @@ static int ioctl_dev_init(struct v4l2_int_device *s)
 	struct sensor_data *sensor = s->priv;
 	int ret = 0;
 	void *mipi_csi2_info;
+	int rst_en = 0;
 
 	if (!isl7998x_can_reset()) {
 		printk(KERN_NOTICE "isl7998x_mipi: in used, skip reset\n");
@@ -1032,6 +1063,28 @@ static int ioctl_dev_init(struct v4l2_int_device *s)
 	}
 
 done:
+	/* Reset the decoder, the sensor->v_channel is 0 ~ 3,
+	 * The isl7998x_reset_channel() need from 1 ~ 4 */
+	switch (sensor->v_channel) {
+	case 0:
+		rst_en = g_isl7998x_ch1_rst_en;
+		break;
+	case 1:
+		rst_en = g_isl7998x_ch2_rst_en;
+		break;
+	case 2:
+		rst_en = g_isl7998x_ch3_rst_en;
+		break;
+	case 3:
+		rst_en = g_isl7998x_ch4_rst_en;
+		break;
+	default:
+		break;
+	}
+
+	if (rst_en)
+		isl7998x_reset_channel(sensor->v_channel+1);
+
 	isl7998x_state[sensor->v_channel] = true;
 
 	return ret;
