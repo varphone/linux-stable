@@ -5049,6 +5049,10 @@ OnError:
                         if (!((physical - Os->device->baseAddress) & 0x80000000))
                         {
                             gctPHYS_ADDR_T gpuPhysical;
+                            
+                            kfree(ref);
+                            ref = gcvNULL;
+                            
                             kfree(pages);
                             pages = gcvNULL;
 
@@ -6886,6 +6890,9 @@ gckOS_QueryProfileTickRate(
     OUT gctUINT64_PTR TickRate
     )
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,2,0)
+    *TickRate = hrtimer_resolution;
+#else
     struct timespec res;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
@@ -6896,6 +6903,7 @@ gckOS_QueryProfileTickRate(
 #endif
 
     *TickRate = res.tv_nsec + res.tv_sec * 1000000000ULL;
+#endif
 
     return gcvSTATUS_OK;
 }
@@ -7382,7 +7390,11 @@ gckOS_WaitSignal(
 
     might_sleep();
 
+#ifdef CONFIG_PREEMPT_RT_BASE
+    raw_spin_lock_irq(&signal->obj.wait.lock);
+#else
     spin_lock_irq(&signal->obj.wait.lock);
+#endif
 
     if (signal->obj.done)
     {
@@ -7404,9 +7416,14 @@ gckOS_WaitSignal(
             ? MAX_SCHEDULE_TIMEOUT
             : Wait * HZ / 1000;
 
+#ifdef CONFIG_PREEMPT_RT_BASE
+        DEFINE_SWAITER(wait);
+        swait_prepare_locked(&signal->obj.wait, &wait);
+#else
         DECLARE_WAITQUEUE(wait, current);
         wait.flags |= WQ_FLAG_EXCLUSIVE;
         __add_wait_queue_tail(&signal->obj.wait, &wait);
+#endif
 
         while (gcvTRUE)
         {
@@ -7418,9 +7435,15 @@ gckOS_WaitSignal(
             }
 
             __set_current_state(TASK_INTERRUPTIBLE);
+#ifdef CONFIG_PREEMPT_RT_BASE
+            raw_spin_unlock_irq(&signal->obj.wait.lock);
+            timeout = schedule_timeout(timeout);
+            raw_spin_lock_irq(&signal->obj.wait.lock);
+#else
             spin_unlock_irq(&signal->obj.wait.lock);
             timeout = schedule_timeout(timeout);
             spin_lock_irq(&signal->obj.wait.lock);
+#endif
 
             if (signal->obj.done)
             {
@@ -7441,10 +7464,18 @@ gckOS_WaitSignal(
             }
         }
 
+#ifdef CONFIG_PREEMPT_RT_BASE
+        swait_finish_locked(&signal->obj.wait, &wait);
+#else
         __remove_wait_queue(&signal->obj.wait, &wait);
+#endif
     }
 
+#ifdef CONFIG_PREEMPT_RT_BASE
+    raw_spin_unlock_irq(&signal->obj.wait.lock);
+#else
     spin_unlock_irq(&signal->obj.wait.lock);
+#endif
 
 OnError:
     /* Return status. */
