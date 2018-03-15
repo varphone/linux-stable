@@ -72,6 +72,9 @@ module_param_named(ch2_rst_en, g_isl7998x_ch2_rst_en, int, S_IRUSR | S_IWUSR);
 module_param_named(ch3_rst_en, g_isl7998x_ch3_rst_en, int, S_IRUSR | S_IWUSR);
 module_param_named(ch4_rst_en, g_isl7998x_ch4_rst_en, int, S_IRUSR | S_IWUSR);
 
+static int g_isl7998x_sync_ch = 0;
+module_param_named(sync_ch, g_isl7998x_sync_ch, int, S_IRUSR | S_IWUSR);
+
 static int isl7998x_probe(struct i2c_client *adapter,
 				const struct i2c_device_id *device_id);
 static int isl7998x_remove(struct i2c_client *client);
@@ -405,7 +408,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 
 		// Page 0
 		isl7998x_write_reg(0xFF, 0x00);
-		isl7998x_write_reg(0x07, 0x02);
+		isl7998x_write_reg(0x07, ((g_isl7998x_sync_ch & 0x03) << 5) | 0x02);
 		isl7998x_write_reg(0x08, 0x1F);
 		isl7998x_write_reg(0x09, 0x43);
 		isl7998x_write_reg(0x0A, 0x4F);
