@@ -28,6 +28,8 @@
 #include <linux/of_device.h>
 #include <linux/i2c.h>
 #include <linux/of_gpio.h>
+#include <linux/of_irq.h>
+#include <linux/gpio.h>
 #include <linux/pinctrl/consumer.h>
 #include <linux/regulator/consumer.h>
 #include <linux/fsl_devices.h>
@@ -75,6 +77,21 @@ module_param_named(ch4_rst_en, g_isl7998x_ch4_rst_en, int, S_IRUSR | S_IWUSR);
 
 static int g_isl7998x_sync_ch = 0;
 module_param_named(sync_ch, g_isl7998x_sync_ch, int, S_IRUSR | S_IWUSR);
+
+static int g_isl7998x_reset_gpio = -1;
+static enum of_gpio_flags g_isl7998x_reset_gpio_flags = 0;
+static int g_isl7998x_power_gpio = -1;
+static enum of_gpio_flags g_isl7998x_power_gpio_flags = 0;
+
+/* IRQ: INT, MPP1, MPP2 */
+static unsigned int g_isl7998x_irqs[3];
+static int g_isl7998x_irq_gpios[3];
+static const char *g_isl7998x_irq_gpio_names[] = {
+	"isl7998x-int-gpio",
+	"isl7998x-mpp1-gpio",
+	"isl7998x-mpp2-gpio",
+	NULL
+};
 
 static int isl7998x_probe(struct i2c_client *adapter,
 				const struct i2c_device_id *device_id);
@@ -168,6 +185,39 @@ static int isl7998x_reset_channel(int channel)
 	isl7998x_write_reg(0xFF, 0x00);
 
 	return 0;
+}
+
+/* Set power of the chip
+ * @param on		0 = Power off, 1 = Power on
+ */
+static void isl7998x_chip_power(int on)
+{
+	/* Skip if gpio not set */
+	if (g_isl7998x_power_gpio < 0)
+		return;
+
+	/* Power ? */
+	if (g_isl7998x_power_gpio_flags & OF_GPIO_ACTIVE_LOW)
+		gpio_direction_output(g_isl7998x_power_gpio, on ? 0 : 1);
+	else
+		gpio_direction_output(g_isl7998x_power_gpio, on ? 1 : 0);
+}
+
+/* Reset the chip
+ * @param reset		0 = Leave reset, 1 = Enter reset
+ */
+static void isl7998x_chip_reset(int reset)
+{
+	/* Skip if gpio not set */
+	if (g_isl7998x_reset_gpio < 0)
+		return;
+
+	/* Reset ? */
+	if (g_isl7998x_reset_gpio_flags & OF_GPIO_ACTIVE_LOW)
+		gpio_direction_output(g_isl7998x_reset_gpio, reset ? 0 : 1);
+	else
+		gpio_direction_output(g_isl7998x_reset_gpio, reset ? 1 : 0);
+
 }
 
 static int isl7998x_hardware_init(struct sensor_data *sensor)
@@ -1370,6 +1420,7 @@ static int isl7998x_probe(struct i2c_client *client,
 {
 	struct device *dev = &client->dev;
 	int retval;
+	int i;
 
 	/* Set initial values for the sensor struct. */
 	memset(&isl7998x_state, 0, sizeof(isl7998x_state));
@@ -1402,6 +1453,47 @@ static int isl7998x_probe(struct i2c_client *client,
 		dev_err(dev, "csi id missing or invalid\n");
 		return retval;
 	}
+
+	g_isl7998x_reset_gpio = of_get_named_gpio_flags(dev->of_node,
+							"reset-gpios", 0,
+							&g_isl7998x_reset_gpio_flags);
+
+	g_isl7998x_power_gpio = of_get_named_gpio_flags(dev->of_node,
+							"power-gpios", 0,
+							&g_isl7998x_power_gpio_flags);
+
+	if (g_isl7998x_reset_gpio > 0) {
+		if (gpio_request(g_isl7998x_reset_gpio, "isl7998x-reset") < 0)
+			g_isl7998x_reset_gpio = -1;
+	}
+
+	if (g_isl7998x_power_gpio > 0) {
+		if (gpio_request(g_isl7998x_power_gpio, "isl7998x-power") < 0)
+			g_isl7998x_power_gpio = -1;
+	}
+
+	for (i = 0; i < 3; i++) {
+		g_isl7998x_irq_gpios[i] = of_get_named_gpio(dev->of_node, "irq-gpios", i);
+		if (g_isl7998x_irq_gpios[i] <= 0) {
+			dev_warn(dev, "irq gpio of %d not found.", i);
+			continue;
+		}
+
+		if (gpio_request(g_isl7998x_irq_gpios[i], g_isl7998x_irq_gpio_names[i]) < 0) {
+			dev_warn(dev, "request gpio %d failed!",
+				 g_isl7998x_irq_gpios[i]);
+			g_isl7998x_irq_gpios[i] = -1;
+		}
+		else {
+			gpio_direction_input(g_isl7998x_irq_gpios[i]);
+		}
+	}
+
+	/* Power on the chip */
+	isl7998x_chip_power(1);
+
+	/* Leave reset state */
+	isl7998x_chip_reset(0);
 
 	clk_prepare_enable(isl7998x_data[0].sensor_clk);
 
