@@ -33,6 +33,7 @@
 #include <linux/fsl_devices.h>
 #include <linux/mipi_csi2.h>
 #include <linux/v4l2-controls.h>
+#include <linux/miscdevice.h>
 #include <media/v4l2-chip-ident.h>
 #include "v4l2-int-device.h"
 #include "mxc_v4l2_capture.h"
@@ -1218,6 +1219,146 @@ static struct v4l2_int_device isl7998x_int_device[SENSOR_NUM] = {
 	}
 };
 
+static ssize_t isl7998x_get_channels_status_attr(struct device *dev,
+						 struct device_attribute *attr,
+						 char *buf)
+{
+	int values[4];
+
+	isl7998x_write_reg(0xFF, 0x00);
+	values[0] = isl7998x_read_reg(0x1B);
+	values[1] = isl7998x_read_reg(0x1C);
+	values[2] = isl7998x_read_reg(0x1D);
+	values[3] = isl7998x_read_reg(0x1E);
+	isl7998x_write_reg(0xFF, 0x00);
+
+	return scnprintf(buf, PAGE_SIZE, "0x%02X,0x%02X,0x%02X,0x%02X\n",
+			 values[0], values[1], values[2],values[3]);
+}
+
+static ssize_t isl7998x_get_device_interrupt_status_attr(struct device *dev,
+							 struct device_attribute *attr,
+							 char *buf)
+{
+	int value;
+
+	isl7998x_write_reg(0xFF, 0x00);
+	value = isl7998x_read_reg(0x10);
+	isl7998x_write_reg(0xFF, 0x00);
+
+	return scnprintf(buf, PAGE_SIZE, "0x%02X\n", value);
+}
+
+static ssize_t isl7998x_get_mipi_csi_errors_attr(struct device *dev,
+						 struct device_attribute *attr,
+						 char *buf)
+{
+	void *mipi_csi2_info = mipi_csi2_get_info();
+	unsigned int values[2];
+
+	values[0] = mipi_csi2_get_error1(mipi_csi2_info);
+	values[1] = mipi_csi2_get_error2(mipi_csi2_info);
+
+	return scnprintf(buf, PAGE_SIZE, "0x%08X,0x%08X\n", values[0], values[1]);
+}
+
+static ssize_t isl7998x_get_mipi_csi_phy_status_attr(struct device *dev,
+						     struct device_attribute *attr,
+						     char *buf)
+{
+	void *mipi_csi2_info = mipi_csi2_get_info();
+	unsigned int value;
+
+	value = mipi_csi2_dphy_status(mipi_csi2_info);
+
+	return scnprintf(buf, PAGE_SIZE, "0x%08X\n", value);
+}
+
+DEVICE_ATTR(channels_status, S_IRUGO, isl7998x_get_channels_status_attr, NULL);
+DEVICE_ATTR(device_interrupt_status, S_IRUGO, isl7998x_get_device_interrupt_status_attr, NULL);
+DEVICE_ATTR(mipi_csi_errors, S_IRUGO, isl7998x_get_mipi_csi_errors_attr, NULL);
+DEVICE_ATTR(mipi_csi_phy_status, S_IRUGO, isl7998x_get_mipi_csi_phy_status_attr, NULL);
+
+static struct attribute *isl7998x_attrs[] = {
+	&dev_attr_channels_status.attr,
+	&dev_attr_device_interrupt_status.attr,
+	&dev_attr_mipi_csi_errors.attr,
+	&dev_attr_mipi_csi_phy_status.attr,
+	NULL
+};
+
+static const struct attribute_group isl7998x_attr_group = {
+	.attrs = isl7998x_attrs,
+};
+
+static const struct attribute_group *isl7998x_attr_groups[] = {
+	&isl7998x_attr_group,
+	NULL,
+};
+
+static int isl7998x_misc_open(struct inode *inode, struct file *file)
+{
+	return 0;
+}
+
+static int isl7998x_misc_release(struct inode *inode, struct file *file)
+{
+	return 0;
+}
+
+static long isl7998x_misc_ioctl(struct file *file, unsigned int cmd,
+			        unsigned long arg)
+{
+	return 0;
+}
+
+static struct file_operations isl7998x_misc_fops = {
+	.owner		= THIS_MODULE,
+	.open		= isl7998x_misc_open,
+	.release	= isl7998x_misc_release,
+	.unlocked_ioctl	= isl7998x_misc_ioctl,
+};
+
+static struct miscdevice isl7998x_misc = {
+	.name	= "isl7998x",
+	.minor	= MISC_DYNAMIC_MINOR,
+	.fops	= &isl7998x_misc_fops,
+	.groups	= isl7998x_attr_groups
+};
+
+static int isl7998x_misc_register(struct i2c_client *client)
+{
+	int ret;
+	isl7998x_misc.parent = &client->dev;
+
+	ret = misc_register(&isl7998x_misc);
+	if (ret) {
+		dev_err(&client->dev, "misc: %s register failed, err: %d\n",
+			isl7998x_misc.name, ret);
+		return ret;
+	}
+
+	dev_info(&client->dev, "misc: %s registered.\n", isl7998x_misc.name);
+
+	return 0;
+}
+
+static int isl7998x_misc_unregister(struct i2c_client *client)
+{
+	int ret;
+
+	ret = misc_deregister(&isl7998x_misc);
+	if (ret) {
+		dev_err(&client->dev, "misc: %s unregister failed, err: %d\n",
+			isl7998x_misc.name, ret);
+		return ret;
+	}
+
+	dev_info(&client->dev, "misc: %s unregistered.\n", isl7998x_misc.name);
+
+	return 0;
+}
+
 /*!
  * isl7998x I2C probe function
  *
@@ -1321,6 +1462,8 @@ static int isl7998x_probe(struct i2c_client *client,
 
 	clk_disable_unprepare(isl7998x_data[0].sensor_clk);
 
+	isl7998x_misc_register(client);
+
 	pr_info("isl7998x_mipi is found\n");
 	return retval;
 }
@@ -1333,6 +1476,8 @@ static int isl7998x_probe(struct i2c_client *client,
  */
 static int isl7998x_remove(struct i2c_client *client)
 {
+	isl7998x_misc_unregister(client);
+
 	v4l2_int_device_unregister(&isl7998x_int_device[3]);
 	v4l2_int_device_unregister(&isl7998x_int_device[2]);
 	v4l2_int_device_unregister(&isl7998x_int_device[1]);
