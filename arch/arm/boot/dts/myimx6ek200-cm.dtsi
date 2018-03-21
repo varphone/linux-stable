@@ -316,7 +316,9 @@
 		mclk_source = <0>;
 		interrupt-parent = <&gpio1>;
 		interrupts = <11 0>;
-		reset-gpios = <&gpio1 10 0>;
+		/* GPIO Interrupts: INT, MPP1, MPP2 */
+		irq-gpios = <&gpio1 11 0>, <&gpio1 14 0>, <&gpio1 15 0>;
+		reset-gpios = <&gpio1 10 1>;
 		power-gpios = <&gpio1 12 1>;
 	};
 
