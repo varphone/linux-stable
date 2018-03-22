@@ -705,7 +705,7 @@ static int ioctl_s_power(struct v4l2_int_device *s, int on)
 	if (!on)
 		isl7998x_state[sensor->v_channel] = false;
 
-	if (isl7998x_can_reset())
+	if (!on && isl7998x_can_reset())
 		isl7998x_started = 0;
 
 	return 0;
