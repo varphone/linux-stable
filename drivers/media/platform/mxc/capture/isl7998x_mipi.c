@@ -93,6 +93,11 @@ static const char *g_isl7998x_irq_gpio_names[] = {
 	NULL
 };
 
+static struct mutex g_isl7998x_lock;
+
+#define ISL7998X_LOCK()		mutex_lock(&g_isl7998x_lock)
+#define ISL7998X_UNLOCK()	mutex_unlock(&g_isl7998x_lock)
+
 static int isl7998x_probe(struct i2c_client *adapter,
 				const struct i2c_device_id *device_id);
 static int isl7998x_remove(struct i2c_client *client);
@@ -1096,6 +1101,8 @@ static int ioctl_dev_init(struct v4l2_int_device *s)
 	void *mipi_csi2_info;
 	int rst_en = 0;
 
+	ISL7998X_LOCK();
+
 	if (!isl7998x_can_reset()) {
 		printk(KERN_NOTICE "isl7998x_mipi: in used, skip reset\n");
 		goto done;
@@ -1112,7 +1119,8 @@ static int ioctl_dev_init(struct v4l2_int_device *s)
 		else {
 			printk(KERN_ERR "%s() in %s: Fail to get mipi_csi2_info!\n",
 			       __func__, __FILE__);
-			return -EPERM;
+			ret = -EPERM;
+			goto done;
 		}
 
 		ret = isl7998x_hardware_init(sensor);
@@ -1144,6 +1152,8 @@ done:
 
 	isl7998x_state[sensor->v_channel] = true;
 
+	ISL7998X_UNLOCK();
+
 	return ret;
 }
 
@@ -1158,9 +1168,11 @@ static int ioctl_dev_exit(struct v4l2_int_device *s)
 	struct sensor_data *sensor = s->priv;
 	void *mipi_csi2_info;
 
+	ISL7998X_LOCK();
+
 	if (!isl7998x_can_reset()) {
 		printk(KERN_NOTICE "isl7998x_mipi: in used, skip reset\n");
-		return 0;
+		goto done;
 	}
 
 	if (isl7998x_started) {
@@ -1173,6 +1185,9 @@ static int ioctl_dev_exit(struct v4l2_int_device *s)
 
 		isl7998x_started = 0;
 	}
+
+done:
+	ISL7998X_UNLOCK();
 
 	return 0;
 }
@@ -1488,6 +1503,8 @@ static int isl7998x_probe(struct i2c_client *client,
 			gpio_direction_input(g_isl7998x_irq_gpios[i]);
 		}
 	}
+
+	mutex_init(&g_isl7998x_lock);
 
 	/* Power on the chip */
 	isl7998x_chip_power(1);
