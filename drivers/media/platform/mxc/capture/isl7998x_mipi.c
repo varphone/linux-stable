@@ -1124,7 +1124,7 @@ static int ioctl_dev_init(struct v4l2_int_device *s)
 		}
 
 		ret = isl7998x_hardware_init(sensor);
-		isl7998x_started = 1;
+		isl7998x_started = ret < 0 ? 0 : 1;
 	}
 
 done:
