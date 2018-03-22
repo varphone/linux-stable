@@ -1334,16 +1334,73 @@ static ssize_t isl7998x_get_mipi_csi_phy_status_attr(struct device *dev,
 	return scnprintf(buf, PAGE_SIZE, "0x%08X\n", value);
 }
 
+static ssize_t isl7998x_set_reset_attr(struct device *dev,
+				       struct device_attribute *attr,
+				       const char *buf, size_t count)
+{
+	unsigned int reset;
+
+	if (sscanf(buf, "%u", &reset) == 1) {
+		if (reset == 1)
+			isl7998x_hardware_init(&isl7998x_data[0]);
+		return count;
+	}
+	return -EINVAL;
+}
+
+/* statm: comma separeted string
+ *   [ 0] = CH1_STATE
+ *   [ 1] = CH2_STATE
+ *   [ 2] = CH3_STATE
+ *   [ 3] = CH4_STATE
+ *   [ 4] = LINE INTERLEAVE ENGINE CONTROL
+ */
+static ssize_t isl7998x_get_statm_attr(struct device *dev,
+				       struct device_attribute *attr,
+				       char *buf)
+{
+	int i;
+	int values[16];
+	char* p = buf;
+	ssize_t l = 0;
+	ssize_t n = 0;
+
+	isl7998x_write_reg(0xFF, 0x00);
+	values[0] = isl7998x_read_reg(0x1B);
+	values[1] = isl7998x_read_reg(0x1C);
+	values[2] = isl7998x_read_reg(0x1D);
+	values[3] = isl7998x_read_reg(0x1E);
+	isl7998x_write_reg(0xFF, 0x00);
+
+	isl7998x_write_reg(0xFF, 0x05);
+	values[4] = isl7998x_read_reg(0x00);
+	isl7998x_write_reg(0xFF, 0x00);
+
+	for (i = 0; i < 5; i++) {
+		n = scnprintf(p, PAGE_SIZE - l, "0x%02X,", values[i]);
+		l += n;
+		p += n;
+	}
+
+	l += scnprintf(p, PAGE_SIZE - l, "\n");
+
+	return l;
+}
+
 DEVICE_ATTR(channels_status, S_IRUGO, isl7998x_get_channels_status_attr, NULL);
 DEVICE_ATTR(device_interrupt_status, S_IRUGO, isl7998x_get_device_interrupt_status_attr, NULL);
 DEVICE_ATTR(mipi_csi_errors, S_IRUGO, isl7998x_get_mipi_csi_errors_attr, NULL);
 DEVICE_ATTR(mipi_csi_phy_status, S_IRUGO, isl7998x_get_mipi_csi_phy_status_attr, NULL);
+DEVICE_ATTR(reset, S_IWUSR, NULL, isl7998x_set_reset_attr);
+DEVICE_ATTR(statm, S_IRUGO, isl7998x_get_statm_attr, NULL);
 
 static struct attribute *isl7998x_attrs[] = {
 	&dev_attr_channels_status.attr,
 	&dev_attr_device_interrupt_status.attr,
 	&dev_attr_mipi_csi_errors.attr,
 	&dev_attr_mipi_csi_phy_status.attr,
+	&dev_attr_reset.attr,
+	&dev_attr_statm.attr,
 	NULL
 };
 
