@@ -2071,7 +2071,7 @@ static struct mxc_dvfs_platform_data sabresd_dvfscore_data = {
 	.delay_time = 80,
 };
 
-static void __init fixup_mxc_board(struct machine_desc *desc, struct tag *tags,
+static void __init myimx6ek200_fixup(struct machine_desc *desc, struct tag *tags,
 				   char **cmdline, struct meminfo *mi)
 {
 }
@@ -2134,7 +2134,7 @@ static const struct imx_pcie_platform_data mx6_sabresd_pcie_data __initconst = {
 /*!
  * Board specific initialization.
  */
-static void __init mx6_sabresd_board_init(void)
+static void __init myimx6ek200_board_init(void)
 {
 	int i;
 	int ret;
@@ -2460,7 +2460,7 @@ static void __init mx6_sabresd_board_init(void)
 }
 
 extern void __iomem *twd_base;
-static void __init mx6_sabresd_timer_init(void)
+static void __init myimx6ek200_timer_init(void)
 {
 	struct clk *uart_clk;
 #ifdef CONFIG_LOCAL_TIMERS
@@ -2473,11 +2473,11 @@ static void __init mx6_sabresd_timer_init(void)
 	early_console_setup(UART1_BASE_ADDR, uart_clk);
 }
 
-static struct sys_timer mx6_sabresd_timer = {
-	.init   = mx6_sabresd_timer_init,
+static struct sys_timer myimx6ek200_timer = {
+	.init   = myimx6ek200_timer_init,
 };
 
-static void __init mx6q_sabresd_reserve(void)
+static void __init myimx6ek200_reserve(void)
 {
 	phys_addr_t phys;
 #if defined(CONFIG_MXC_GPU_VIV) || defined(CONFIG_MXC_GPU_VIV_MODULE)
@@ -2503,10 +2503,10 @@ static void __init mx6q_sabresd_reserve(void)
  */
 MACHINE_START(MYIMX6EK200, "MYZR i.MX6 Evaluation Kit ( DIMM 200 )")
 	.boot_params = MX6_PHYS_OFFSET + 0x100,
-	.fixup = fixup_mxc_board,
+	.fixup = myimx6ek200_fixup,
 	.map_io = mx6_map_io,
 	.init_irq = mx6_init_irq,
-	.init_machine = mx6_sabresd_board_init,
-	.timer = &mx6_sabresd_timer,
-	.reserve = mx6q_sabresd_reserve,
+	.init_machine = myimx6ek200_board_init,
+	.timer = &myimx6ek200_timer,
+	.reserve = myimx6ek200_reserve,
 MACHINE_END
