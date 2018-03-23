@@ -1348,7 +1348,7 @@ static ssize_t isl7998x_set_reset_attr(struct device *dev,
 	return -EINVAL;
 }
 
-/* statm: comma separeted string
+/* statm: binary format data
  *   [ 0] = CH1_STATE
  *   [ 1] = CH2_STATE
  *   [ 2] = CH3_STATE
@@ -1360,10 +1360,7 @@ static ssize_t isl7998x_get_statm_attr(struct device *dev,
 				       char *buf)
 {
 	int i;
-	int values[16];
-	char* p = buf;
-	ssize_t l = 0;
-	ssize_t n = 0;
+	unsigned char values[16];
 
 	isl7998x_write_reg(0xFF, 0x00);
 	values[0] = isl7998x_read_reg(0x1B);
@@ -1376,15 +1373,9 @@ static ssize_t isl7998x_get_statm_attr(struct device *dev,
 	values[4] = isl7998x_read_reg(0x00);
 	isl7998x_write_reg(0xFF, 0x00);
 
-	for (i = 0; i < 5; i++) {
-		n = scnprintf(p, PAGE_SIZE - l, "0x%02X,", values[i]);
-		l += n;
-		p += n;
-	}
+	memcpy(buf, values, 5);
 
-	l += scnprintf(p, PAGE_SIZE - l, "\n");
-
-	return l;
+	return 5;
 }
 
 DEVICE_ATTR(channels_status, S_IRUGO, isl7998x_get_channels_status_attr, NULL);
