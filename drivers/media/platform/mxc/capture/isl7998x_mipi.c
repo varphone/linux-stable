@@ -306,6 +306,34 @@ static void isl7998x_chip_reset(int reset)
 
 }
 
+static void isl7998x_apply_adjusts(int ch)
+{
+	u8 rv;
+	struct isl7998x_adjust *adj = &g_isl7998x_adjusts[ch];
+
+	/* Set brightness */
+	rv = isl7998x_brightness_u2r(adj->brightness);
+	isl7998x_write_reg(0x10, rv);
+
+	/* Set contrast */
+	rv = isl7998x_contrast_u2r(adj->contrast);
+	isl7998x_write_reg(0x11, rv);
+
+	/* Set hue */
+	rv = isl7998x_hue_u2r(adj->hue);
+	isl7998x_write_reg(0x15, rv);
+
+	/* Set saturation */
+	rv = isl7998x_saturation_u2r(adj->saturation);
+	isl7998x_write_reg(0x13, rv);
+	isl7998x_write_reg(0x14, rv);
+
+	/* Set sharpness */
+	rv = isl7998x_sharpness_u2r(adj->hue);
+	isl7998x_write_reg(0x12, 0x10 | (rv & 0x0f));
+}
+
+
 static int isl7998x_hardware_init(struct sensor_data *sensor)
 {
 	int retval = 0;
@@ -568,6 +596,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
 		isl7998x_write_reg(0x3D, 0x00); // Data conversion
+		isl7998x_apply_adjusts(1);
 		isl7998x_write_reg(0xFF, 0x01);
 
 		// Page 2
@@ -589,6 +618,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
 		isl7998x_write_reg(0x3D, 0x00); // Data conversion
+		isl7998x_apply_adjusts(2);
 		isl7998x_write_reg(0xFF, 0x02);
 
 		// Page 3
@@ -610,6 +640,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
 		isl7998x_write_reg(0x3D, 0x00); // Data conversion
+		isl7998x_apply_adjusts(3);
 		isl7998x_write_reg(0xFF, 0x03);
 
 		// Page 4
@@ -631,6 +662,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
 		isl7998x_write_reg(0x3D, 0x00); // Data conversion
+		isl7998x_apply_adjusts(4);
 		isl7998x_write_reg(0xFF, 0x04);
 
 		// Page 5
