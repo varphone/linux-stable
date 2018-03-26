@@ -1027,6 +1027,16 @@ static int mxc_v4l2_g_ctrl(cam_data *cam, struct v4l2_control *c)
 			status = -ENODEV;
 		}
 		break;
+	case V4L2_CID_SHARPNESS:
+		if (cam->sensor) {
+			c->value = cam->sharpness;
+			status = vidioc_int_g_ctrl(cam->sensor, c);
+			cam->sharpness = c->value;
+		} else {
+			pr_err("ERROR: v4l2 capture: slave not found!\n");
+			status = -ENODEV;
+		}
+		break;
 	case V4L2_CID_RED_BALANCE:
 		if (cam->sensor) {
 			c->value = cam->red;
@@ -1188,6 +1198,15 @@ static int mxc_v4l2_s_ctrl(cam_data *cam, struct v4l2_control *c)
 	case V4L2_CID_SATURATION:
 		if (cam->sensor) {
 			cam->saturation = c->value;
+			ret = vidioc_int_s_ctrl(cam->sensor, c);
+		} else {
+			pr_err("ERROR: v4l2 capture: slave not found!\n");
+			ret = -ENODEV;
+		}
+		break;
+	case V4L2_CID_SHARPNESS:
+		if (cam->sensor) {
+			cam->sharpness = c->value;
 			ret = vidioc_int_s_ctrl(cam->sensor, c);
 		} else {
 			pr_err("ERROR: v4l2 capture: slave not found!\n");

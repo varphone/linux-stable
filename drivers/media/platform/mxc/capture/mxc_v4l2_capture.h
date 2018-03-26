@@ -168,6 +168,7 @@ typedef struct _cam_data {
 	int hue;
 	int contrast;
 	int saturation;
+	int sharpness;
 	int red;
 	int green;
 	int blue;
@@ -248,6 +249,7 @@ struct sensor_data {
 	int hue;
 	int contrast;
 	int saturation;
+	int sharpness;
 	int red;
 	int green;
 	int blue;
