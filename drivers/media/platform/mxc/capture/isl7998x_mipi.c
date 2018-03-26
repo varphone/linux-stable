@@ -98,6 +98,87 @@ static struct mutex g_isl7998x_lock;
 #define ISL7998X_LOCK()		mutex_lock(&g_isl7998x_lock)
 #define ISL7998X_UNLOCK()	mutex_unlock(&g_isl7998x_lock)
 
+struct isl7998x_adjust {
+	int brightness;
+	int contrast;
+	int hue;
+	int saturation;
+	int sharpness;
+};
+
+static struct isl7998x_adjust g_isl7998x_adjusts[] = {
+	{ 0, 100, 0, 100, 0 }, // CH0 for dummy
+	{ 0, 100, 0, 100, 0 }, // CH1
+	{ 0, 100, 0, 100, 0 }, // CH2
+	{ 0, 100, 0, 100, 0 }, // CH3
+	{ 0, 100, 0, 100, 0 }, // CH4
+};
+
+/* Map brightness from unified to register
+ *   [-100,+100] -> [-127,+127] */
+static inline u8 isl7998x_brightness_u2r(int uv)
+{
+	return (u8)(uv * 127 / 100);
+}
+
+/* @sa isl7998x_brightness_u2r() */
+static inline int isl7998x_brightness_r2u(u8 rv)
+{
+	return (u8)(rv * 100 / 127);
+}
+
+/* Map contrast from unified to register
+ *   [0,200] -> [0,200] */
+static inline u8 isl7998x_contrast_u2r(int uv)
+{
+	return (uv > 200) ? 200 : uv;
+}
+
+/* @sa isl7998x_contrast_u2r() */
+static inline u8 isl7998x_contrast_r2u(u8 rv)
+{
+	return (rv > 200) ? 200 : rv;
+}
+
+/* Map hue from unified to register
+ *   [-100,+100] -> [-127,+127] */
+static inline u8 isl7998x_hue_u2r(int uv)
+{
+	return (u8)(uv * 127 / 100);
+}
+
+/* @sa isl7998x_hue_u2r() */
+static inline u8 isl7998x_hue_r2u(u8 rv)
+{
+	return (u8)(rv * 100 / 127);
+}
+
+/* Map saturation from unified to register
+ *   [0,200] -> [0,255] */
+static inline u8 isl7998x_saturation_u2r(int uv)
+{
+	return (u8)(uv * 255 / 200);
+}
+
+/* @sa isl7998x_saturation_u2r() */
+static inline u8 isl7998x_saturation_r2u(u8 rv)
+{
+	return (u8)(rv * 200 / 255);
+}
+
+/* Map sharpness from unified to register
+ *   [0,100] -> [0,15] */
+static inline u8 isl7998x_sharpness_u2r(int uv)
+{
+	return (u8)(uv * 15 / 100);
+}
+
+/* @sa isl7998x_sharpness_u2r() */
+static inline u8 isl7998x_sharpness_r2u(u8 rv)
+{
+	return (u8)(rv * 100 / 15);
+}
+
 static int isl7998x_probe(struct i2c_client *adapter,
 				const struct i2c_device_id *device_id);
 static int isl7998x_remove(struct i2c_client *client);
@@ -829,85 +910,161 @@ static int ioctl_try_fmt_cap(struct v4l2_int_device *s, struct v4l2_format *f)
 
 static int isl7998x_get_brightness(int channel)
 {
-	int ret = 0;
-	isl7998x_write_reg(0xFF, channel);
-	ret = isl7998x_read_reg(0x10);
-	return ret;
+	if (channel < 1 || channel > 4)
+		return -ENXIO;
+
+	return g_isl7998x_adjusts[channel].brightness;
 }
 
 static int isl7998x_get_contrast(int channel)
 {
-	int ret = 0;
-	isl7998x_write_reg(0xFF, channel);
-	ret = isl7998x_read_reg(0x11);
-	return ret;
+	if (channel < 1 || channel > 4)
+		return -ENXIO;
+
+	return g_isl7998x_adjusts[channel].contrast;
 }
 
 static int isl7998x_get_hue(int channel)
 {
-	int ret = 0;
-	isl7998x_write_reg(0xFF, channel);
-	ret = isl7998x_read_reg(0x15);
-	return ret;
+	return g_isl7998x_adjusts[channel].hue;
 }
 
 static int isl7998x_get_saturation(int channel)
 {
-	int ret = 0;
-	isl7998x_write_reg(0xFF, channel);
-	ret = isl7998x_read_reg(0x13);
-	return ret;
+	if (channel < 1 || channel > 4)
+		return -ENXIO;
+
+	return g_isl7998x_adjusts[channel].saturation;
 }
 
 static int isl7998x_get_sharpness(int channel)
 {
-	int ret = 0;
-	isl7998x_write_reg(0xFF, channel);
-	ret = isl7998x_read_reg(0x12);
-	if (ret > 0)
-		ret = ret & 0x3f;
-	return ret;
+	if (channel < 1 || channel > 4)
+		return -ENXIO;
+
+	return g_isl7998x_adjusts[channel].sharpness;
 }
 
 static int isl7998x_set_brightness(int value, int channel)
 {
+	u8 rv;
 	int ret = 0;
+
+	if (channel < 1 || channel > 4)
+		return -ENXIO;
+
+	/* Skip if not changed */
+	if (value == g_isl7998x_adjusts[channel].brightness)
+		return 0;
+
+	rv = isl7998x_brightness_u2r(value);
+
 	isl7998x_write_reg(0xFF, channel);
-	ret = isl7998x_write_reg(0x10, value);
+	ret = isl7998x_write_reg(0x10, rv);
+	isl7998x_write_reg(0xFF, channel);
+
+	/* Keep current value */
+	g_isl7998x_adjusts[channel].brightness = value;
+
 	return ret;
 }
 
 static int isl7998x_set_contrast(int value, int channel)
 {
+	u8 rv;
 	int ret = 0;
+
+	if (channel < 1 || channel > 4)
+		return -ENXIO;
+
+	/* Skip if not changed */
+	if (value == g_isl7998x_adjusts[channel].contrast)
+		return 0;
+
+	rv = isl7998x_contrast_u2r(value);
+
 	isl7998x_write_reg(0xFF, channel);
-	ret = isl7998x_write_reg(0x11, value);
+	ret = isl7998x_write_reg(0x11, rv);
+	isl7998x_write_reg(0xFF, channel);
+
+	/* Keep current value */
+	g_isl7998x_adjusts[channel].contrast = value;
+
 	return ret;
 }
 
 static int isl7998x_set_hue(int value, int channel)
 {
+	u8 rv;
 	int ret = 0;
+
+	if (channel < 1 || channel > 4)
+		return -ENXIO;
+
+	/* Skip if not changed */
+	if (value == g_isl7998x_adjusts[channel].hue)
+		return 0;
+
+	rv = isl7998x_hue_u2r(value);
+
 	isl7998x_write_reg(0xFF, channel);
-	ret = isl7998x_write_reg(0x15, value);
+	ret = isl7998x_read_reg(0x15);
+	ret = isl7998x_write_reg(0x15, rv);
+	isl7998x_write_reg(0xFF, channel);
+
+	/* Keep current value */
+	g_isl7998x_adjusts[channel].hue = value;
+
 	return ret;
 }
 
 static int isl7998x_set_saturation(int value, int channel)
 {
+	u8 rv;
 	int ret = 0;
+
+	if (channel < 1 || channel > 4)
+		return -ENXIO;
+
+	/* Skip if not changed */
+	if (value == g_isl7998x_adjusts[channel].saturation)
+		return 0;
+
+	rv = isl7998x_saturation_u2r(value);
+
 	isl7998x_write_reg(0xFF, channel);
-	ret  = isl7998x_write_reg(0x13, value);
-	ret |= isl7998x_write_reg(0x14, value);
+	ret = isl7998x_read_reg(0x13);
+	ret  = isl7998x_write_reg(0x13, rv);
+	ret |= isl7998x_write_reg(0x14, rv);
+	isl7998x_write_reg(0xFF, channel);
+
+	/* Keep current value */
+	g_isl7998x_adjusts[channel].saturation = value;
+
 	return ret;
 }
 
 static int isl7998x_set_sharpness(int value, int channel)
 {
+	u8 rv;
 	int ret = 0;
+
+	if (channel < 1 || channel > 4)
+		return -ENXIO;
+
+	/* Skip if not changed */
+	if (value == g_isl7998x_adjusts[channel].sharpness)
+		return 0;
+
+	rv = isl7998x_sharpness_u2r(value);
+
 	isl7998x_write_reg(0xFF, channel);
-	value = value & 0x3f;
-	ret = isl7998x_write_reg(0x12, value);
+	ret = isl7998x_write_reg(0x12, 0x10 | (rv & 0x0f));
+	isl7998x_write_reg(0xFF, channel);
+
+	/* Keep current value */
+	g_isl7998x_adjusts[channel].sharpness = value;
+
 	return ret;
 }
 
