@@ -1152,6 +1152,9 @@ static int ioctl_s_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
 	struct sensor_data *sensor = s->priv;
 	int ret = 0;
 	int vch = sensor->v_channel + 1; /* The channel in isl7998x is base on 1 */
+
+	ISL7998X_LOCK();
+
 	switch (vc->id) {
 	case V4L2_CID_BRIGHTNESS:
 		ret = isl7998x_set_brightness(vc->value, vch);
@@ -1173,6 +1176,9 @@ static int ioctl_s_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
 		ret = -EINVAL;
 		break;
 	}
+
+	ISL7998X_UNLOCK();
+
 	return ret;
 }
 
