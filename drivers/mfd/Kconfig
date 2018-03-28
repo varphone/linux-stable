@@ -1452,6 +1452,11 @@ config MFD_ATM88PA
 	  The ATM88PA is an integrated keypad, leds, and power management
 	  subsystem for embeded systems.
 
+config MFD_ATM88PA_POWEROFF_USE_GPIO
+	bool "Use GPIO To Turn Off The Power"
+	default n
+	depends on MFD_ATM88PA && GPIOLIB
+
 menu "Multimedia Capabilities Port drivers"
 	depends on ARCH_SA1100
 

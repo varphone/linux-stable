@@ -14,7 +14,7 @@
 #include <linux/mfd/atm88pa.h>
 #include <linux/mfd/atm88pa-private.h>
 
-#ifdef CONFIG_ATM88PA_POWEROFF_USE_GPIO
+#ifdef CONFIG_MFD_ATM88PA_POWEROFF_USE_GPIO
 static int poweroff_gpio;
 static int poweroff_level;
 
@@ -38,7 +38,7 @@ static void atm88pa_power_off(void)
 
 int atm88pa_power_register(struct atm88pa *atm)
 {
-#ifdef CONFIG_ATM88PA_POWEROFF_USE_GPIO
+#ifdef CONFIG_MFD_ATM88PA_POWEROFF_USE_GPIO
 	int flags, ret;
 	struct atm88pa_power *pwr = &atm->power;
 
