@@ -13,6 +13,16 @@
 	compatible = "tdc,cvr-mil-v2", "myzr,myimx6", "myzr,myimx6q", "myzr,myimx6cb200", "myzr,myimx6ek200", "fsl,imx6q", "fsl,imx6q-ldb";
 };
 
+&i2c1 {
+
+	atm88pa@7a {
+		power {
+			/* poweroff GPIO5_IO20, ACTIVE_LOW */
+			gpios = <&gpio5 20 1>;
+		};
+	};
+};
+
 &ldb {
 	lvds-channel@0 {
 		crtc = "ipu2-di0";
