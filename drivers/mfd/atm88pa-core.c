@@ -427,6 +427,22 @@ static ssize_t atm88pa_set_lcd_light_attr(struct device *dev,
 	return -EINVAL;
 }
 
+static ssize_t atm88pa_set_poweroff_attr(struct device *dev,
+					 struct device_attribute *attr,
+					 const char *buf, size_t count)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int val;
+
+	if (sscanf(buf, "%d", &val) == 1) {
+		if (val == 1)
+			atm88pa_write(atm, ATM88PA_REG_PWR_CTRL, 0x55);
+		return count;
+	}
+	return -EINVAL;
+}
+
+
 static ssize_t atm88pa_get_status_attr(struct device *dev,
 				       struct device_attribute *attr,
 				       char *buf)
@@ -546,6 +562,7 @@ DEVICE_ATTR(cam_r_pwr, S_IRUGO | S_IWUSR, atm88pa_get_cam_r_pwr_attr, atm88pa_se
 DEVICE_ATTR(keypad_light, S_IRUGO | S_IWUSR, atm88pa_get_keypad_light_attr, atm88pa_set_keypad_light_attr);
 DEVICE_ATTR(lcd_pwr, S_IRUGO | S_IWUSR, atm88pa_get_lcd_pwr_attr, atm88pa_set_lcd_pwr_attr);
 DEVICE_ATTR(lcd_light, S_IRUGO | S_IWUSR, atm88pa_get_lcd_light_attr, atm88pa_set_lcd_light_attr);
+DEVICE_ATTR(poweroff, S_IWUSR, NULL, atm88pa_set_poweroff_attr);
 DEVICE_ATTR(status, S_IRUGO, atm88pa_get_status_attr, NULL);
 DEVICE_ATTR(sucap_volt, S_IRUGO, atm88pa_get_sucap_volt_attr, NULL);
 DEVICE_ATTR(sup_light, S_IRUGO | S_IWUSR, atm88pa_get_sup_light_attr, atm88pa_set_sup_light_attr);
@@ -563,6 +580,7 @@ static struct attribute *atm88pa_attrs[] = {
 	&dev_attr_keypad_light.attr,
 	&dev_attr_lcd_pwr.attr,
 	&dev_attr_lcd_light.attr,
+	&dev_attr_poweroff.attr,
 	&dev_attr_status.attr,
 	&dev_attr_sucap_volt.attr,
 	&dev_attr_sup_light.attr,
