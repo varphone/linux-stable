@@ -32,24 +32,68 @@
 	};
 };
 
+&can1 {
+	status = "disabled";
+};
+
+&can2 {
+	status = "disabled";
+};
+
+&fec {
+	status = "disabled";
+};
+
+&hdmi_audio {
+	status = "disabled";
+};
+
+&hdmi_cec {
+	status = "disabled";
+};
+
+&hdmi_core {
+	status = "disabled";
+};
+
+&hdmi_video {
+	status = "disabled";
+};
+
+&i2c2 {
+	status = "disabled";
+};
+
+&i2c3 {
+	status = "disabled";
+};
+
 &mxcfb1 {
 	status = "okay";
 };
 
 &mxcfb2 {
-	status = "okay";
+	status = "disabled";
 };
 
 &mxcfb3 {
-	status = "okay";
+	status = "disabled";
 };
 
 &mxcfb4 {
-	status = "okay";
+	status = "disabled";
+};
+
+&pcie {
+	status = "disabled";
+};
+
+&pwm1 {
+	status = "disabled";
 };
 
 &sata {
-	status = "okay";
+	status = "disabled";
 };
 
 &snvs {
