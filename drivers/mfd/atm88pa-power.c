@@ -18,14 +18,14 @@
 static int poweroff_gpio;
 static int poweroff_level;
 
-static void atm88pa_power_off(void)
+static void atm88pa_power_off_prepare(void)
 {
 	gpio_set_value(poweroff_gpio, poweroff_level);
 }
 #else
 static struct atm88pa *poweroff_atm88pa;
 
-static void atm88pa_power_off(void)
+static void atm88pa_power_off_prepare(void)
 {
 	int ret;
 
@@ -35,6 +35,11 @@ static void atm88pa_power_off(void)
 	}
 }
 #endif
+
+static void atm88pa_power_off(void)
+{
+	/* Nothing to do */
+}
 
 int atm88pa_power_register(struct atm88pa *atm)
 {
@@ -56,6 +61,7 @@ int atm88pa_power_register(struct atm88pa *atm)
 #endif
 	/* Replace power off routine */
 	pm_power_off = atm88pa_power_off;
+	pm_power_off_prepare = atm88pa_power_off_prepare;
 
 	dev_info(atm->dev, "power subsystem registered.\n");
 
