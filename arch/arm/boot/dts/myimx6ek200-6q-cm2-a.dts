@@ -31,6 +31,42 @@
 	status = "disabled";
 };
 
+&can1 {
+	status = "disabled";
+};
+
+&can2 {
+	status = "disabled";
+};
+
+&fec {
+	status = "disabled";
+};
+
+&hdmi_audio {
+	status = "disabled";
+};
+
+&hdmi_cec {
+	status = "disabled";
+};
+
+&hdmi_core {
+	status = "disabled";
+};
+
+&hdmi_video {
+	status = "disabled";
+};
+
+&i2c2 {
+	status = "disabled";
+};
+
+&i2c3 {
+	status = "disabled";
+};
+
 &mxcfb1 {
 	compatible = "fsl,mxc_sdc_fb";
 	disp_dev = "hdmi";
@@ -51,6 +87,14 @@
 };
 
 &mxcfb4 {
+	status = "disabled";
+};
+
+&pcie {
+	status = "disabled";
+};
+
+&pwm1 {
 	status = "disabled";
 };
 
