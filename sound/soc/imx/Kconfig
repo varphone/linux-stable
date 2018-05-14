@@ -139,6 +139,15 @@ config SND_SOC_IMX_TLV320AIC3007
 	  Say Y if you want to add support for SoC audio on an i.MX board with
 	  a tlv320aic3007 codec.
 
+config SND_SOC_IMX_TLV320AIC31
+	tristate "SoC Audio support for i.MX boards with tlv320aic31"
+	depends on I2C && (MACH_MX6Q_PHYFLEX || MACH_MX6Q_PHYCARD)
+	select SND_SOC_TLV320AIC3X
+	select SND_MXC_SOC_MX2
+	help
+	  Say Y if you want to add support for SoC audio on an i.MX board with
+	  a tlv320aic3x codec.
+
 config SND_SOC_IMX_WM9712
 	tristate "SoC Audio support for i.MX boards with wm9712"
 	depends on MACH_MX6Q_PHYCARD && !SND_SOC_IMX_TLV320AIC3007
