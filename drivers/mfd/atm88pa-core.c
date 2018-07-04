@@ -691,10 +691,12 @@ static int atm88pa_probe(struct i2c_client* client,
 	 * Check software version, current:
          *   5.01 for CVR-MIL-V2
 	 *   6.00 for CVR-MIL-V2-A
+	 *   7.00 for CVR-MIL-V2-Y30
 	 */
 	if (atm->chip_ver != 100 &&
 	    atm->chip_ver != 501 &&
-	    atm->chip_ver != 600) {
+	    atm->chip_ver != 600 &&
+	    atm->chip_ver != 700) {
 		dev_err(atm->dev, "ATMEGA88PA not found.\n");
 		return -ENODEV;
 	}
