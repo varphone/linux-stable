@@ -1,0 +1,130 @@
+/*
+ * Technology Development Co.,Ltd
+ * http://www.nedi.com.cn
+ * Varphone Wong <varphone@qq.com>
+ */
+
+/dts-v1/;
+#include "imx6q.dtsi"
+#include "myimx6ek200-cm.dtsi"
+#include "imx6qdl-sabresd-bt656.dtsi"
+
+/ {
+	model = "TDC Car Video Recorder for Military (V2-Y30)";
+	compatible = "tdc,cvr-mil-v2-y30", "tdc,cvr-mil-v2", "myzr,myimx6", "myzr,myimx6q", "myzr,myimx6cb200", "myzr,myimx6ek200", "fsl,imx6q", "fsl,imx6q-ldb";
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* global autoconfigured region for contiguous allocations */
+		linux,cma {
+			compatible = "shared-dma-pool";
+			reusable;
+			size = <0x1E000000>;
+			linux,cma-default;
+		};
+	};
+};
+
+&i2c1 {
+	adv7391@2b {
+		compatible = "fsl,adv739x_tvout";
+		reg = <0x2b>;
+		default_ifmt = "BT656";
+		ipu_id = <0>;
+		disp_id = <0>;
+	};
+
+	atm88pa@7a {
+		power {
+			/* poweroff GPIO5_IO20, ACTIVE_LOW */
+			gpios = <&gpio5 20 1>;
+		};
+	};
+};
+
+&ldb {
+	lvds-channel@0 {
+		crtc = "ipu2-di0";
+	};
+	lvds-channel@1 {
+		crtc = "ipu2-di1";
+	};
+};
+
+&can1 {
+	status = "okay";
+};
+
+&can2 {
+	status = "disabled";
+};
+
+&fec {
+	status = "disabled";
+};
+
+&hdmi_audio {
+	status = "disabled";
+};
+
+&hdmi_cec {
+	status = "disabled";
+};
+
+&hdmi_core {
+	status = "disabled";
+};
+
+&hdmi_video {
+	status = "disabled";
+};
+
+&i2c2 {
+	status = "disabled";
+};
+
+&i2c3 {
+	status = "disabled";
+};
+
+&mxcfb1 {
+	compatible = "fsl,mxc_sdc_fb";
+	disp_dev = "adv739x";
+	interface_pix_fmt = "BT656";
+	mode_str ="BT656-PAL";
+	default_bpp = <32>;
+	int_clk = <0>;
+	late_init = <0>;
+	status = "okay";
+};
+
+&mxcfb2 {
+	status = "disabled";
+};
+
+&mxcfb3 {
+	status = "disabled";
+};
+
+&mxcfb4 {
+	status = "disabled";
+};
+
+&pcie {
+	status = "disabled";
+};
+
+&pwm1 {
+	status = "disabled";
+};
+
+&sata {
+	status = "disabled";
+};
+
+&snvs {
+	status = "disabled";
+};
