@@ -7,7 +7,6 @@
 /dts-v1/;
 #include "imx6q.dtsi"
 #include "myimx6ek200-cm.dtsi"
-#include "imx6qdl-sabresd-bt656.dtsi"
 
 / {
 	model = "TDC Car Video Recorder for Military (V2-Y30)";
@@ -26,11 +25,49 @@
 			linux,cma-default;
 		};
 	};
+
+	lcd@0 {
+		compatible = "fsl,bt656";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_adv739x_tvout>;
+		ipu_id = <0>;
+		disp_id = <0>;
+		default_ifmt = "BT656";
+		status = "okay";
+	};
+};
+
+&iomuxc {
+	cvr-mil-v2-y30 {
+		pinctrl_adv739x_tvout: adv739xtvoutgrp {
+			fsl,pins = <
+				MX6QDL_PAD_DI0_DISP_CLK__IPU1_DI0_DISP_CLK 0x10
+				MX6QDL_PAD_DISP0_DAT16__IPU1_DISP0_DATA16  0x10
+				MX6QDL_PAD_DISP0_DAT17__IPU1_DISP0_DATA17  0x10
+				MX6QDL_PAD_DISP0_DAT18__IPU1_DISP0_DATA18  0x10
+				MX6QDL_PAD_DISP0_DAT19__IPU1_DISP0_DATA19  0x10
+				MX6QDL_PAD_DISP0_DAT20__IPU1_DISP0_DATA20  0x10
+				MX6QDL_PAD_DISP0_DAT21__IPU1_DISP0_DATA21  0x10
+				MX6QDL_PAD_DISP0_DAT22__IPU1_DISP0_DATA22  0x10
+				MX6QDL_PAD_DISP0_DAT23__IPU1_DISP0_DATA23  0x10
+			>;
+		};
+		pinctrl_adv739x_tvout_gpios: adv739xtvoutgpiosgrp {
+			fsl,pins = <
+				MX6QDL_PAD_DI0_PIN2__GPIO4_IO18            0x80000000
+				MX6QDL_PAD_DI0_PIN3__GPIO4_IO19            0x80000000
+			>;
+		};
+	};
 };
 
 &i2c1 {
-	adv7391@2b {
+	adv7391_tvout@2b {
 		compatible = "fsl,adv739x_tvout";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_adv739x_tvout_gpios>;
+		hsync-gpios = <&gpio4 18 0>;
+		vsync-gpios = <&gpio4 19 0>;
 		reg = <0x2b>;
 		default_ifmt = "BT656";
 		ipu_id = <0>;
