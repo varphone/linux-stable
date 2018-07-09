@@ -60,7 +60,10 @@ int atm88pa_power_register(struct atm88pa *atm)
 	poweroff_atm88pa = atm;
 #endif
 	/* Replace power off routine */
+
+#if 0   /* Disabled to prevent the locks held bugs */
 	pm_power_off = atm88pa_power_off;
+#endif
 	pm_power_off_prepare = atm88pa_power_off_prepare;
 
 	dev_info(atm->dev, "power subsystem registered.\n");
