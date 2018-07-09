@@ -18,6 +18,7 @@
 #include <linux/module.h>
 #include <linux/mxcfb.h>
 #include <linux/of_device.h>
+#include <linux/of_gpio.h>
 #include <linux/pinctrl/consumer.h>
 #include <linux/platform_device.h>
 #include "mxc_dispdrv.h"
@@ -29,6 +30,8 @@ struct adv739x_platform_data {
 	u32 default_ifmt;
 	u32 ipu_id;
 	u32 disp_id;
+	int hsync_gpio;
+	int vsync_gpio;
 };
 
 struct adv739x_data {
@@ -307,6 +310,9 @@ static int adv739x_get_of_property(struct i2c_client *client,
 		return err;
 	}
 
+	plat->hsync_gpio = of_get_named_gpio(np, "hsync-gpios", 0);
+	plat->vsync_gpio = of_get_named_gpio(np, "vsync-gpios", 0);
+
 	plat->ipu_id = ipu_id;
 	plat->disp_id = disp_id;
 	if (!strncmp(default_ifmt, "BT656", 5))
@@ -352,6 +358,14 @@ static int __init adv739x_tvout_probe(struct i2c_client *client,
 	ret = adv739x_get_of_property(client, plat);
 	if (ret < 0)
 		return ret;
+
+	if (gpio_is_valid(plat->hsync_gpio))
+		devm_gpio_request_one(&client->dev, plat->hsync_gpio,
+		                      GPIOF_OUT_INIT_HIGH, "HSYNC GPIO");
+
+	if (gpio_is_valid(plat->vsync_gpio))
+		devm_gpio_request_one(&client->dev, plat->vsync_gpio,
+		                      GPIOF_OUT_INIT_HIGH, "VSYNC GPIO");
 
 	adv739x->client = client;
 	adv739x->client->dev.platform_data = plat;
