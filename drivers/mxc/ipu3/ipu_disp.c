@@ -525,6 +525,9 @@ void __ipu_dp_csc_setup(struct ipu_soc *ipu,
 		reg = ipu_dp_read(ipu, DP_COM_CONF(dp));
 		reg &= ~DP_COM_CONF_CSC_DEF_MASK;
 		reg |= dp_csc_param.mode;
+#if defined(CONFIG_FB_MXC_BT656)
+		reg |= (1 << 11);  /* Y range 16-235, U/V range 16-240. */
+#endif
 		ipu_dp_write(ipu, reg, DP_COM_CONF(dp));
 	}
 
