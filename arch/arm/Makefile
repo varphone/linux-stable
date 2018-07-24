@@ -33,6 +33,9 @@ ifeq ($(CONFIG_MMU),)
 MMUEXT		:= -nommu
 endif
 
+# Fix boot failure with gcc newer than 4.4
+KBUILD_CFLAGS	+= $(call cc-option,-mno-unaligned-access)
+
 ifeq ($(CONFIG_FRAME_POINTER),y)
 KBUILD_CFLAGS	+=-fno-omit-frame-pointer -mapcs -mno-sched-prolog
 endif
