@@ -1,0 +1,26 @@
+/ {
+	amba_pl {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges ;
+		framebuffer_rd@43c00000 {
+			compatible = "generic-uio";
+			interrupt-names = "interrupt";
+			interrupt-parent = <&intc>;
+			interrupts = <0 29 4>;
+			reg = <0x43c00000 0x10000>;
+			xlnx,s-axi-control-bus-addr-width = <0x5>;
+			xlnx,s-axi-control-bus-data-width = <0x20>;
+		};
+		framebuffer_wr@43c10000 {
+			compatible = "generic-uio";
+			interrupt-names = "interrupt";
+			interrupt-parent = <&intc>;
+			interrupts = <0 30 4>;
+			reg = <0x43c10000 0x10000>;
+			xlnx,s-axi-control-bus-addr-width = <0x5>;
+			xlnx,s-axi-control-bus-data-width = <0x20>;
+		};
+	};
+};
