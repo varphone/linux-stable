@@ -23,7 +23,7 @@
 	};
 
 	chosen {
-		bootargs = "console=ttyPS0,115200 earlyprintk";
+		bootargs = "console=ttyPS0,115200 earlyprintk panic=1 root=/dev/mmcblk0p2 rw rootwait";
 		stdout-path = "serial0:115200n8";
 	};
 
