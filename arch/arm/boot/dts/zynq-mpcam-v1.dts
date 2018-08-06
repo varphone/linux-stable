@@ -5,6 +5,7 @@
  */
 /dts-v1/;
 #include "zynq-7000.dtsi"
+#include "zynq-mpcam-v1.dtsi"
 
 / {
 	model = "Multiple Path Camera on Zynq ZC702 (V1)";
@@ -23,7 +24,7 @@
 	};
 
 	chosen {
-		bootargs = "console=ttyPS0,115200 earlyprintk panic=1 root=/dev/mmcblk0p2 rw rootwait";
+		bootargs = "console=ttyPS0,115200 earlyprintk panic=1 root=/dev/mmcblk0p2 rw rootwait earlycon clk_ignore_unused uio_pdrv_genirq.of_id=generic-uio";
 		stdout-path = "serial0:115200n8";
 	};
 
