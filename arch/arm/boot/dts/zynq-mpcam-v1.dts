@@ -16,6 +16,7 @@
 		serial0 = &uart1;
 		spi0 = &qspi;
 		mmc0 = &sdhci0;
+		mmc1 = &sdhci1;
 	};
 
 	memory {
@@ -89,6 +90,11 @@
 };
 
 &sdhci0 {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&sdhci1 {
 	u-boot,dm-pre-reloc;
 	status = "okay";
 };
