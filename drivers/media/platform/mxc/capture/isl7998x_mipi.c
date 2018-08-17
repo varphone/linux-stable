@@ -131,13 +131,13 @@ static inline int isl7998x_brightness_r2u(u8 rv)
  *   [0,200] -> [0,200] */
 static inline u8 isl7998x_contrast_u2r(int uv)
 {
-	return (uv > 200) ? 200 : uv;
+	return (u8)(uv * 64 / 100);
 }
 
 /* @sa isl7998x_contrast_u2r() */
 static inline u8 isl7998x_contrast_r2u(u8 rv)
 {
-	return (rv > 200) ? 200 : rv;
+	return (u8)(rv * 100 / 64);
 }
 
 /* Map hue from unified to register
