@@ -25,7 +25,7 @@
 	};
 
 	chosen {
-		bootargs = "console=ttyPS0,115200 earlyprintk panic=1 root=/dev/mmcblk0p2 rw rootwait earlycon clk_ignore_unused uio_pdrv_genirq.of_id=generic-uio";
+		bootargs = "mem=512M console=ttyPS0,115200 earlyprintk panic=1 root=/dev/mmcblk0p2 rw rootwait earlycon clk_ignore_unused uio_pdrv_genirq.of_id=generic-uio";
 		stdout-path = "serial0:115200n8";
 	};
 
