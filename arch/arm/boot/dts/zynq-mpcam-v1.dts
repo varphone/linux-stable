@@ -53,6 +53,10 @@
 	};
 };
 
+&mpcam0 {
+	status = "okay";
+};
+
 &qspi {
 	u-boot,dm-pre-reloc;
 	status = "okay";
