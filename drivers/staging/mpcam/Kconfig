@@ -1,0 +1,10 @@
+menuconfig MPCAM
+	tristate "Mulitple Path Camera support"
+	depends on ARCH_ZYNQ
+	help
+	  Mulitple Path Camera based on Xilinx Zynq FPGAs.
+
+if MPCAM
+
+endif # MPCAM
+
