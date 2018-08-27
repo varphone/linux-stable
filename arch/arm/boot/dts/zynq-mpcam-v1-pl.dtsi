@@ -22,5 +22,33 @@
 			xlnx,s-axi-control-bus-addr-width = <0x5>;
 			xlnx,s-axi-control-bus-data-width = <0x20>;
 		};
+
+		/* MPCAM ISP device base on miscdev */
+		mpcam0: mpcam@0 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "tdc,mpcam";
+			ranges;
+			reg = <0x20000000 0x4000000>,   /* Filler: Frame Buffers */
+			      <0x43c00000 0x10000>,     /* Filler: Output Port */
+			      <0x43c10000 0x10000>;     /* Filler: Input Port */
+			status = "disabled";
+
+			/* Filler: Output Port */
+			port@0 {
+				interrupt-names = "interrupt";
+				interrupt-parent = <&intc>;
+				interrupts = <0 29 4>;
+				reg = <0x43c00000 0x10000>;
+			};
+
+			/* Filler: Input Port */
+			port@1 {
+				interrupt-names = "interrupt";
+				interrupt-parent = <&intc>;
+				interrupts = <0 30 4>;
+				reg = <0x43c10000 0x10000>;
+			};
+		};
 	};
 };
