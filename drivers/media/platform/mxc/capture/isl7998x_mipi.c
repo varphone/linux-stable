@@ -1480,12 +1480,14 @@ static ssize_t isl7998x_get_channels_status_attr(struct device *dev,
 {
 	int values[4];
 
+	ISL7998X_LOCK();
 	isl7998x_write_reg(0xFF, 0x00);
 	values[0] = isl7998x_read_reg(0x1B);
 	values[1] = isl7998x_read_reg(0x1C);
 	values[2] = isl7998x_read_reg(0x1D);
 	values[3] = isl7998x_read_reg(0x1E);
 	isl7998x_write_reg(0xFF, 0x00);
+	ISL7998X_UNLOCK();
 
 	return scnprintf(buf, PAGE_SIZE, "0x%02X,0x%02X,0x%02X,0x%02X\n",
 			 values[0], values[1], values[2],values[3]);
@@ -1497,9 +1499,11 @@ static ssize_t isl7998x_get_device_interrupt_status_attr(struct device *dev,
 {
 	int value;
 
+	ISL7998X_LOCK();
 	isl7998x_write_reg(0xFF, 0x00);
 	value = isl7998x_read_reg(0x10);
 	isl7998x_write_reg(0xFF, 0x00);
+	ISL7998X_UNLOCK();
 
 	return scnprintf(buf, PAGE_SIZE, "0x%02X\n", value);
 }
@@ -1508,11 +1512,13 @@ static ssize_t isl7998x_get_mipi_csi_errors_attr(struct device *dev,
 						 struct device_attribute *attr,
 						 char *buf)
 {
+	ISL7998X_LOCK();
 	void *mipi_csi2_info = mipi_csi2_get_info();
 	unsigned int values[2];
 
 	values[0] = mipi_csi2_get_error1(mipi_csi2_info);
 	values[1] = mipi_csi2_get_error2(mipi_csi2_info);
+	ISL7998X_UNLOCK();
 
 	return scnprintf(buf, PAGE_SIZE, "0x%08X,0x%08X\n", values[0], values[1]);
 }
@@ -1521,10 +1527,12 @@ static ssize_t isl7998x_get_mipi_csi_phy_status_attr(struct device *dev,
 						     struct device_attribute *attr,
 						     char *buf)
 {
+	ISL7998X_LOCK();
 	void *mipi_csi2_info = mipi_csi2_get_info();
 	unsigned int value;
 
 	value = mipi_csi2_dphy_status(mipi_csi2_info);
+	ISL7998X_UNLOCK();
 
 	return scnprintf(buf, PAGE_SIZE, "0x%08X\n", value);
 }
@@ -1535,11 +1543,15 @@ static ssize_t isl7998x_set_reset_attr(struct device *dev,
 {
 	unsigned int reset;
 
+	ISL7998X_LOCK();
 	if (sscanf(buf, "%u", &reset) == 1) {
 		if (reset == 1)
 			isl7998x_hardware_init(&isl7998x_data[0]);
+		ISL7998X_UNLOCK();
 		return count;
 	}
+	ISL7998X_UNLOCK();
+
 	return -EINVAL;
 }
 
@@ -1557,6 +1569,7 @@ static ssize_t isl7998x_get_statm_attr(struct device *dev,
 	int i;
 	unsigned char values[16];
 
+	ISL7998X_LOCK();
 	isl7998x_write_reg(0xFF, 0x00);
 	values[0] = isl7998x_read_reg(0x1B);
 	values[1] = isl7998x_read_reg(0x1C);
@@ -1569,6 +1582,7 @@ static ssize_t isl7998x_get_statm_attr(struct device *dev,
 	isl7998x_write_reg(0xFF, 0x00);
 
 	memcpy(buf, values, 5);
+	ISL7998X_UNLOCK();
 
 	return 5;
 }
