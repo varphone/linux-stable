@@ -21,6 +21,8 @@ static int poweroff_level;
 static void atm88pa_power_off_prepare(void)
 {
 	gpio_set_value(poweroff_gpio, poweroff_level);
+	printk(KERN_INFO "Power Off by GPIO %d, level %d\n",
+	       poweroff_gpio, poweroff_level);
 }
 #else
 static struct atm88pa *poweroff_atm88pa;
@@ -33,6 +35,7 @@ static void atm88pa_power_off_prepare(void)
 	if (ret < 0) {
 		dev_warn(poweroff_atm88pa->dev, "write power off control failed, err: %d\n", ret);
 	}
+	printk(KERN_INFO "Power Off by ATM88PA I2C\n");
 }
 #endif
 
@@ -56,14 +59,17 @@ int atm88pa_power_register(struct atm88pa *atm)
 
 	poweroff_gpio = pwr->gpio;
 	poweroff_level = pwr->active_low ? 0 : 1;
+	dev_info(atm->dev, "Power Off use GPIO %d, level %d\n",
+	         poweroff_gpio, poweroff_level);
 #else
 	poweroff_atm88pa = atm;
+	dev_info(atm->dev, "Power Off use I2C\n");
 #endif
-	/* Replace power off routine */
 
-#if 0   /* Disabled to prevent the locks held bugs */
+	/* Replace power off routine */
 	pm_power_off = atm88pa_power_off;
-#endif
+
+        /* To prevent the locks held bugs */
 	pm_power_off_prepare = atm88pa_power_off_prepare;
 
 	dev_info(atm->dev, "power subsystem registered.\n");
