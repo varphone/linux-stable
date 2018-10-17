@@ -28,7 +28,7 @@
 };
 
 &ldb {
-	status = "disabled";
+	status = "okay";
 };
 
 &can1 {
@@ -44,27 +44,27 @@
 };
 
 &hdmi_audio {
-	status = "disabled";
+	status = "okay";
 };
 
 &hdmi_cec {
-	status = "disabled";
+	status = "okay";
 };
 
 &hdmi_core {
-	status = "disabled";
+	status = "okay";
 };
 
 &hdmi_video {
-	status = "disabled";
+	status = "okay";
 };
 
 &i2c2 {
-	status = "disabled";
+	status = "okay";
 };
 
 &i2c3 {
-	status = "disabled";
+	status = "okay";
 };
 
 &mxcfb1 {
