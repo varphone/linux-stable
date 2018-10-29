@@ -728,6 +728,14 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		// Page 0
 		isl7998x_write_reg(0xFF, 0x00);
 		isl7998x_write_reg(0x02, 0x00);  /* clear Reset */
+
+		isl7998x_write_reg(0xFF, 0x0F);  /* Page 1 ~ Page 4  */
+		isl7998x_write_reg(0x10, 0x20);  //BRIGHTNESS CONTROL
+		isl7998x_write_reg(0x11, 0x80);  //CONTRAST CONTROL
+		isl7998x_write_reg(0x12, 0x97);  //SHARPNESS CONTROL
+		isl7998x_write_reg(0x13, 0xFF);  //CHROMA (U) GAIN
+		isl7998x_write_reg(0x14, 0xFF);  //CHROMA (V) GAIN
+		isl7998x_write_reg(0x15, 0xFF);  //HUE CONTROL
 	}
 
 	msleep(10);
