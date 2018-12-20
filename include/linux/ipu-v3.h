@@ -657,6 +657,11 @@ int ipu_request_irq(struct ipu_soc *ipu, uint32_t irq,
 		    uint32_t irq_flags, const char *devname, void *dev_id);
 void ipu_free_irq(struct ipu_soc *ipu, uint32_t irq, void *dev_id);
 bool ipu_get_irq_status(struct ipu_soc *ipu, uint32_t irq);
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+int ipu_get_csi_frame_error(struct ipu_soc *ipu);
+void ipu_reset_csi_frame_error(struct ipu_soc *ipu, int bits);
+void ipu_free_scroll_irq(struct ipu_soc *ipu, uint32_t bits);
+#endif
 void ipu_set_csc_coefficients(struct ipu_soc *ipu, ipu_channel_t channel, int32_t param[][3]);
 int32_t ipu_set_channel_bandmode(struct ipu_soc *ipu, ipu_channel_t channel,
 				 ipu_buffer_t type, uint32_t band_height);
