@@ -43,6 +43,9 @@
 #include <linux/fsl_devices.h>
 #include "mxc_v4l2_capture.h"
 #include "ipu_prp_sw.h"
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+#include <linux/mipi_csi2.h>
+#endif
 
 #define init_MUTEX(sem)         sema_init(sem, 1)
 
@@ -224,6 +227,16 @@ static struct v4l2_int_master mxc_v4l2_master = {
 	.attach = mxc_v4l2_master_attach,
 	.detach = mxc_v4l2_master_detach,
 };
+
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+static inline void append_list(struct list_head *dst, struct list_head* src)
+{
+	src->prev->next = dst->next;
+	dst->next->prev = src->prev;
+	dst->next = src->next;
+	src->next->prev = dst;
+}
+#endif
 
 /***************************************************************************
  * Functions for handling Frame buffers.
@@ -437,6 +450,10 @@ static int mxc_streamon(cam_data *cam)
 	if (cam->overlay_on == true)
 		stop_preview(cam);
 
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+	ipu_reset_csi_frame_error(cam->ipu, 1<<(cam->mipi_v_channel%2));
+#endif
+
 	if (cam->enc_enable) {
 		err = cam->enc_enable(cam);
 		if (err != 0)
@@ -490,6 +507,9 @@ static int mxc_streamon(cam_data *cam)
 static int mxc_streamoff(cam_data *cam)
 {
 	int err = 0;
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+	unsigned long lock_flags;
+#endif
 
 	pr_debug("In MVC:mxc_streamoff\n");
 
@@ -515,11 +535,49 @@ static int mxc_streamoff(cam_data *cam)
 		}
 	}
 
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+	INIT_LIST_HEAD(&cam->tmp_queue);
+	spin_lock_irqsave(&cam->queue_int_lock, lock_flags);
+	/* collect buffers from all queues and store them in tmp_queue */
+	append_list(&cam->tmp_queue, &cam->done_q);
+	append_list(&cam->tmp_queue, &cam->working_q);
+	append_list(&cam->tmp_queue, &cam->ready_q);
 	mxc_free_frames(cam);
+	spin_unlock_irqrestore(&cam->queue_int_lock, lock_flags);
+#else
+    mxc_free_frames(cam);
+#endif
 	mxc_capture_inputs[cam->current_input].status |= V4L2_IN_ST_NO_POWER;
 	cam->capture_on = false;
 	return err;
 }
+
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+static void mxc_reset_stream(cam_data *cam)
+{
+	struct mxc_v4l_frame *frame;
+	unsigned long lock_flags;
+
+///	vidioc_int_dev_init(cam->sensor);
+
+	/* stop capturing */
+	mxc_streamoff(cam);
+
+	/* enqueue buffers */
+	list_for_each_entry(frame, &cam->tmp_queue, queue) {
+		if(frame){
+			frame->buffer.flags |= V4L2_BUF_FLAG_QUEUED;
+		}
+ 	}
+
+	spin_lock_irqsave(&cam->queue_int_lock, lock_flags);
+ 	append_list(&cam->ready_q, &cam->tmp_queue);
+	spin_unlock_irqrestore(&cam->queue_int_lock, lock_flags);
+
+	/* start capturing */
+	mxc_streamon(cam);
+}
+#endif
 
 /*!
  * Valid and adjust the overlay window size, position
@@ -1522,8 +1580,21 @@ static int mxc_v4l_dqueue(cam_data *cam, struct v4l2_buffer *buf)
 	int retval = 0;
 	struct mxc_v4l_frame *frame;
 	unsigned long lock_flags;
+	int frame_error;
 
 	pr_debug("In MVC:mxc_v4l_dqueue\n");
+
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+reset_stream:
+	frame_error = ipu_get_csi_frame_error(cam->ipu);
+	if (frame_error & (1<<(cam->mipi_v_channel%2))) {
+		pr_info("c:%d,e:%d\n", cam->mipi_v_channel, frame_error);
+		mxc_reset_stream(cam);
+		frame_error = ipu_get_csi_frame_error(cam->ipu);
+		pr_info("d:%d,e:%d\n", cam->mipi_v_channel, frame_error);
+		cam->drop_frames = CONFIG_MXC_DROP_FRAMES_AFTER_RESET_STREAM;
+	}
+#endif
 
 	if (!wait_event_interruptible_timeout(cam->enc_queue,
 					      cam->enc_counter != 0,
@@ -1537,6 +1608,15 @@ static int mxc_v4l_dqueue(cam_data *cam, struct v4l2_buffer *buf)
 			"interrupt received\n");
 		return -ERESTARTSYS;
 	}
+
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+	frame_error = ipu_get_csi_frame_error(cam->ipu);
+	if (frame_error & (1<<(cam->mipi_v_channel%2))) {
+		cam->enc_counter--;
+		pr_info("g:%d,e:%d\n", cam->mipi_v_channel, frame_error);
+		goto reset_stream;
+	}
+#endif
 
 	if (down_interruptible(&cam->busy_lock))
 		return -EBUSY;
@@ -1566,6 +1646,12 @@ static int mxc_v4l_dqueue(cam_data *cam, struct v4l2_buffer *buf)
 	buf->index = frame->index;
 	buf->flags = frame->buffer.flags;
 	buf->m = cam->frame[frame->index].buffer.m;
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+	if(cam->drop_frames){
+		memset(cam->frame[frame->index].vaddress, 0xab, PAGE_ALIGN(cam->v2f.fmt.pix.sizeimage));
+		cam->drop_frames--;
+	}
+#endif
 	buf->timestamp = cam->frame[frame->index].buffer.timestamp;
 	buf->field = cam->frame[frame->index].buffer.field;
 	spin_unlock_irqrestore(&cam->dqueue_int_lock, lock_flags);
@@ -1762,6 +1848,11 @@ static int mxc_v4l_close(struct file *file)
 		       __func__);
 		return -EBADF;
 	}
+
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+	if(cam->ipu)
+		ipu_free_scroll_irq(cam->ipu, 1<<cam->csi);
+#endif
 
 	down(&cam->busy_lock);
 

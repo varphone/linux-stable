@@ -234,6 +234,11 @@ typedef struct _cam_data {
 	struct dma_async_tx_descriptor *txd;
 	dma_cookie_t cookie;
 	struct scatterlist sg[2];
+
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+	struct list_head tmp_queue;
+	u32 drop_frames;
+#endif
 } cam_data;
 
 struct sensor_data {
