@@ -27,8 +27,9 @@
 #include "mxc_v4l2_capture.h"
 #include "ipu_prp_sw.h"
 
+///#define CAMERA_DBG
 #ifdef CAMERA_DBG
-	#define CAMERA_TRACE(x) (printk)x
+	#define CAMERA_TRACE(x) printk(x)
 #else
 	#define CAMERA_TRACE(x)
 #endif
