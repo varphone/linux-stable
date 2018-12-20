@@ -151,6 +151,10 @@ struct ipu_soc {
 	unsigned int normal_axi;
 
 	bool smfc_idmac_12bit_3planar_bs_fixup;	/* workaround little stripes */
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+	/* CSI frame errors */
+	int csi_nfb4eof_error;
+#endif
 };
 
 struct ipu_channel {

@@ -36,7 +36,9 @@
 #include <linux/reset.h>
 #include <linux/spinlock.h>
 #include <linux/types.h>
-
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+#include <linux/mipi_csi2.h>
+#endif
 #include <asm/cacheflush.h>
 
 #include "ipu_param_mem.h"
@@ -646,10 +648,15 @@ static int ipu_probe(struct platform_device *pdev)
 	ipu_idmac_write(ipu, 0x1880000FL, IDMAC_CHA_PRI(0));
 
 	/* Enable error interrupts by default */
+#if defined (CONFIG_MXC_GET_FRAME_ERROR_POLLING_MODE)
+	ipu_cm_write(ipu, 0xFFFFFFFC, IPU_INT_CTRL(5));
+	ipu_cm_write(ipu, 0xFFFFFFFC, IPU_INT_CTRL(10));
+#else
 	ipu_cm_write(ipu, 0xFFFFFFFF, IPU_INT_CTRL(5));
+	ipu_cm_write(ipu, 0xFFFFFFFF, IPU_INT_CTRL(10));
+#endif
 	ipu_cm_write(ipu, 0xFFFFFFFF, IPU_INT_CTRL(6));
 	ipu_cm_write(ipu, 0xFFFFFFFF, IPU_INT_CTRL(9));
-	ipu_cm_write(ipu, 0xFFFFFFFF, IPU_INT_CTRL(10));
 
 	if (!bypass_reset)
 		clk_disable(ipu->ipu_clk);
@@ -762,10 +769,15 @@ int32_t ipu_init_channel(struct ipu_soc *ipu, ipu_channel_t channel, ipu_channel
 	mutex_lock(&ipu->mutex_lock);
 
 	/* Re-enable error interrupts every time a channel is initialized */
+#if defined (CONFIG_MXC_GET_FRAME_ERROR_POLLING_MODE)
+	ipu_cm_write(ipu, 0xFFFFFFFC, IPU_INT_CTRL(5));
+	ipu_cm_write(ipu, 0xFFFFFFFC, IPU_INT_CTRL(10));
+#else
 	ipu_cm_write(ipu, 0xFFFFFFFF, IPU_INT_CTRL(5));
+	ipu_cm_write(ipu, 0xFFFFFFFF, IPU_INT_CTRL(10));
+#endif
 	ipu_cm_write(ipu, 0xFFFFFFFF, IPU_INT_CTRL(6));
 	ipu_cm_write(ipu, 0xFFFFFFFF, IPU_INT_CTRL(9));
-	ipu_cm_write(ipu, 0xFFFFFFFF, IPU_INT_CTRL(10));
 
 	if (ipu->channel_init_mask & (1L << IPU_CHAN_ID(channel))) {
 		dev_warn(ipu->dev, "Warning: channel already initialized %d\n",
@@ -2907,12 +2919,20 @@ static irqreturn_t ipu_err_irq_handler(int irq, void *desc)
 			ipu_cm_write(ipu, int_stat,
 				IPU_INT_STAT(ipu->devtype, err_reg[i]));
 			dev_warn(ipu->dev,
-				"IPU Warning - IPU_INT_STAT_%d = 0x%08X\n",
+				"STAT_%d=0x%x\n",
 				err_reg[i], int_stat);
-			/* Disable interrupts so we only get error once */
-			int_stat = ipu_cm_read(ipu, IPU_INT_CTRL(err_reg[i])) &
-					~int_stat;
-			ipu_cm_write(ipu, int_stat, IPU_INT_CTRL(err_reg[i]));
+
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+			if ((err_reg[i]==5 || err_reg[i]==10 ) && (int_stat & 0x3)) {
+				/* new frame before end of frame error on CSI_MEM channels 0-3 */
+				ipu->csi_nfb4eof_error |= int_stat;
+			}else{
+				/* Disable interrupts so we only get error once */
+				int_stat = ipu_cm_read(ipu, IPU_INT_CTRL(err_reg[i])) &
+					    ~int_stat;
+				ipu_cm_write(ipu, int_stat, IPU_INT_CTRL(err_reg[i]));
+			}
+#endif
 		}
 	}
 
@@ -2920,6 +2940,37 @@ static irqreturn_t ipu_err_irq_handler(int irq, void *desc)
 
 	return IRQ_HANDLED;
 }
+
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+void ipu_free_scroll_irq(struct ipu_soc *ipu, uint32_t bits)
+{
+	uint32_t int_ctrl;
+	unsigned long lock_flags;
+	int i;
+	const int err_reg[] = { 5, 10, 0 };
+
+	_ipu_get(ipu);
+
+	spin_lock_irqsave(&ipu->int_reg_spin_lock, lock_flags);
+
+	for (i = 0; err_reg[i] != 0; i++) {
+
+		dev_warn(ipu->dev, "Free CTRL_%d=0x%x\n", err_reg[i], bits);
+
+		/* clear the interrupt */
+		ipu_cm_write(ipu, bits, IPU_INT_STAT(ipu->devtype, err_reg[i]));
+
+		/* disable the interrupt */
+		int_ctrl = ipu_cm_read(ipu, IPU_INT_CTRL(err_reg[i]));
+		ipu_cm_write(ipu, int_ctrl & (~bits), IPU_INT_CTRL(err_reg[i]));
+	}
+
+	spin_unlock_irqrestore(&ipu->int_reg_spin_lock, lock_flags);
+
+	_ipu_put(ipu);
+}
+EXPORT_SYMBOL(ipu_free_scroll_irq);
+#endif
 
 /*!
  * This function enables the interrupt for the specified interrupt line.
@@ -3046,6 +3097,65 @@ bool ipu_get_irq_status(struct ipu_soc *ipu, uint32_t irq)
 		return false;
 }
 EXPORT_SYMBOL(ipu_get_irq_status);
+
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+/*!
+ * This function returns the current CSI frame error status.
+ *
+ * @param ipu  ipu handler
+ *
+ * @return 	Returns the frame error status.
+ */
+int ipu_get_csi_frame_error(struct ipu_soc *ipu)
+{
+#if defined (CONFIG_MXC_GET_FRAME_ERROR_INT_MODE)
+	int err;
+
+	mutex_lock(&ipu->mutex_lock);
+	err = ipu->csi_nfb4eof_error;
+	mutex_unlock(&ipu->mutex_lock);
+	return err;
+#elif defined (CONFIG_MXC_GET_FRAME_ERROR_POLLING_MODE)
+	int i;
+	uint32_t int_stat;
+	const int err_reg[] = { 5, 10, 0 };
+
+	mutex_lock(&ipu->mutex_lock);
+
+	for (i = 0; err_reg[i] != 0; i++) {
+		int_stat = ipu_cm_read(ipu,
+				IPU_INT_STAT(ipu->devtype, err_reg[i]));
+		int_stat &= 0x3;
+		if (int_stat) {
+			ipu_cm_write(ipu, int_stat,
+				IPU_INT_STAT(ipu->devtype, err_reg[i]));
+			dev_warn(ipu->dev,
+				"STAT_%d=0x%x\n",
+				err_reg[i], int_stat);
+			ipu->csi_nfb4eof_error |= int_stat;
+		}
+	}
+
+	mutex_unlock(&ipu->mutex_lock);
+
+	return ipu->csi_nfb4eof_error;
+#endif
+}
+EXPORT_SYMBOL(ipu_get_csi_frame_error);
+
+/*!
+ * This function resets the current CSI frame error status.
+ *
+ * @param ipu 	ipu handler
+ */
+void ipu_reset_csi_frame_error(struct ipu_soc *ipu, int bits)
+{
+	mutex_lock(&ipu->mutex_lock);
+	ipu->csi_nfb4eof_error = ipu->csi_nfb4eof_error & (~bits);
+	mutex_unlock(&ipu->mutex_lock);
+}
+EXPORT_SYMBOL(ipu_reset_csi_frame_error);
+#endif
 
 /*!
  * This function registers an interrupt handler function for the specified
