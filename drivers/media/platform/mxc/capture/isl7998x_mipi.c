@@ -66,10 +66,17 @@ module_param_named(ch2_std, g_isl7998x_ch2_std, int, S_IRUSR | S_IWUSR);
 module_param_named(ch3_std, g_isl7998x_ch3_std, int, S_IRUSR | S_IWUSR);
 module_param_named(ch4_std, g_isl7998x_ch4_std, int, S_IRUSR | S_IWUSR);
 
+#ifdef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
+static int g_isl7998x_ch1_rst_en = 1;
+static int g_isl7998x_ch2_rst_en = 1;
+static int g_isl7998x_ch3_rst_en = 1;
+static int g_isl7998x_ch4_rst_en = 1;
+#else
 static int g_isl7998x_ch1_rst_en = 0;
 static int g_isl7998x_ch2_rst_en = 0;
 static int g_isl7998x_ch3_rst_en = 0;
 static int g_isl7998x_ch4_rst_en = 0;
+#endif
 module_param_named(ch1_rst_en, g_isl7998x_ch1_rst_en, int, S_IRUSR | S_IWUSR);
 module_param_named(ch2_rst_en, g_isl7998x_ch2_rst_en, int, S_IRUSR | S_IWUSR);
 module_param_named(ch3_rst_en, g_isl7998x_ch3_rst_en, int, S_IRUSR | S_IWUSR);
@@ -1298,7 +1305,9 @@ static int ioctl_dev_init(struct v4l2_int_device *s)
 	ISL7998X_LOCK();
 
 	if (!isl7998x_can_reset()) {
+#ifndef CONFIG_MXC_VIDEO_SCROLL_ELIMINATE
 		printk(KERN_NOTICE "isl7998x_mipi: in used, skip reset\n");
+#endif
 		goto done;
 	}
 
