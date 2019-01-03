@@ -135,6 +135,38 @@ static int extract_pixel_format(
 		*format = V4L2_PIX_FMT_XBGGR10P;
 	else if (strncmp(pixel_t, "bayer_xrggb10p", size) == 0)
 		*format = V4L2_PIX_FMT_XRGGB10P;
+	else if (strncmp(pixel_t, "yuv_yvu420", size) == 0)
+		*format = V4L2_PIX_FMT_YVU420;
+	else if (strncmp(pixel_t, "yuv_yv12", size) == 0)
+		*format = V4L2_PIX_FMT_YVU420;
+	else if (strncmp(pixel_t, "yuv_yuyv", size) == 0)
+		*format = V4L2_PIX_FMT_YUYV;
+	else if (strncmp(pixel_t, "yuv_yyuv", size) == 0)
+		*format = V4L2_PIX_FMT_YYUV;
+	else if (strncmp(pixel_t, "yuv_yvyu", size) == 0)
+		*format = V4L2_PIX_FMT_YVYU;
+	else if (strncmp(pixel_t, "yuv_uyvy", size) == 0)
+		*format = V4L2_PIX_FMT_UYVY;
+	else if (strncmp(pixel_t, "yuv_vyuv", size) == 0)
+		*format = V4L2_PIX_FMT_VYUY;
+	else if (strncmp(pixel_t, "yuv_yuv422p", size) == 0)
+		*format = V4L2_PIX_FMT_YUV422P;
+	else if (strncmp(pixel_t, "yuv_yuv444", size) == 0)
+		*format = V4L2_PIX_FMT_YUV444;
+	else if (strncmp(pixel_t, "yuv_yuv32", size) == 0)
+		*format = V4L2_PIX_FMT_YUV32;
+	else if (strncmp(pixel_t, "yuv_yuv420", size) == 0)
+		*format = V4L2_PIX_FMT_YUV420;
+	else if (strncmp(pixel_t, "yuv_yu12", size) == 0)
+		*format = V4L2_PIX_FMT_YUV420;
+	else if (strncmp(pixel_t, "yuv_nv12", size) == 0)
+		*format = V4L2_PIX_FMT_NV12;
+	else if (strncmp(pixel_t, "yuv_nv21", size) == 0)
+		*format = V4L2_PIX_FMT_NV21;
+	else if (strncmp(pixel_t, "yuv_nv16", size) == 0)
+		*format = V4L2_PIX_FMT_NV16;
+	else if (strncmp(pixel_t, "yuv_nv61", size) == 0)
+		*format = V4L2_PIX_FMT_NV61;
 	else {
 		pr_err("%s: Need to extend format%s\n", __func__, pixel_t);
 		return -EINVAL;
