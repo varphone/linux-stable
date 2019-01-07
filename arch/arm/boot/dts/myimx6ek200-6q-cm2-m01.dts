@@ -1,0 +1,107 @@
+/*
+ * Technology Development Co.,Ltd
+ * http://www.nedi.com.cn
+ * Varphone Wong <varphone@qq.com>
+ */
+
+/dts-v1/;
+#include "imx6q.dtsi"
+#include "myimx6ek200-cm.dtsi"
+
+/ {
+	model = "TDC Car Video Recorder for Military (V2-M01)";
+	compatible = "tdc,cvr-mil-v2", "myzr,myimx6", "myzr,myimx6q", "myzr,myimx6cb200", "myzr,myimx6ek200", "fsl,imx6q", "fsl,imx6q-ldb";
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* global autoconfigured region for contiguous allocations */
+		linux,cma {
+			compatible = "shared-dma-pool";
+			reusable;
+			size = <0x1E000000>;
+			linux,cma-default;
+		};
+	};
+};
+
+&ldb {
+	status = "okay";
+};
+
+&can1 {
+	status = "okay";
+};
+
+&can2 {
+	status = "disabled";
+};
+
+&fec {
+	status = "disabled";
+};
+
+&hdmi_audio {
+	status = "okay";
+};
+
+&hdmi_cec {
+	status = "okay";
+};
+
+&hdmi_core {
+	status = "okay";
+};
+
+&hdmi_video {
+	status = "okay";
+};
+
+&i2c2 {
+	status = "okay";
+};
+
+&i2c3 {
+	status = "okay";
+};
+
+&mxcfb1 {
+	compatible = "fsl,mxc_sdc_fb";
+	disp_dev = "hdmi";
+	interface_pix_fmt = "RGB24";
+	mode_str = "1536x576M@60";
+	default_bpp = <32>;
+	int_clk = <0>;
+	late_init = <0>;
+	status = "okay";
+};
+
+&mxcfb2 {
+	status = "disabled";
+};
+
+&mxcfb3 {
+	status = "disabled";
+};
+
+&mxcfb4 {
+	status = "disabled";
+};
+
+&pcie {
+	status = "disabled";
+};
+
+&pwm1 {
+	status = "disabled";
+};
+
+&sata {
+	status = "okay";
+};
+
+&snvs {
+	status = "disabled";
+};
