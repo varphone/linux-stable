@@ -354,6 +354,7 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
 	myimx6ek200-6q-cm2.dtb \
 	myimx6ek200-6q-cm2-a.dtb \
 	myimx6ek200-6q-cm2-b.dtb \
+	myimx6ek200-6q-cm2-m01.dtb \
 	myimx6ek200-6q-cm2-y30.dtb \
 	myimx6ek200-6q-cm3.dtb \
 	myimx6ek200-6s.dtb \
