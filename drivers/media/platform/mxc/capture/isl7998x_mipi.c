@@ -1779,10 +1779,10 @@ DEVICE_ATTR(mipi_csi_errors, S_IRUGO, isl7998x_get_mipi_csi_errors_attr, NULL);
 DEVICE_ATTR(mipi_csi_phy_status, S_IRUGO, isl7998x_get_mipi_csi_phy_status_attr, NULL);
 DEVICE_ATTR(reset, S_IWUSR, NULL, isl7998x_set_reset_attr);
 DEVICE_ATTR(statm, S_IRUGO, isl7998x_get_statm_attr, NULL);
-DEVICE_ATTR(hactives, S_IWUSR, isl7998x_get_hactives_attr, isl7998x_set_hactives_attr);
-DEVICE_ATTR(hdelays, S_IWUSR, isl7998x_get_hdelays_attr, isl7998x_set_hdelays_attr);
-DEVICE_ATTR(vactives, S_IWUSR, isl7998x_get_vactives_attr, isl7998x_set_vactives_attr);
-DEVICE_ATTR(vdelays, S_IWUSR, isl7998x_get_vdelays_attr, isl7998x_set_vdelays_attr);
+DEVICE_ATTR(hactives, S_IRUGO | S_IWUSR, isl7998x_get_hactives_attr, isl7998x_set_hactives_attr);
+DEVICE_ATTR(hdelays, S_IRUGO | S_IWUSR, isl7998x_get_hdelays_attr, isl7998x_set_hdelays_attr);
+DEVICE_ATTR(vactives, S_IRUGO | S_IWUSR, isl7998x_get_vactives_attr, isl7998x_set_vactives_attr);
+DEVICE_ATTR(vdelays, S_IRUGO | S_IWUSR, isl7998x_get_vdelays_attr, isl7998x_set_vdelays_attr);
 
 static struct attribute *isl7998x_attrs[] = {
 	&dev_attr_channels_status.attr,
