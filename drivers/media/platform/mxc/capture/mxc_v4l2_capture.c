@@ -427,6 +427,8 @@ static int mxc_streamon(cam_data *cam)
 		return -1;
 	}
 
+	vidioc_int_stream_pre_on(cam->sensor);
+
 	if (cam->capture_on) {
 		pr_err("ERROR: v4l2 capture: Capture stream has been turned "
 		       " on\n");
@@ -549,6 +551,9 @@ static int mxc_streamoff(cam_data *cam)
 #endif
 	mxc_capture_inputs[cam->current_input].status |= V4L2_IN_ST_NO_POWER;
 	cam->capture_on = false;
+
+	vidioc_int_stream_post_off(cam->sensor);
+
 	return err;
 }
 
