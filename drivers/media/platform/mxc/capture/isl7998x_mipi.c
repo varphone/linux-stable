@@ -52,6 +52,10 @@ unsigned int g_isl7998x_frame_height = 576;
 /*!
  * Maintains the information on the current state of the sesor.
  */
+static int isl7998x_hactives[SENSOR_NUM] = { 720, 720, 720, 720 };
+static int isl7998x_hdelays[SENSOR_NUM] = { 8, 8, 8, 8 };
+static int isl7998x_vactives[SENSOR_NUM] = { 288, 288, 288, 288 };
+static int isl7998x_vdelays[SENSOR_NUM] = { 24, 24, 24, 24};
 static int isl7998x_started = 0;
 static int isl7998x_state[SENSOR_NUM];
 static struct sensor_data isl7998x_data[SENSOR_NUM];
@@ -348,6 +352,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 	u32 mipi_reg;
 	int i, lanes;
 	u8 reg;
+	u8 val;
 
 	mipi_csi2_info = mipi_csi2_get_info();
 
@@ -402,11 +407,12 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 
 		// Page 1
 		isl7998x_write_reg(0xFF, 0x01);
-		isl7998x_write_reg(0x07, 0x12); // VA_HI[5:4]=1, HA_HI[1:0]=2
-		isl7998x_write_reg(0x08, 0x12); // VD_LO
-		isl7998x_write_reg(0x09, 0x20); // VA_LO
-		isl7998x_write_reg(0x0A, 0x0A); // HD_LO
-		isl7998x_write_reg(0x0B, 0xD0); // HA_LO
+		val = ((isl7998x_vactives[0] >> 8) << 4) | (isl7998x_hactives[0] >> 8);
+		isl7998x_write_reg(0x07, val); // VA_HI[5:4]=1, HA_HI[1:0]=2
+		isl7998x_write_reg(0x08, isl7998x_vdelays[0] & 0xFF); // VD_LO
+		isl7998x_write_reg(0x09, isl7998x_vactives[0] & 0xFF); // VA_LO
+		isl7998x_write_reg(0x0A, isl7998x_hdelays[0] & 0xFF); // HD_LO
+		isl7998x_write_reg(0x0B, isl7998x_hactives[0] & 0xFF); // HA_LO
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
 		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3D, 0x00); // Data conversion
@@ -414,11 +420,12 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 
 		// Page 2
 		isl7998x_write_reg(0xFF, 0x02);
-		isl7998x_write_reg(0x07, 0x12);
-		isl7998x_write_reg(0x08, 0x12);
-		isl7998x_write_reg(0x09, 0x20);
-		isl7998x_write_reg(0x0A, 0x0A);
-		isl7998x_write_reg(0x0B, 0xD0);
+		val = ((isl7998x_vactives[1] >> 8) << 4) | (isl7998x_hactives[1] >> 8);
+		isl7998x_write_reg(0x07, val); // VA_HI[5:4]=1, HA_HI[1:0]=2
+		isl7998x_write_reg(0x08, isl7998x_vdelays[1] & 0xFF); // VD_LO
+		isl7998x_write_reg(0x09, isl7998x_vactives[1] & 0xFF); // VA_LO
+		isl7998x_write_reg(0x0A, isl7998x_hdelays[1] & 0xFF); // HD_LO
+		isl7998x_write_reg(0x0B, isl7998x_hactives[1] & 0xFF); // HA_LO
 		isl7998x_write_reg(0x2F, 0xE6);
 		isl7998x_write_reg(0x33, 0xF2);
 		isl7998x_write_reg(0x3D, 0x00);
@@ -426,11 +433,12 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 
 		// Page 3
 		isl7998x_write_reg(0xFF, 0x03);
-		isl7998x_write_reg(0x07, 0x12);
-		isl7998x_write_reg(0x08, 0x12);
-		isl7998x_write_reg(0x09, 0x20);
-		isl7998x_write_reg(0x0A, 0x0A);
-		isl7998x_write_reg(0x0B, 0xD0);
+		val = ((isl7998x_vactives[2] >> 8) << 4) | (isl7998x_hactives[2] >> 8);
+		isl7998x_write_reg(0x07, val); // VA_HI[5:4]=1, HA_HI[1:0]=2
+		isl7998x_write_reg(0x08, isl7998x_vdelays[2] & 0xFF); // VD_LO
+		isl7998x_write_reg(0x09, isl7998x_vactives[2] & 0xFF); // VA_LO
+		isl7998x_write_reg(0x0A, isl7998x_hdelays[2] & 0xFF); // HD_LO
+		isl7998x_write_reg(0x0B, isl7998x_hactives[2] & 0xFF); // HA_LO
 		isl7998x_write_reg(0x2F, 0xE6);
 		isl7998x_write_reg(0x33, 0xF2);
 		isl7998x_write_reg(0x3D, 0x00);
@@ -438,11 +446,12 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 
 		// Page 4
 		isl7998x_write_reg(0xFF, 0x04);
-		isl7998x_write_reg(0x07, 0x12);
-		isl7998x_write_reg(0x08, 0x12);
-		isl7998x_write_reg(0x09, 0x20);
-		isl7998x_write_reg(0x0A, 0x0A);
-		isl7998x_write_reg(0x0B, 0xD0);
+		val = ((isl7998x_vactives[3] >> 8) << 4) | (isl7998x_hactives[3] >> 8);
+		isl7998x_write_reg(0x07, val); // VA_HI[5:4]=1, HA_HI[1:0]=2
+		isl7998x_write_reg(0x08, isl7998x_vdelays[3] & 0xFF); // VD_LO
+		isl7998x_write_reg(0x09, isl7998x_vactives[3] & 0xFF); // VA_LO
+		isl7998x_write_reg(0x0A, isl7998x_hdelays[3] & 0xFF); // HD_LO
+		isl7998x_write_reg(0x0B, isl7998x_hactives[3] & 0xFF); // HA_LO
 		isl7998x_write_reg(0x2F, 0xE6);
 		isl7998x_write_reg(0x33, 0xF2);
 		isl7998x_write_reg(0x3D, 0x00);
@@ -587,11 +596,12 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		// Page 1
 		isl7998x_write_reg(0xFF, 0x01);
 		isl7998x_write_reg(0x02, 0x48); // 27MHz Input
-		isl7998x_write_reg(0x07, 0x12); // VA_HI[5:4]=1, HA_HI[1:0]=2
-		isl7998x_write_reg(0x08, 0x18); // VD_LO
-		isl7998x_write_reg(0x09, 0x20); // VA_LO
-		isl7998x_write_reg(0x0A, 0x08); // HD_LO
-		isl7998x_write_reg(0x0B, 0xD0); // HA_LO
+		val = ((isl7998x_vactives[0] >> 8) << 4) | (isl7998x_hactives[0] >> 8);
+		isl7998x_write_reg(0x07, val); // VA_HI[5:4]=1, HA_HI[1:0]=2
+		isl7998x_write_reg(0x08, isl7998x_vdelays[0] & 0xFF); // VD_LO
+		isl7998x_write_reg(0x09, isl7998x_vactives[0] & 0xFF); // VA_LO
+		isl7998x_write_reg(0x0A, isl7998x_hdelays[0] & 0xFF); // HD_LO
+		isl7998x_write_reg(0x0B, isl7998x_hactives[0] & 0xFF); // HA_LO
 		isl7998x_write_reg(0x0C, 0xCC); // CNTRL1
 		if (g_isl7998x_ch1_std >= 0)
 			isl7998x_write_reg(0x1C, g_isl7998x_ch1_std);
@@ -610,11 +620,12 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		// Page 2
 		isl7998x_write_reg(0xFF, 0x02);
 		isl7998x_write_reg(0x02, 0x48); // 27MHz Input
-		isl7998x_write_reg(0x07, 0x12); // VA_HI[5:4]=1, HA_HI[1:0]=2
-		isl7998x_write_reg(0x08, 0x18); // VD_LO
-		isl7998x_write_reg(0x09, 0x20); // VA_LO
-		isl7998x_write_reg(0x0A, 0x08); // HD_LO
-		isl7998x_write_reg(0x0B, 0xD0); // HA_LO
+		val = ((isl7998x_vactives[1] >> 8) << 4) | (isl7998x_hactives[1] >> 8);
+		isl7998x_write_reg(0x07, val); // VA_HI[5:4]=1, HA_HI[1:0]=2
+		isl7998x_write_reg(0x08, isl7998x_vdelays[1] & 0xFF); // VD_LO
+		isl7998x_write_reg(0x09, isl7998x_vactives[1] & 0xFF); // VA_LO
+		isl7998x_write_reg(0x0A, isl7998x_hdelays[1] & 0xFF); // HD_LO
+		isl7998x_write_reg(0x0B, isl7998x_hactives[1] & 0xFF); // HA_LO
 		isl7998x_write_reg(0x0C, 0xCC); // CNTRL1
 		if (g_isl7998x_ch2_std >= 0)
 			isl7998x_write_reg(0x1C, g_isl7998x_ch2_std);
@@ -633,11 +644,12 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		// Page 3
 		isl7998x_write_reg(0xFF, 0x03);
 		isl7998x_write_reg(0x02, 0x48); // 27MHz Input
-		isl7998x_write_reg(0x07, 0x12); // VA_HI[5:4]=1, HA_HI[1:0]=2
-		isl7998x_write_reg(0x08, 0x18); // VD_LO
-		isl7998x_write_reg(0x09, 0x20); // VA_LO
-		isl7998x_write_reg(0x0A, 0x08); // HD_LO
-		isl7998x_write_reg(0x0B, 0xD0); // HA_LO
+		val = ((isl7998x_vactives[2] >> 8) << 4) | (isl7998x_hactives[2] >> 8);
+		isl7998x_write_reg(0x07, val); // VA_HI[5:4]=1, HA_HI[1:0]=2
+		isl7998x_write_reg(0x08, isl7998x_vdelays[2] & 0xFF); // VD_LO
+		isl7998x_write_reg(0x09, isl7998x_vactives[2] & 0xFF); // VA_LO
+		isl7998x_write_reg(0x0A, isl7998x_hdelays[2] & 0xFF); // HD_LO
+		isl7998x_write_reg(0x0B, isl7998x_hactives[2] & 0xFF); // HA_LO
 		isl7998x_write_reg(0x0C, 0xCC); // CNTRL1
 		if (g_isl7998x_ch3_std >= 0)
 			isl7998x_write_reg(0x1C, g_isl7998x_ch3_std);
@@ -656,11 +668,12 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		// Page 4
 		isl7998x_write_reg(0xFF, 0x04);
 		isl7998x_write_reg(0x02, 0x48); // 27MHz Input
-		isl7998x_write_reg(0x07, 0x12); // VA_HI[5:4]=1, HA_HI[1:0]=2
-		isl7998x_write_reg(0x08, 0x18); // VD_LO
-		isl7998x_write_reg(0x09, 0x20); // VA_LO
-		isl7998x_write_reg(0x0A, 0x08); // HD_LO
-		isl7998x_write_reg(0x0B, 0xD0); // HA_LO
+		val = ((isl7998x_vactives[3] >> 8) << 4) | (isl7998x_hactives[3] >> 8);
+		isl7998x_write_reg(0x07, val); // VA_HI[5:4]=1, HA_HI[1:0]=2
+		isl7998x_write_reg(0x08, isl7998x_vdelays[3] & 0xFF); // VD_LO
+		isl7998x_write_reg(0x09, isl7998x_vactives[3] & 0xFF); // VA_LO
+		isl7998x_write_reg(0x0A, isl7998x_hdelays[3] & 0xFF); // HD_LO
+		isl7998x_write_reg(0x0B, isl7998x_hactives[3] & 0xFF); // HA_LO
 		isl7998x_write_reg(0x0C, 0xCC); // CNTRL1
 		if (g_isl7998x_ch4_std >= 0)
 			isl7998x_write_reg(0x1C, g_isl7998x_ch4_std);
@@ -1600,12 +1613,124 @@ static ssize_t isl7998x_get_statm_attr(struct device *dev,
 	return 5;
 }
 
+static ssize_t isl7998x_get_hactives_attr(struct device *dev,
+					  struct device_attribute *attr,
+					  char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "%d %d %d %d",
+			 isl7998x_hactives[0],
+			 isl7998x_hactives[1],
+			 isl7998x_hactives[2],
+			 isl7998x_hactives[3]);
+}
+
+static ssize_t isl7998x_set_hactives_attr(struct device *dev,
+					  struct device_attribute *attr,
+					  const char *buf, size_t count)
+{
+
+	if (sscanf(buf, "%d %d %d %d",
+		   &isl7998x_hactives[0],
+		   &isl7998x_hactives[1],
+		   &isl7998x_hactives[2],
+		   &isl7998x_hactives[3]) == 4) {
+		return count;
+	}
+
+	return -EINVAL;
+}
+
+static ssize_t isl7998x_get_hdelays_attr(struct device *dev,
+					  struct device_attribute *attr,
+					  char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "%d %d %d %d",
+			 isl7998x_hdelays[0],
+			 isl7998x_hdelays[1],
+			 isl7998x_hdelays[2],
+			 isl7998x_hdelays[3]);
+}
+
+static ssize_t isl7998x_set_hdelays_attr(struct device *dev,
+					 struct device_attribute *attr,
+					 const char *buf, size_t count)
+{
+
+	if (sscanf(buf, "%d %d %d %d",
+		   &isl7998x_hdelays[0],
+		   &isl7998x_hdelays[1],
+		   &isl7998x_hdelays[2],
+		   &isl7998x_hdelays[3]) == 4) {
+		return count;
+	}
+
+	return -EINVAL;
+}
+
+static ssize_t isl7998x_get_vactives_attr(struct device *dev,
+					  struct device_attribute *attr,
+					  char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "%d %d %d %d",
+			 isl7998x_vactives[0],
+			 isl7998x_vactives[1],
+			 isl7998x_vactives[2],
+			 isl7998x_vactives[3]);
+}
+
+static ssize_t isl7998x_set_vactives_attr(struct device *dev,
+					  struct device_attribute *attr,
+					  const char *buf, size_t count)
+{
+
+	if (sscanf(buf, "%d %d %d %d",
+		   &isl7998x_vactives[0],
+		   &isl7998x_vactives[1],
+		   &isl7998x_vactives[2],
+		   &isl7998x_vactives[3]) == 4) {
+		return count;
+	}
+
+	return -EINVAL;
+}
+
+static ssize_t isl7998x_get_vdelays_attr(struct device *dev,
+					 struct device_attribute *attr,
+					 char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "%d %d %d %d",
+			 isl7998x_vdelays[0],
+			 isl7998x_vdelays[1],
+			 isl7998x_vdelays[2],
+			 isl7998x_vdelays[3]);
+}
+
+static ssize_t isl7998x_set_vdelays_attr(struct device *dev,
+					 struct device_attribute *attr,
+					 const char *buf, size_t count)
+{
+
+	if (sscanf(buf, "%d %d %d %d",
+		   &isl7998x_vdelays[0],
+		   &isl7998x_vdelays[1],
+		   &isl7998x_vdelays[2],
+		   &isl7998x_vdelays[3]) == 4) {
+		return count;
+	}
+
+	return -EINVAL;
+}
+
 DEVICE_ATTR(channels_status, S_IRUGO, isl7998x_get_channels_status_attr, NULL);
 DEVICE_ATTR(device_interrupt_status, S_IRUGO, isl7998x_get_device_interrupt_status_attr, NULL);
 DEVICE_ATTR(mipi_csi_errors, S_IRUGO, isl7998x_get_mipi_csi_errors_attr, NULL);
 DEVICE_ATTR(mipi_csi_phy_status, S_IRUGO, isl7998x_get_mipi_csi_phy_status_attr, NULL);
 DEVICE_ATTR(reset, S_IWUSR, NULL, isl7998x_set_reset_attr);
 DEVICE_ATTR(statm, S_IRUGO, isl7998x_get_statm_attr, NULL);
+DEVICE_ATTR(hactives, S_IWUSR, isl7998x_get_hactives_attr, isl7998x_set_hactives_attr);
+DEVICE_ATTR(hdelays, S_IWUSR, isl7998x_get_hdelays_attr, isl7998x_set_hdelays_attr);
+DEVICE_ATTR(vactives, S_IWUSR, isl7998x_get_vactives_attr, isl7998x_set_vactives_attr);
+DEVICE_ATTR(vdelays, S_IWUSR, isl7998x_get_vdelays_attr, isl7998x_set_vdelays_attr);
 
 static struct attribute *isl7998x_attrs[] = {
 	&dev_attr_channels_status.attr,
@@ -1614,6 +1739,10 @@ static struct attribute *isl7998x_attrs[] = {
 	&dev_attr_mipi_csi_phy_status.attr,
 	&dev_attr_reset.attr,
 	&dev_attr_statm.attr,
+	&dev_attr_hactives.attr,
+	&dev_attr_hdelays.attr,
+	&dev_attr_vactives.attr,
+	&dev_attr_vdelays.attr,
 	NULL
 };
 
