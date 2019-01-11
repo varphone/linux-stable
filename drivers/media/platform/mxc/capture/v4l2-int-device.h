@@ -230,6 +230,8 @@ enum v4l2_int_ioctl_num {
 	 *
 	 */
 	vidioc_int_priv_start_num = 2000,
+	vidioc_int_stream_pre_on_num,
+	vidioc_int_stream_post_off_num,
 };
 
 /*
@@ -305,5 +307,7 @@ V4L2_INT_WRAPPER_1(enum_frameintervals, struct v4l2_frmivalenum, *);
 V4L2_INT_WRAPPER_0(reset);
 V4L2_INT_WRAPPER_0(init);
 V4L2_INT_WRAPPER_1(g_chip_ident, int, *);
+V4L2_INT_WRAPPER_0(stream_pre_on);
+V4L2_INT_WRAPPER_0(stream_post_off);
 
 #endif
