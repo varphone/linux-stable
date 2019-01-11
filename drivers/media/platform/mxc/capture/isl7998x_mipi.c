@@ -280,6 +280,9 @@ static int isl7998x_reset_channel(int channel)
 	/* Exit reset state */
 	isl7998x_write_reg(0x02, 0x00);
 	isl7998x_write_reg(0xFF, 0x00);
+	/* Re-configure the HDELAY */
+	isl7998x_write_reg(0xFF, channel);
+	isl7998x_write_reg(0x0A, isl7998x_hdelays[channel-1]);
 
 	return 0;
 }
