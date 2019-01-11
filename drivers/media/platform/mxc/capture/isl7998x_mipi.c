@@ -1412,6 +1412,53 @@ done:
 }
 
 /*!
+ * ioctl_stream_pre_on - V4L2 sensor interface handler for vidioc_int_stream_pre_on_num
+ * @s: pointer to standard V4L2 device structure
+ *
+ * Prepare the sensor before stream starting.
+ */
+static int ioctl_stream_pre_on(struct v4l2_int_device *s)
+{
+	struct sensor_data *sensor = s->priv;
+	int rst_en = 0;
+
+	/* Reset the decoder, the sensor->v_channel is 0 ~ 3,
+	 * The isl7998x_reset_channel() need from 1 ~ 4 */
+	switch (sensor->v_channel) {
+	case 0:
+		rst_en = g_isl7998x_ch1_rst_en;
+		break;
+	case 1:
+		rst_en = g_isl7998x_ch2_rst_en;
+		break;
+	case 2:
+		rst_en = g_isl7998x_ch3_rst_en;
+		break;
+	case 3:
+		rst_en = g_isl7998x_ch4_rst_en;
+		break;
+	default:
+		break;
+	}
+
+	if (rst_en)
+		isl7998x_reset_channel(sensor->v_channel+1);
+
+	return 0;
+}
+
+/*!
+ * ioctl_stream_post_off - V4L2 sensor interface handler for vidioc_int_stream_post_off_num
+ * @s: pointer to standard V4L2 device structure
+ *
+ * Finalize the sensor after stream stopped.
+ */
+static int ioctl_stream_post_off(struct v4l2_int_device *s)
+{
+	return 0;
+}
+
+/*!
  * This structure defines all the ioctls for this module and links them to the
  * enumeration.
  */
@@ -1441,6 +1488,8 @@ static struct v4l2_int_ioctl_desc isl7998x_ioctl_desc[] = {
 				(v4l2_int_ioctl_func *) ioctl_enum_frameintervals},
 	{vidioc_int_g_chip_ident_num,
 				(v4l2_int_ioctl_func *) ioctl_g_chip_ident},
+	{vidioc_int_stream_pre_on_num, ioctl_stream_pre_on},
+	{vidioc_int_stream_post_off_num, ioctl_stream_post_off},
 };
 
 static struct v4l2_int_slave isl7998x_slave[SENSOR_NUM] = {
