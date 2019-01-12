@@ -1018,9 +1018,10 @@ static int isl7998x_set_brightness(int value, int channel)
 
 	rv = isl7998x_brightness_u2r(value);
 
-	isl7998x_write_reg(0xFF, channel);
-	ret = isl7998x_write_reg(0x10, rv);
-	isl7998x_write_reg(0xFF, channel);
+	if (isl7998x_write_reg(0xFF, channel) == 0) {
+		ret = isl7998x_write_reg(0x10, rv);
+		isl7998x_write_reg(0xFF, 0);
+	}
 
 	/* Keep current value */
 	g_isl7998x_adjusts[channel].brightness = value;
@@ -1042,9 +1043,10 @@ static int isl7998x_set_contrast(int value, int channel)
 
 	rv = isl7998x_contrast_u2r(value);
 
-	isl7998x_write_reg(0xFF, channel);
-	ret = isl7998x_write_reg(0x11, rv);
-	isl7998x_write_reg(0xFF, channel);
+	if (isl7998x_write_reg(0xFF, channel) == 0) {
+		ret = isl7998x_write_reg(0x11, rv);
+		isl7998x_write_reg(0xFF, channel);
+	}
 
 	/* Keep current value */
 	g_isl7998x_adjusts[channel].contrast = value;
@@ -1066,10 +1068,11 @@ static int isl7998x_set_hue(int value, int channel)
 
 	rv = isl7998x_hue_u2r(value);
 
-	isl7998x_write_reg(0xFF, channel);
-	ret = isl7998x_read_reg(0x15);
-	ret = isl7998x_write_reg(0x15, rv);
-	isl7998x_write_reg(0xFF, channel);
+	if (isl7998x_write_reg(0xFF, channel) == 0) {
+		ret = isl7998x_read_reg(0x15);
+		ret = isl7998x_write_reg(0x15, rv);
+		isl7998x_write_reg(0xFF, 0);
+	}
 
 	/* Keep current value */
 	g_isl7998x_adjusts[channel].hue = value;
@@ -1091,11 +1094,12 @@ static int isl7998x_set_saturation(int value, int channel)
 
 	rv = isl7998x_saturation_u2r(value);
 
-	isl7998x_write_reg(0xFF, channel);
-	ret = isl7998x_read_reg(0x13);
-	ret  = isl7998x_write_reg(0x13, rv);
-	ret |= isl7998x_write_reg(0x14, rv);
-	isl7998x_write_reg(0xFF, channel);
+	if (isl7998x_write_reg(0xFF, channel) == 0) {
+		ret = isl7998x_read_reg(0x13);
+		ret  = isl7998x_write_reg(0x13, rv);
+		ret |= isl7998x_write_reg(0x14, rv);
+		isl7998x_write_reg(0xFF, 0);
+	}
 
 	/* Keep current value */
 	g_isl7998x_adjusts[channel].saturation = value;
@@ -1117,9 +1121,10 @@ static int isl7998x_set_sharpness(int value, int channel)
 
 	rv = isl7998x_sharpness_u2r(value);
 
-	isl7998x_write_reg(0xFF, channel);
-	ret = isl7998x_write_reg(0x12, 0x10 | (rv & 0x0f));
-	isl7998x_write_reg(0xFF, channel);
+	if (isl7998x_write_reg(0xFF, channel) == 0) {
+		ret = isl7998x_write_reg(0x12, 0x10 | (rv & 0x0f));
+		isl7998x_write_reg(0xFF, 0);
+	}
 
 	/* Keep current value */
 	g_isl7998x_adjusts[channel].sharpness = value;
@@ -1559,12 +1564,13 @@ static ssize_t isl7998x_get_channels_status_attr(struct device *dev,
 	int values[4];
 
 	ISL7998X_LOCK();
-	isl7998x_write_reg(0xFF, 0x00);
-	values[0] = isl7998x_read_reg(0x1B);
-	values[1] = isl7998x_read_reg(0x1C);
-	values[2] = isl7998x_read_reg(0x1D);
-	values[3] = isl7998x_read_reg(0x1E);
-	isl7998x_write_reg(0xFF, 0x00);
+	if (isl7998x_write_reg(0xFF, 0x00) == 0) {
+		values[0] = isl7998x_read_reg(0x1B);
+		values[1] = isl7998x_read_reg(0x1C);
+		values[2] = isl7998x_read_reg(0x1D);
+		values[3] = isl7998x_read_reg(0x1E);
+		isl7998x_write_reg(0xFF, 0x00);
+	}
 	ISL7998X_UNLOCK();
 
 	return scnprintf(buf, PAGE_SIZE, "0x%02X,0x%02X,0x%02X,0x%02X\n",
@@ -1578,9 +1584,10 @@ static ssize_t isl7998x_get_device_interrupt_status_attr(struct device *dev,
 	int value;
 
 	ISL7998X_LOCK();
-	isl7998x_write_reg(0xFF, 0x00);
-	value = isl7998x_read_reg(0x10);
-	isl7998x_write_reg(0xFF, 0x00);
+	if (isl7998x_write_reg(0xFF, 0x00) == 0) {
+		value = isl7998x_read_reg(0x10);
+		isl7998x_write_reg(0xFF, 0x00);
+	}
 	ISL7998X_UNLOCK();
 
 	return scnprintf(buf, PAGE_SIZE, "0x%02X\n", value);
@@ -1648,16 +1655,18 @@ static ssize_t isl7998x_get_statm_attr(struct device *dev,
 	unsigned char values[16];
 
 	ISL7998X_LOCK();
-	isl7998x_write_reg(0xFF, 0x00);
-	values[0] = isl7998x_read_reg(0x1B);
-	values[1] = isl7998x_read_reg(0x1C);
-	values[2] = isl7998x_read_reg(0x1D);
-	values[3] = isl7998x_read_reg(0x1E);
-	isl7998x_write_reg(0xFF, 0x00);
+	if (isl7998x_write_reg(0xFF, 0x00) == 0) {
+		values[0] = isl7998x_read_reg(0x1B);
+		values[1] = isl7998x_read_reg(0x1C);
+		values[2] = isl7998x_read_reg(0x1D);
+		values[3] = isl7998x_read_reg(0x1E);
+		isl7998x_write_reg(0xFF, 0x00);
+	}
 
-	isl7998x_write_reg(0xFF, 0x05);
-	values[4] = isl7998x_read_reg(0x00);
-	isl7998x_write_reg(0xFF, 0x00);
+	if (isl7998x_write_reg(0xFF, 0x05) == 0) {
+		values[4] = isl7998x_read_reg(0x00);
+		isl7998x_write_reg(0xFF, 0x00);
+	}
 
 	memcpy(buf, values, 5);
 	ISL7998X_UNLOCK();
