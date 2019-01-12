@@ -1593,10 +1593,10 @@ static int mxc_v4l_dqueue(cam_data *cam, struct v4l2_buffer *buf)
 reset_stream:
 	frame_error = ipu_get_csi_frame_error(cam->ipu);
 	if (frame_error & (1<<(cam->mipi_v_channel%2))) {
-		pr_info("c:%d,e:%d\n", cam->mipi_v_channel, frame_error);
+		pr_debug("mxc-v4l2-capture: c:%d, e:%d\n", cam->mipi_v_channel, frame_error);
 		mxc_reset_stream(cam);
 		frame_error = ipu_get_csi_frame_error(cam->ipu);
-		pr_info("d:%d,e:%d\n", cam->mipi_v_channel, frame_error);
+		pr_debug("mxc-v4l2-capture: c:%d, e:%d\n", cam->mipi_v_channel, frame_error);
 		cam->drop_frames = CONFIG_MXC_DROP_FRAMES_AFTER_RESET_STREAM;
 	}
 #endif
@@ -1618,7 +1618,7 @@ reset_stream:
 	frame_error = ipu_get_csi_frame_error(cam->ipu);
 	if (frame_error & (1<<(cam->mipi_v_channel%2))) {
 		cam->enc_counter--;
-		pr_info("g:%d,e:%d\n", cam->mipi_v_channel, frame_error);
+		pr_debug("mxc-v4l2-capture: c:%d, e:%d\n", cam->mipi_v_channel, frame_error);
 		goto reset_stream;
 	}
 #endif
