@@ -1661,6 +1661,8 @@ reset_stream:
 	buf->field = cam->frame[frame->index].buffer.field;
 	spin_unlock_irqrestore(&cam->dqueue_int_lock, lock_flags);
 
+	vidioc_int_stream_post_dequeue(cam->sensor);
+
 	up(&cam->busy_lock);
 	return retval;
 }
