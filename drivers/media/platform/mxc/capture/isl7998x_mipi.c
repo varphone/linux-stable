@@ -269,20 +269,24 @@ static int isl7998x_write_reg(u8 reg, u8 val)
  */
 static int isl7998x_reset_channel(int channel)
 {
-	if (channel < 1)
+	if (channel < 1 || channel > 4)
 		return -EINVAL;
 
-	isl7998x_write_reg(0xFF, 0x00);
-	/* Reset the decoder's logic */
-	isl7998x_write_reg(0x02, 1 << (channel -1));
-	/* Wait for reset */
-	msleep(10);
-	/* Exit reset state */
-	isl7998x_write_reg(0x02, 0x00);
-	isl7998x_write_reg(0xFF, 0x00);
+	if (isl7998x_write_reg(0xFF, 0x00) == 0) {
+		/* Reset the decoder's logic */
+		isl7998x_write_reg(0x02, 1 << (channel -1));
+		/* Wait for reset */
+		msleep(10);
+		/* Exit reset state */
+		isl7998x_write_reg(0x02, 0x00);
+		isl7998x_write_reg(0xFF, 0x00);
+	}
+
 	/* Re-configure the HDELAY */
-	isl7998x_write_reg(0xFF, channel);
-	isl7998x_write_reg(0x0A, isl7998x_hdelays[channel-1]);
+	if (isl7998x_write_reg(0xFF, channel) == 0) {
+		isl7998x_write_reg(0x0A, isl7998x_hdelays[channel-1]);
+		isl7998x_write_reg(0xFF, 0x00);
+	}
 
 	return 0;
 }
