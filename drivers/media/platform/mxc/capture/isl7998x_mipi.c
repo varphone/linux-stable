@@ -291,27 +291,6 @@ static int isl7998x_reset_channel(int channel)
 	return 0;
 }
 
-/* Reconfigure the decoder
- * @param channel	The decoder index, from 1 to 4
- * @return 0 for success, negative for error
- */
-static int isl7998x_reconfigure_channel(int channel)
-{
-	int val;
-
-	if (channel < 1 || channel > 4)
-		return -EINVAL;
-
-	if (isl7998x_write_reg(0xFF, channel) == 0) {
-		val = isl7998x_read_reg(0x0A);
-		if (val != isl7998x_hdelays[channel-1])
-			isl7998x_write_reg(0x0A, isl7998x_hdelays[channel-1]);
-		isl7998x_write_reg(0xFF, 0);
-	}
-
-	return 0;
-}
-
 /* Set power of the chip
  * @param on		0 = Power off, 1 = Power on
  */
@@ -813,6 +792,24 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 	}
 
 	return retval;
+}
+
+/* Fixup the decoder bugs
+ * @param sensor	The sensor_data of the decoder
+ * @return 0 for success, negative for error
+ */
+static int isl7998x_sensor_fixup(struct sensor_data *sensor)
+{
+	int vc = sensor->v_channel;
+
+	if (isl7998x_write_reg(0xFF, vc+1) == 0) {
+		isl7998x_write_reg(0x0A, 0x02); // HD_LO
+		isl7998x_write_reg(0x0A, 0x20); // HD_LO
+		isl7998x_write_reg(0x0A, isl7998x_hdelays[vc] & 0xFF); // HD_LO
+		isl7998x_write_reg(0xFF, 0);
+	}
+
+	return 0;
 }
 
 /* True if all channel power offed */
@@ -1456,32 +1453,10 @@ done:
 static int ioctl_stream_pre_on(struct v4l2_int_device *s)
 {
 	struct sensor_data *sensor = s->priv;
-	int rst_en = 0;
 
-	/* Reset the decoder, the sensor->v_channel is 0 ~ 3,
-	 * The isl7998x_reset_channel() need from 1 ~ 4 */
-	switch (sensor->v_channel) {
-	case 0:
-		rst_en = g_isl7998x_ch1_rst_en;
-		break;
-	case 1:
-		rst_en = g_isl7998x_ch2_rst_en;
-		break;
-	case 2:
-		rst_en = g_isl7998x_ch3_rst_en;
-		break;
-	case 3:
-		rst_en = g_isl7998x_ch4_rst_en;
-		break;
-	default:
-		break;
-	}
-
-	if (rst_en) {
-		ISL7998X_LOCK();
-		isl7998x_reconfigure_channel(sensor->v_channel+1);
-		ISL7998X_UNLOCK();
-	}
+	ISL7998X_LOCK();
+	isl7998x_sensor_fixup(sensor);
+	ISL7998X_UNLOCK();
 
 	return 0;
 }
