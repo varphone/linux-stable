@@ -1356,6 +1356,12 @@ static int ioctl_dev_init(struct v4l2_int_device *s)
 	sensor->on = true;
 
 	if (!isl7998x_started) {
+		/* Reset the chip */
+		isl7998x_chip_reset(1);
+		usleep_range(50000, 60000);
+		isl7998x_chip_reset(0);
+		usleep_range(50000, 60000);
+
 		mipi_csi2_info = mipi_csi2_get_info();
 
 		/* enable mipi csi2 */
