@@ -1621,10 +1621,10 @@ static ssize_t isl7998x_get_mipi_csi_errors_attr(struct device *dev,
 						 struct device_attribute *attr,
 						 char *buf)
 {
-	ISL7998X_LOCK();
 	void *mipi_csi2_info = mipi_csi2_get_info();
 	unsigned int values[2];
 
+	ISL7998X_LOCK();
 	values[0] = mipi_csi2_get_error1(mipi_csi2_info);
 	values[1] = mipi_csi2_get_error2(mipi_csi2_info);
 	ISL7998X_UNLOCK();
@@ -1636,10 +1636,10 @@ static ssize_t isl7998x_get_mipi_csi_phy_status_attr(struct device *dev,
 						     struct device_attribute *attr,
 						     char *buf)
 {
-	ISL7998X_LOCK();
 	void *mipi_csi2_info = mipi_csi2_get_info();
 	unsigned int value;
 
+	ISL7998X_LOCK();
 	value = mipi_csi2_dphy_status(mipi_csi2_info);
 	ISL7998X_UNLOCK();
 
