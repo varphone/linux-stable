@@ -1498,6 +1498,17 @@ static int ioctl_stream_post_off(struct v4l2_int_device *s)
 }
 
 /*!
+ * ioctl_stream_post_dequeue - V4L2 sensor interface handler for vidioc_int_stream_post_dequeue_num
+ * @s: pointer to standard V4L2 device structure
+ *
+ * Callback when a buffer dequeue.
+ */
+static int ioctl_stream_post_dequeue(struct v4l2_int_device *s)
+{
+	return 0;
+}
+
+/*!
  * This structure defines all the ioctls for this module and links them to the
  * enumeration.
  */
@@ -1529,6 +1540,7 @@ static struct v4l2_int_ioctl_desc isl7998x_ioctl_desc[] = {
 				(v4l2_int_ioctl_func *) ioctl_g_chip_ident},
 	{vidioc_int_stream_pre_on_num, ioctl_stream_pre_on},
 	{vidioc_int_stream_post_off_num, ioctl_stream_post_off},
+	{vidioc_int_stream_post_dequeue_num, ioctl_stream_post_dequeue},
 };
 
 static struct v4l2_int_slave isl7998x_slave[SENSOR_NUM] = {
