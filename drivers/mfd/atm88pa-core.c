@@ -687,6 +687,8 @@ static int atm88pa_probe(struct i2c_client* client,
 	atm->i2c = client;
 	atm->chip_ver = atm88pa_get_sw_ver(atm);
 
+	dev_info(atm->dev, "ATM88PA: Chip Version = %u\n", atm->chip_ver);
+
 	/*
 	 * Check software version, current:
          *   5.01 for CVR-MIL-V2
