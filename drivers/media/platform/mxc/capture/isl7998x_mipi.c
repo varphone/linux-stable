@@ -109,6 +109,20 @@ static struct mutex g_isl7998x_lock;
 #define ISL7998X_LOCK()		mutex_lock(&g_isl7998x_lock)
 #define ISL7998X_UNLOCK()	mutex_unlock(&g_isl7998x_lock)
 
+struct isl7998x_delayed_work {
+	struct delayed_work work;
+	struct sensor_data *sensor;
+	u64 last_act_jiffies;
+};
+
+struct isl7998x {
+	int sensor_fixup_cfg[SENSOR_NUM];
+	u64 total_frames[SENSOR_NUM];
+	struct isl7998x_delayed_work delayed_works[SENSOR_NUM];
+};
+
+static struct isl7998x s_isl7998x;
+
 struct isl7998x_adjust {
 	int brightness;
 	int contrast;
@@ -801,15 +815,42 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 static int isl7998x_sensor_fixup(struct sensor_data *sensor)
 {
 	int vc = sensor->v_channel;
+	int val = 0;
 
 	if (isl7998x_write_reg(0xFF, vc+1) == 0) {
-		isl7998x_write_reg(0x0A, 0x02); // HD_LO
-		isl7998x_write_reg(0x0A, 0x20); // HD_LO
-		isl7998x_write_reg(0x0A, isl7998x_hdelays[vc] & 0xFF); // HD_LO
+		val |= (isl7998x_vdelays[vc] >> 8) << 6;  // VD_HI
+		val |= (isl7998x_vactives[vc] >> 8) << 4; // VA_HI
+		val |= (isl7998x_vdelays[vc] >> 8) << 2;  // HD_HI
+		val |= (isl7998x_hactives[vc] >> 8);      // HA_HI
+		isl7998x_write_reg(0x07, val);
+		isl7998x_write_reg(0x08, isl7998x_vdelays[vc] & 0xFF);  // VD_LO
+		isl7998x_write_reg(0x09, isl7998x_vactives[vc] & 0xFF); // VA_LO
+		isl7998x_write_reg(0x0A, isl7998x_hdelays[vc] & 0xFF);   // HD_LO
+		isl7998x_write_reg(0x0B, isl7998x_hactives[vc] & 0xFF);  // HA_LO
 		isl7998x_write_reg(0xFF, 0);
 	}
 
 	return 0;
+}
+
+/* Callback for delayed_work
+ */
+static void isl7998x_async_sensor_fixup(struct work_struct *work)
+{
+	struct isl7998x_delayed_work *delayed_work =
+		container_of(work, struct isl7998x_delayed_work, work.work);
+	struct sensor_data *sensor = delayed_work->sensor;
+
+	ISL7998X_LOCK();
+
+	printk(KERN_INFO "ISL7998X: Async fixup the channel %d\n",
+	       sensor->v_channel + 1);
+
+	isl7998x_sensor_fixup(sensor);
+
+	delayed_work->last_act_jiffies = get_jiffies_64();
+
+	ISL7998X_UNLOCK();
 }
 
 /* True if all channel power offed */
@@ -1454,9 +1495,14 @@ static int ioctl_stream_pre_on(struct v4l2_int_device *s)
 {
 	struct sensor_data *sensor = s->priv;
 
-	ISL7998X_LOCK();
-	isl7998x_sensor_fixup(sensor);
-	ISL7998X_UNLOCK();
+	if (s_isl7998x.sensor_fixup_cfg[sensor->v_channel] & 0x0100) {
+		ISL7998X_LOCK();
+		isl7998x_sensor_fixup(sensor);
+		ISL7998X_UNLOCK();
+	}
+
+	/* Recount the frame number */
+	s_isl7998x.total_frames[sensor->v_channel] = 0;
 
 	return 0;
 }
@@ -1480,6 +1526,28 @@ static int ioctl_stream_post_off(struct v4l2_int_device *s)
  */
 static int ioctl_stream_post_dequeue(struct v4l2_int_device *s)
 {
+	struct sensor_data *sensor = s->priv;
+	struct isl7998x_delayed_work *delayed_work;
+	int cfg = s_isl7998x.sensor_fixup_cfg[sensor->v_channel];
+
+	if ((cfg & 0x0200) && (s_isl7998x.total_frames[sensor->v_channel] == (cfg & 0xFF))) {
+		printk(KERN_INFO "ISL7998X: First %llu frames of channel %d arrived\n",
+		       s_isl7998x.total_frames[sensor->v_channel],
+		       sensor->v_channel + 1);
+
+		delayed_work = &s_isl7998x.delayed_works[sensor->v_channel];
+
+		if ((get_jiffies_64() - delayed_work->last_act_jiffies) > (HZ / 2)) {
+			printk(KERN_INFO "ISL7998X: Delayed to fixup the channel %d\n",
+			       sensor->v_channel + 1);
+			schedule_delayed_work(&delayed_work->work, 0);
+			delayed_work->last_act_jiffies = get_jiffies_64();
+		}
+	}
+
+	/* Increase the frame counter */
+	s_isl7998x.total_frames[sensor->v_channel]++;
+
 	return 0;
 }
 
@@ -1661,6 +1729,57 @@ static ssize_t isl7998x_set_reset_attr(struct device *dev,
 	return -EINVAL;
 }
 
+static ssize_t isl7998x_set_sensor_fixup_attr(struct device *dev,
+					      struct device_attribute *attr,
+					      const char *buf, size_t count)
+{
+	int ch;
+
+	if (sscanf(buf, "%u", &ch) == 1) {
+		if (ch < 0 || ch > 3)
+			return -EINVAL;
+		ISL7998X_LOCK();
+		isl7998x_sensor_fixup(&isl7998x_data[ch]);
+		ISL7998X_UNLOCK();
+	}
+
+	return count;
+}
+
+static ssize_t isl7998x_get_sensor_fixup_cfg_attr(struct device *dev,
+						  struct device_attribute *attr,
+						  char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "%d %d %d %d",
+			 s_isl7998x.sensor_fixup_cfg[0],
+			 s_isl7998x.sensor_fixup_cfg[1],
+			 s_isl7998x.sensor_fixup_cfg[2],
+			 s_isl7998x.sensor_fixup_cfg[3]);
+}
+
+/*! Set sensor fixup config
+ * Format: "CH1 CH2 CH3 CH4"
+ *   [9] Async Fixup, 0=Disable, 1=Enable
+ *   [8] Static Fixup, 0=Disable, 1=Enable
+ *   [7:0] Number of frames to start fixup
+ */
+static ssize_t isl7998x_set_sensor_fixup_cfg_attr(struct device *dev,
+						  struct device_attribute *attr,
+						  const char *buf, size_t count)
+{
+	int vals[4];
+
+	if (sscanf(buf, "%d %d %d %d", &vals[0], &vals[1], &vals[2], &vals[3]) != 4)
+		return -EINVAL;
+
+	s_isl7998x.sensor_fixup_cfg[0] = vals[0];
+	s_isl7998x.sensor_fixup_cfg[1] = vals[1];
+	s_isl7998x.sensor_fixup_cfg[2] = vals[2];
+	s_isl7998x.sensor_fixup_cfg[3] = vals[3];
+
+	return count;
+}
+
 /* statm: binary format data
  *   [ 0] = CH1_STATE
  *   [ 1] = CH2_STATE
@@ -1808,6 +1927,8 @@ DEVICE_ATTR(device_interrupt_status, S_IRUGO, isl7998x_get_device_interrupt_stat
 DEVICE_ATTR(mipi_csi_errors, S_IRUGO, isl7998x_get_mipi_csi_errors_attr, NULL);
 DEVICE_ATTR(mipi_csi_phy_status, S_IRUGO, isl7998x_get_mipi_csi_phy_status_attr, NULL);
 DEVICE_ATTR(reset, S_IWUSR, NULL, isl7998x_set_reset_attr);
+DEVICE_ATTR(sensor_fixup, S_IWUSR, NULL, isl7998x_set_sensor_fixup_attr);
+DEVICE_ATTR(sensor_fixup_cfg, S_IRUGO | S_IWUSR, isl7998x_get_sensor_fixup_cfg_attr, isl7998x_set_sensor_fixup_cfg_attr);
 DEVICE_ATTR(statm, S_IRUGO, isl7998x_get_statm_attr, NULL);
 DEVICE_ATTR(hactives, S_IRUGO | S_IWUSR, isl7998x_get_hactives_attr, isl7998x_set_hactives_attr);
 DEVICE_ATTR(hdelays, S_IRUGO | S_IWUSR, isl7998x_get_hdelays_attr, isl7998x_set_hdelays_attr);
@@ -1820,6 +1941,8 @@ static struct attribute *isl7998x_attrs[] = {
 	&dev_attr_mipi_csi_errors.attr,
 	&dev_attr_mipi_csi_phy_status.attr,
 	&dev_attr_reset.attr,
+	&dev_attr_sensor_fixup.attr,
+	&dev_attr_sensor_fixup_cfg.attr,
 	&dev_attr_statm.attr,
 	&dev_attr_hactives.attr,
 	&dev_attr_hdelays.attr,
@@ -1912,6 +2035,8 @@ static int isl7998x_probe(struct i2c_client *client,
 	struct device *dev = &client->dev;
 	int retval;
 	int i;
+
+	memset(&s_isl7998x, 0, sizeof(s_isl7998x));
 
 	/* Set initial values for the sensor struct. */
 	memset(&isl7998x_state, 0, sizeof(isl7998x_state));
@@ -2035,6 +2160,13 @@ static int isl7998x_probe(struct i2c_client *client,
 	isl7998x_data[3].ipu_id = 1;
 	isl7998x_data[3].csi = 1;
 	isl7998x_data[3].v_channel = 3;
+
+	for (i = 0; i < SENSOR_NUM; i++) {
+		s_isl7998x.sensor_fixup_cfg[i] = 0x100;
+		s_isl7998x.delayed_works[i].sensor = &isl7998x_data[i];
+		INIT_DELAYED_WORK(&s_isl7998x.delayed_works[i].work,
+				  isl7998x_async_sensor_fixup);
+	}
 
 	isl7998x_int_device[0].priv = &isl7998x_data[0];
 	isl7998x_int_device[1].priv = &isl7998x_data[1];
