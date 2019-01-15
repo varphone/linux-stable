@@ -435,7 +435,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x0A, isl7998x_hdelays[0] & 0xFF); // HD_LO
 		isl7998x_write_reg(0x0B, isl7998x_hactives[0] & 0xFF); // HA_LO
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
-		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
+		isl7998x_write_reg(0x33, 0xC5); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3D, 0x00); // Data conversion
 		isl7998x_write_reg(0xFF, 0x01);
 
@@ -448,7 +448,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x0A, isl7998x_hdelays[1] & 0xFF); // HD_LO
 		isl7998x_write_reg(0x0B, isl7998x_hactives[1] & 0xFF); // HA_LO
 		isl7998x_write_reg(0x2F, 0xE6);
-		isl7998x_write_reg(0x33, 0xF2);
+		isl7998x_write_reg(0x33, 0xC5);
 		isl7998x_write_reg(0x3D, 0x00);
 		isl7998x_write_reg(0xFF, 0x02);
 
@@ -461,7 +461,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x0A, isl7998x_hdelays[2] & 0xFF); // HD_LO
 		isl7998x_write_reg(0x0B, isl7998x_hactives[2] & 0xFF); // HA_LO
 		isl7998x_write_reg(0x2F, 0xE6);
-		isl7998x_write_reg(0x33, 0xF2);
+		isl7998x_write_reg(0x33, 0xC5);
 		isl7998x_write_reg(0x3D, 0x00);
 		isl7998x_write_reg(0xFF, 0x03);
 
@@ -474,7 +474,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x0A, isl7998x_hdelays[3] & 0xFF); // HD_LO
 		isl7998x_write_reg(0x0B, isl7998x_hactives[3] & 0xFF); // HA_LO
 		isl7998x_write_reg(0x2F, 0xE6);
-		isl7998x_write_reg(0x33, 0xF2);
+		isl7998x_write_reg(0x33, 0xC5);
 		isl7998x_write_reg(0x3D, 0x00);
 		isl7998x_write_reg(0xFF, 0x04);
 
@@ -552,60 +552,66 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 
 		// Default setting
 		isl7998x_write_reg(0xFF, 0x00);
-		isl7998x_write_reg(0x03, 0x00);
-		isl7998x_write_reg(0x0C, 0xC9);
-		isl7998x_write_reg(0x0D, 0xC9);
-		isl7998x_write_reg(0x0E, 0xC9);
-		isl7998x_write_reg(0x10, 0x01);
-		isl7998x_write_reg(0x11, 0x03);
+		isl7998x_write_reg(0x03, 0x0C);
+		isl7998x_write_reg(0x0C, 0x00);
+		isl7998x_write_reg(0x0D, 0x00);
+		isl7998x_write_reg(0x0E, 0x00);
+		isl7998x_write_reg(0x10, 0x00);
+		isl7998x_write_reg(0x11, 0x00);
 		isl7998x_write_reg(0x12, 0x00);
 		isl7998x_write_reg(0x13, 0x00);
 		isl7998x_write_reg(0x14, 0x00);
+		isl7998x_write_reg(0x15, 0xFF);
 
+		// Page 5
 		isl7998x_write_reg(0xFF, 0x05);
 		isl7998x_write_reg(0x00, 0x02);
 		isl7998x_write_reg(0x01, 0x85);
 		isl7998x_write_reg(0x02, 0xA0);
 		isl7998x_write_reg(0x03, 0x18);
+		isl7998x_write_reg(0x04, 0xE4);
 		isl7998x_write_reg(0x05, 0x40);
 		isl7998x_write_reg(0x06, 0x40);
 		isl7998x_write_reg(0x10, 0x05);
 		isl7998x_write_reg(0x11, 0xA0);
 		isl7998x_write_reg(0x20, 0x00);
 		isl7998x_write_reg(0x21, 0x0C);
-		isl7998x_write_reg(0x22, 0x00);
-		isl7998x_write_reg(0x23, 0x00);
-		isl7998x_write_reg(0x24, 0x00);
-		isl7998x_write_reg(0x25, 0xF0);
-		isl7998x_write_reg(0x26, 0x00);
-		isl7998x_write_reg(0x27, 0x00);
+//		isl7998x_write_reg(0x22, 0x00);
+//		isl7998x_write_reg(0x23, 0x00);
+//		isl7998x_write_reg(0x24, 0x00);
+//		isl7998x_write_reg(0x25, 0xF0);
+//		isl7998x_write_reg(0x26, 0x00);
+//		isl7998x_write_reg(0x27, 0x00);
 		isl7998x_write_reg(0x2A, 0x00);
-		isl7998x_write_reg(0x2B, 0x19);
-		isl7998x_write_reg(0x2C, 0x18);
-		isl7998x_write_reg(0x2D, 0xF1);
-		isl7998x_write_reg(0x2E, 0x00);
-		isl7998x_write_reg(0x2F, 0xF1);
+		isl7998x_write_reg(0x2B, 0x00);
+		isl7998x_write_reg(0x2C, 0x01);
+		isl7998x_write_reg(0x2D, 0x04);
+		isl7998x_write_reg(0x2E, 0x01);
+		isl7998x_write_reg(0x2F, 0x05);
 		isl7998x_write_reg(0x30, 0x00);
 		isl7998x_write_reg(0x31, 0x00);
 		isl7998x_write_reg(0x32, 0x00);
-		isl7998x_write_reg(0x33, 0xC0);
-		isl7998x_write_reg(0x34, 0x18);
+		isl7998x_write_reg(0x33, 0x00);
+		isl7998x_write_reg(0x34, 0x06);
+		isl7998x_write_reg(0x35, 0x0F);
 		isl7998x_write_reg(0x36, 0x00);
 
 		// Page 0
 		isl7998x_write_reg(0xFF, 0x00);
 		isl7998x_write_reg(0x02, 0x10);  /* clear CReset_CH1 ~ Reset_CH4 */
 
+		// Page 1/2/3/4
 		isl7998x_write_reg(0xFF, 0x0F);
-		isl7998x_write_reg(0x08, 0x14);
-		isl7998x_write_reg(0x2F, 0xE6);
-		isl7998x_write_reg(0x33, 0x85);
+//		isl7998x_write_reg(0x08, 0x14);
+//		isl7998x_write_reg(0x2F, 0xE6);
+//		isl7998x_write_reg(0x33, 0x85);
+		isl7998x_write_reg(0x44, 0x00);
 		isl7998x_write_reg(0x45, 0x11);
 		isl7998x_write_reg(0xE7, 0x00);
 
 		// Page 0
 		isl7998x_write_reg(0xFF, 0x00);
-		isl7998x_write_reg(0x07, ((g_isl7998x_sync_ch & 0x03) << 5) | 0x02);
+		isl7998x_write_reg(0x07, ((g_isl7998x_sync_ch & 0x03) << 5) | 0x12);
 		isl7998x_write_reg(0x08, 0x1F);
 		isl7998x_write_reg(0x09, 0x43);
 		isl7998x_write_reg(0x0A, 0x4F);
@@ -625,16 +631,16 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x0B, isl7998x_hactives[0] & 0xFF); // HA_LO
 		isl7998x_write_reg(0x0C, 0xCC); // CNTRL1
 		if (g_isl7998x_ch1_std >= 0)
-			isl7998x_write_reg(0x1C, g_isl7998x_ch1_std);
+			isl7998x_write_reg(0x1C, 0x08 | g_isl7998x_ch1_std);
 		else
-			isl7998x_write_reg(0x1C, 0x07); // Standard Auto Detection
+			isl7998x_write_reg(0x1C, 0x08 | 0x07); // Standard Auto Detection
 		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
-		isl7998x_write_reg(0x28, 0x08); // Use search VMODE
-		isl7998x_write_reg(0x29, 0xc0); // Burst PLL center frequency control
+		isl7998x_write_reg(0x28, 0x00); // Use search VMODE
+		isl7998x_write_reg(0x29, 0x00); // Burst PLL center frequency control
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
-		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
+		isl7998x_write_reg(0x33, 0xC5); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
-		isl7998x_write_reg(0x3D, 0x00); // Data conversion
+		isl7998x_write_reg(0x3D, 0x08); // Data conversion
 		isl7998x_apply_adjusts(1);
 		isl7998x_write_reg(0xFF, 0x01);
 
@@ -649,16 +655,16 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x0B, isl7998x_hactives[1] & 0xFF); // HA_LO
 		isl7998x_write_reg(0x0C, 0xCC); // CNTRL1
 		if (g_isl7998x_ch2_std >= 0)
-			isl7998x_write_reg(0x1C, g_isl7998x_ch2_std);
+			isl7998x_write_reg(0x1C, 0x08 | g_isl7998x_ch2_std);
 		else
-			isl7998x_write_reg(0x1C, 0x07); // Standard Auto Detection
+			isl7998x_write_reg(0x1C, 0x08 | 0x07); // Standard Auto Detection
 		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
-		isl7998x_write_reg(0x28, 0x08); // Use search VMODE
-		isl7998x_write_reg(0x29, 0xc0); // Burst PLL center frequency control
+		isl7998x_write_reg(0x28, 0x00); // Use search VMODE
+		isl7998x_write_reg(0x29, 0x00); // Burst PLL center frequency control
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
-		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
+		isl7998x_write_reg(0x33, 0xC5); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
-		isl7998x_write_reg(0x3D, 0x00); // Data conversion
+		isl7998x_write_reg(0x3D, 0x08); // Data conversion
 		isl7998x_apply_adjusts(2);
 		isl7998x_write_reg(0xFF, 0x02);
 
@@ -673,16 +679,16 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x0B, isl7998x_hactives[2] & 0xFF); // HA_LO
 		isl7998x_write_reg(0x0C, 0xCC); // CNTRL1
 		if (g_isl7998x_ch3_std >= 0)
-			isl7998x_write_reg(0x1C, g_isl7998x_ch3_std);
+			isl7998x_write_reg(0x1C, 0x08 | g_isl7998x_ch3_std);
 		else
-			isl7998x_write_reg(0x1C, 0x07); // Standard Auto Detection
+			isl7998x_write_reg(0x1C, 0x08 | 0x07); // Standard Auto Detection
 		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
-		isl7998x_write_reg(0x28, 0x08); // Use search VMODE
-		isl7998x_write_reg(0x29, 0xc0); // Burst PLL center frequency control
+		isl7998x_write_reg(0x28, 0x00); // Use search VMODE
+		isl7998x_write_reg(0x29, 0x00); // Burst PLL center frequency control
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
-		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
+		isl7998x_write_reg(0x33, 0xC5); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
-		isl7998x_write_reg(0x3D, 0x00); // Data conversion
+		isl7998x_write_reg(0x3D, 0x08); // Data conversion
 		isl7998x_apply_adjusts(3);
 		isl7998x_write_reg(0xFF, 0x03);
 
@@ -697,16 +703,16 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x0B, isl7998x_hactives[3] & 0xFF); // HA_LO
 		isl7998x_write_reg(0x0C, 0xCC); // CNTRL1
 		if (g_isl7998x_ch4_std >= 0)
-			isl7998x_write_reg(0x1C, g_isl7998x_ch4_std);
+			isl7998x_write_reg(0x1C, 0x08 | g_isl7998x_ch4_std);
 		else
-			isl7998x_write_reg(0x1C, 0x07); // Standard Auto Detection
+			isl7998x_write_reg(0x1C, 0x08 | 0x07); // Standard Auto Detection
 		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
-		isl7998x_write_reg(0x28, 0x08); // Use search VMODE
-		isl7998x_write_reg(0x29, 0xc0); // Burst PLL center frequency control
+		isl7998x_write_reg(0x28, 0x00); // Use search VMODE
+		isl7998x_write_reg(0x29, 0x00); // Burst PLL center frequency control
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
-		isl7998x_write_reg(0x33, 0xF2); // 50Hz Free run, Medium YNR
+		isl7998x_write_reg(0x33, 0xC5); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
-		isl7998x_write_reg(0x3D, 0x00); // Data conversion
+		isl7998x_write_reg(0x3D, 0x08); // Data conversion
 		isl7998x_apply_adjusts(4);
 		isl7998x_write_reg(0xFF, 0x04);
 
@@ -719,12 +725,12 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 //		isl7998x_write_reg(0x01, 0x05);  //For field mode
 		isl7998x_write_reg(0x01, 0x25);  //For frame mode
 		isl7998x_write_reg(0x02, 0xA0);
-		isl7998x_write_reg(0x03, 0x10);
+		isl7998x_write_reg(0x03, 0x18);
 		isl7998x_write_reg(0x04, 0xE4);
-		isl7998x_write_reg(0x05, 0x00);
-		isl7998x_write_reg(0x06, 0x60);
-		isl7998x_write_reg(0x07, 0x2B);
-		isl7998x_write_reg(0x08, 0x02);
+		isl7998x_write_reg(0x05, 0x40);
+		isl7998x_write_reg(0x06, 0x00);
+//		isl7998x_write_reg(0x07, 0x2B);
+		isl7998x_write_reg(0x08, 0x08);
 		isl7998x_write_reg(0x09, 0x00);
 		isl7998x_write_reg(0x0A, 0x62);
 		isl7998x_write_reg(0x0B, 0x02);
@@ -734,37 +740,40 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 		isl7998x_write_reg(0x0F, 0x00);
 		isl7998x_write_reg(0x10, 0x05);
 		isl7998x_write_reg(0x11, 0xA0);
-		isl7998x_write_reg(0x12, 0x77);
+		isl7998x_write_reg(0x12, 0x76);
 		isl7998x_write_reg(0x13, 0x17);
-		isl7998x_write_reg(0x14, 0x08);
-		isl7998x_write_reg(0x15, 0x38);
-		isl7998x_write_reg(0x16, 0x14);
+		isl7998x_write_reg(0x14, 0x0E);
+		isl7998x_write_reg(0x15, 0x36);
+		isl7998x_write_reg(0x16, 0x12);
 		isl7998x_write_reg(0x17, 0xF6);
 		isl7998x_write_reg(0x18, 0x00);
-		isl7998x_write_reg(0x19, 0x17);
+		isl7998x_write_reg(0x19, 0x03);
 		isl7998x_write_reg(0x1A, 0x0A);
-		isl7998x_write_reg(0x1B, 0x71);
+		isl7998x_write_reg(0x1B, 0x61);
 		isl7998x_write_reg(0x1C, 0x7A);
 		isl7998x_write_reg(0x1D, 0x0F);
 		isl7998x_write_reg(0x1E, 0x8C);
-		isl7998x_write_reg(0x23, 0x0A);
-		isl7998x_write_reg(0x24, 0x03);
-		isl7998x_write_reg(0x25, 0xc0);
-		isl7998x_write_reg(0x26, 0x08);
+		isl7998x_write_reg(0x1F, 0x06);
+//		isl7998x_write_reg(0x23, 0x0A);
+//		isl7998x_write_reg(0x24, 0x03);
+//		isl7998x_write_reg(0x25, 0xc0);
+//		isl7998x_write_reg(0x26, 0x08);
 		isl7998x_write_reg(0x28, 0x01);
 		isl7998x_write_reg(0x29, 0x0E);
 		isl7998x_write_reg(0x2A, 0x00);
 		isl7998x_write_reg(0x2B, 0x00);
+		isl7998x_write_reg(0x34, 0x18);
+		isl7998x_write_reg(0x35, 0x00);
 		isl7998x_write_reg(0x38, 0x03);
 		isl7998x_write_reg(0x39, 0xC0);
 		isl7998x_write_reg(0x3A, 0x06);
 		isl7998x_write_reg(0x3B, 0xB3);
-		isl7998x_write_reg(0x3C, 0x00);
-		isl7998x_write_reg(0x3D, 0xF1);
+		isl7998x_write_reg(0x3C, 0x01);
+		isl7998x_write_reg(0x3D, 0x21);
 
 		/* change by BKang */
-		isl7998x_write_reg(0x06, 0x00);
-		isl7998x_write_reg(0x35, 0x00);
+//		isl7998x_write_reg(0x06, 0x00);
+//		isl7998x_write_reg(0x35, 0x00);
 
 		// Page 0
 		isl7998x_write_reg(0xFF, 0x00);
