@@ -636,7 +636,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 			isl7998x_write_reg(0x1C, 0x08 | 0x07); // Standard Auto Detection
 		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
 		isl7998x_write_reg(0x28, 0x00); // Use search VMODE
-		isl7998x_write_reg(0x29, 0x00); // Burst PLL center frequency control
+		isl7998x_write_reg(0x29, 0xE0); // Burst PLL center frequency control
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
 		isl7998x_write_reg(0x33, 0xC5); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
@@ -660,7 +660,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 			isl7998x_write_reg(0x1C, 0x08 | 0x07); // Standard Auto Detection
 		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
 		isl7998x_write_reg(0x28, 0x00); // Use search VMODE
-		isl7998x_write_reg(0x29, 0x00); // Burst PLL center frequency control
+		isl7998x_write_reg(0x29, 0xE0); // Burst PLL center frequency control
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
 		isl7998x_write_reg(0x33, 0xC5); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
@@ -684,7 +684,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 			isl7998x_write_reg(0x1C, 0x08 | 0x07); // Standard Auto Detection
 		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
 		isl7998x_write_reg(0x28, 0x00); // Use search VMODE
-		isl7998x_write_reg(0x29, 0x00); // Burst PLL center frequency control
+		isl7998x_write_reg(0x29, 0xE0); // Burst PLL center frequency control
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
 		isl7998x_write_reg(0x33, 0xC5); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
@@ -708,7 +708,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 			isl7998x_write_reg(0x1C, 0x08 | 0x07); // Standard Auto Detection
 		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
 		isl7998x_write_reg(0x28, 0x00); // Use search VMODE
-		isl7998x_write_reg(0x29, 0x00); // Burst PLL center frequency control
+		isl7998x_write_reg(0x29, 0xE0); // Burst PLL center frequency control
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
 		isl7998x_write_reg(0x33, 0xC5); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
