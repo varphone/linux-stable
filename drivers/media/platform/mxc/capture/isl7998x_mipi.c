@@ -2171,7 +2171,7 @@ static int isl7998x_probe(struct i2c_client *client,
 	isl7998x_data[3].v_channel = 3;
 
 	for (i = 0; i < SENSOR_NUM; i++) {
-		s_isl7998x.sensor_fixup_cfg[i] = 0x100;
+		s_isl7998x.sensor_fixup_cfg[i] = 0x000;
 		s_isl7998x.delayed_works[i].sensor = &isl7998x_data[i];
 		INIT_DELAYED_WORK(&s_isl7998x.delayed_works[i].work,
 				  isl7998x_async_sensor_fixup);
