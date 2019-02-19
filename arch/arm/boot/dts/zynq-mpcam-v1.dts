@@ -5,7 +5,7 @@
  */
 /dts-v1/;
 #include "zynq-7000-mmc1-mmc0.dtsi"
-#include "zynq-mpcam-v2-pl.dtsi"
+#include "zynq-mpcam-v1-pl.dtsi"
 
 / {
 	model = "Multiple Path Camera on Zynq ZC702 (V1)";
