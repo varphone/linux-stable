@@ -13,20 +13,28 @@
 
 	aliases {
 		ethernet0 = &gem0;
-		serial0 = &uart1;
-		spi0 = &qspi;
+		i2c0 = &i2c0;
+		i2c1 = &i2c1;
 		mmc0 = &sdhci0;
 		mmc1 = &sdhci1;
+		serial0 = &uart0;
+		serial1 = &uart1;
+		spi0 = &qspi;
+	};
+
+	chosen {
+		bootargs = "mem=256M console=ttyPS0,115200 earlycon earlyprintk panic=1 root=/dev/mmcblk0p2 rw rootwait clk_ignore_unused";
+		stdout-path = "serial0:115200n8";
+	};
+	cpus {
+		cpu@0 {
+			operating-points = <666666 1000000 333333 1000000>;
+		};
 	};
 
 	memory {
 		device_type = "memory";
-		reg = <0x0 0x40000000>;
-	};
-
-	chosen {
-		bootargs = "mem=512M console=ttyPS0,115200 earlyprintk panic=1 root=/dev/mmcblk0p2 rw rootwait earlycon clk_ignore_unused";
-		stdout-path = "serial0:115200n8";
+		reg = <0x0 0x10000000>;
 	};
 
 	usb_phy0: phy0@e0002000 {
@@ -39,11 +47,12 @@
 };
 
 &clkc {
+	fclk-enable = <0x1>;
 	ps-clk-frequency = <33333333>;
 };
 
 &gem0 {
-	status = "okay";
+	status = "disabled";
 	phy-mode = "rgmii-id";
 	phy-handle = <&ethernet_phy>;
 
@@ -53,63 +62,89 @@
 	};
 };
 
+&i2c0 {
+	status = "okay";
+	clock-frequency = <40000>;
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <40000>;
+};
+
+&intc {
+	num_cpus = <2>;
+	num_interrupts = <96>;
+};
+
 &mpcam0 {
 	status = "okay";
 };
 
 &qspi {
-	u-boot,dm-pre-reloc;
 	status = "okay";
 	is-dual = <0>;
 	num-cs = <1>;
+
 	flash@0 {
-		compatible = "n25q128a11";
+		compatible = "s25fl256s1", "micron,m25p80";
 		reg = <0x0>;
 		spi-tx-bus-width = <1>;
 		spi-rx-bus-width = <4>;
 		spi-max-frequency = <50000000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		partition@qspi-boot-bin {
-			label = "qspi-boot-bin";
-			reg = <0x0 0x80000>;
+
+		partition@qspi-fsbl {
+			label = "qspi-fsbl";
+			reg = <0x00000000 0x00040000>;
+		};
+		partition@qspi-fpga {
+			label = "qspi-fpga";
+			reg = <0x00040000 0x00500000>;
+		};
+		partition@qspi-uboot {
+			label = "qspi-uboot";
+			reg = <0x00540000 0x00080000>;
 		};
 		partition@qspi-uboot-env {
 			label = "qspi-uboot-env";
-			reg = <0x80000 0x80000>;
+			reg = <0x005C0000 0x00020000>;
 		};
-		partition@qspi-uboot-img {
-			label = "qspi-uboot-img";
-			reg = <0x100000 0x100000>;
+		partition@qspi-device-tree {
+			label = "qspi-device-tree";
+			reg = <0x005E0000 0x00020000>;
 		};
 		partition@qspi-image-itb {
 			label = "qspi-image-itb";
-			reg = <0x200000 0xD00000>;
+			reg = <0x00600000 0x00A00000>;
 		};
-		partition@qspi-user-data {
-			label = "qspi-user-data";
-			reg = <0xF00000 0x100000>;
+		partition@qspi-rootfs {
+			label = "qspi-rootfs";
+			reg = <0x01000000 0x01000000>;
 		};
 	};
 };
 
 &sdhci0 {
-	u-boot,dm-pre-reloc;
 	status = "okay";
 };
 
 &sdhci1 {
-	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&uart0 {
 	status = "okay";
 };
 
 &uart1 {
-	u-boot,dm-pre-reloc;
 	status = "okay";
 };
 
 &usb0 {
 	status = "okay";
 	dr_mode = "host";
+	phy_type = "ulpi";
 	usb-phy = <&usb_phy0>;
 };
