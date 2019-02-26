@@ -144,7 +144,6 @@
 
 &usb0 {
 	status = "okay";
-	dr_mode = "host";
-	phy_type = "ulpi";
+	dr_mode = "peripheral";
 	usb-phy = <&usb_phy0>;
 };
