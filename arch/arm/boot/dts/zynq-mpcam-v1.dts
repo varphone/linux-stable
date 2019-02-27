@@ -64,12 +64,12 @@
 
 &i2c0 {
 	status = "okay";
-	clock-frequency = <40000>;
+	clock-frequency = <400000>;
 };
 
 &i2c1 {
 	status = "okay";
-	clock-frequency = <40000>;
+	clock-frequency = <400000>;
 };
 
 &intc {
