@@ -424,6 +424,15 @@ config VIDEO_VPX3220
 	  To compile this driver as a module, choose M here: the
 	  module will be called vpx3220.
 
+config VIDEO_ISL7998X
+	tristate "Intersil ISL79985/6/7 video decoders"
+	depends on VIDEO_V4L2 && I2C
+	---help---
+	  Support for ISL7998X video decoders.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called isl7998x.
+
 comment "Video and audio decoders"
 
 config VIDEO_SAA717X
