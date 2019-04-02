@@ -1,0 +1,62 @@
+/*
+ * Copyright 2012=2015 Freescale Semiconductor, Inc.
+ * Copyright 2011 Linaro Ltd.
+ *
+ * The code contained herein is licensed under the GNU General Public
+ * License. You may obtain a copy of the GNU General Public License
+ * Version 2 or later at the following locations:
+ *
+ * http://www.opensource.org/licenses/gpl-license.html
+ * http://www.gnu.org/copyleft/gpl.html
+ */
+
+/dts-v1/;
+
+#include "imx6q.dtsi"
+#include "imx6q-jycz2.dtsi"
+
+/ {
+	model = "TDC's JYCZ-2 IMX6Q Device Board";
+	compatible = "tdc,imx6q-jycz2", "fsl,imx6q";
+};
+
+&ldb {
+	lvds-channel@0 {
+		crtc = "ipu2-di0";
+	};
+
+	lvds-channel@1 {
+		crtc = "ipu2-di1";
+	};
+};
+
+&mxcfb1 {
+	disp_dev = "hdmi";
+	interface_pix_fmt = "RGB24";
+	mode_str ="1280x720M@60";
+	default_bpp = <32>;
+	int_clk = <0>;
+	late_init = <0>;
+	status = "disabled";
+};
+
+&mxcfb2 {
+	status = "disabled";
+};
+
+&mxcfb3 {
+	status = "disabled";
+};
+
+&mxcfb4 {
+	status = "disabled";
+};
+
+&sata {
+	status = "okay";
+};
+
+&ipu1_csi1_from_mipi_vc1 {
+	clock-lanes = <0>;
+	data-lanes = <1 2>;
+};
