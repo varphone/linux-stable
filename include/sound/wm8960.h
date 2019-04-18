@@ -15,10 +15,21 @@
 #define WM8960_DRES_150R 3
 #define WM8960_DRES_MAX  3
 
+#define WM8960_MAX_GPIO  6
+#define WM8960_GPIO_FN_DMICCLK  19
+#define WM8960_GPIO_FN_DMICDAT  20
+
 struct wm8960_data {
 	bool capless;  /* Headphone outputs configured in capless mode */
 
 	int dres;  /* Discharge resistance for headphone outputs */
+
+	int gpio_base;
+	u32 gpio_init[WM8960_MAX_GPIO];
+	
+    u32 mic_cfg;
+    bool irq_active_low;
+    bool spk_mono;
 };
 
 #endif

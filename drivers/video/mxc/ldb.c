@@ -129,6 +129,14 @@ static struct fb_videomode ldb_modedb[] = {
 	 FB_VMODE_NONINTERLACED,
 	 FB_MODE_IS_DETAILED,},
 	{
+	"LDB-1366X768", 60, 1366, 768, 13806,
+	 120, 10,
+	 14, 3,
+	 32, 5,
+	 0,
+	 FB_VMODE_NONINTERLACED,
+	 FB_MODE_IS_DETAILED,},
+	{
 	 "LDB-1080P60", 60, 1920, 1080, 7692,
 	 100, 40,
 	 30, 3,

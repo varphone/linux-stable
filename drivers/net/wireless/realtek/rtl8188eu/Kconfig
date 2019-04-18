@@ -1,0 +1,31 @@
+
+menuconfig RTL8188EU
+	tristate "MYZR for Realtek 8188E USB WiFi"
+	depends on USB
+	---help---
+	  Help message of RTL8188EU
+
+if RTL8188EU
+
+choice
+     prompt "Select driver version"
+     default RTL8188EU_V4324
+
+config RTL8188EU_V418
+     depends on RTL8188EU
+     tristate "v4.1.8"
+
+config RTL8188EU_V4309
+     depends on RTL8188EU
+     tristate "v4.3.0.9"
+
+config RTL8188EU_V4324
+     depends on RTL8188EU
+     tristate "v4.3.24"
+
+config RTL8188EU_V5224
+     depends on RTL8188EU
+     tristate "v5.2.2.4"
+
+endchoice
+endif

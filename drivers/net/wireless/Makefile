@@ -2,6 +2,8 @@
 # Makefile for the Linux Wireless network device drivers.
 #
 
+obj-y += realtek/
+
 obj-$(CONFIG_IPW2100) += ipw2x00/
 obj-$(CONFIG_IPW2200) += ipw2x00/
 
@@ -24,6 +26,7 @@ obj-$(CONFIG_B43LEGACY)		+= b43legacy/
 obj-$(CONFIG_ZD1211RW)		+= zd1211rw/
 obj-$(CONFIG_RTL8180)		+= rtl818x/
 obj-$(CONFIG_RTL8187)		+= rtl818x/
+obj-$(CONFIG_RTL8188EU)		+= rtl818x/
 obj-$(CONFIG_RTLWIFI)		+= rtlwifi/
 
 # 16-bit wireless PCMCIA client drivers
