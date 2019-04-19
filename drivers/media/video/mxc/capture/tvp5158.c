@@ -462,9 +462,9 @@ static int tvp5158_chip_init(void)
 	//tvp5158_write_reg(TVP5158_DECODER_WRITE_ENABLE, 0x0f);
 	tmp = tvp5158_read(TVP5158_OUT_FMT_CTL_2);
 	tvp5158_write_reg(TVP5158_OUT_FMT_CTL_2, tmp | 0x04);
-	tvp5158_write_reg(TVP5158_BLUE_SCREEN_Y_CTL, 0x29);
-	tvp5158_write_reg(TVP5158_BLUE_SCREEN_CB_CTL, 0xf0);
-	tvp5158_write_reg(TVP5158_BLUE_SCREEN_CR_CTL, 0x6e);
+	tvp5158_write_reg(TVP5158_BLUE_SCREEN_Y_CTL, 0x10);
+	tvp5158_write_reg(TVP5158_BLUE_SCREEN_CB_CTL, 0x80);
+	tvp5158_write_reg(TVP5158_BLUE_SCREEN_CR_CTL, 0x80);
 	tvp5158_write_reg(TVP5158_BLUE_SCREEN_LSB_CTL, 0x00);
 	
 	return 0;
