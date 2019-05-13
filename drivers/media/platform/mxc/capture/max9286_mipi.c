@@ -6035,6 +6035,7 @@ static int max9286_hardware_init(struct sensor_data *sensor)
 	max9286_write_reg(0x06, 0x00);
 	max9286_write_reg(0x07, 0x00);
 	max9286_write_reg(0x08, 0x26);
+	max9286_write_reg(0x0C, 0x91);
 #endif
 	msleep(100);
 
@@ -6713,7 +6714,22 @@ static int max9286_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
 {
 	struct device *dev = &client->dev;
+	int pwdn_gpio;
 	int retval;
+
+	/* request  pin */
+	pwdn_gpio = of_get_named_gpio(dev->of_node, "gpios", 0);
+	if (!gpio_is_valid(pwdn_gpio)) {
+		dev_warn(dev, "the  pin is not available");
+		return -EINVAL;
+	}
+
+	retval = devm_gpio_request_one(dev, pwdn_gpio, GPIOF_OUT_INIT_HIGH, "gpios");
+	if (retval < 0)
+		return retval;
+	msleep(10);
+
+	gpio_set_value(pwdn_gpio, 1);
 
 	/* Set initial values for the sensor struct. */
 	memset(&max9286_data[0], 0, sizeof(max9286_data[0]));
