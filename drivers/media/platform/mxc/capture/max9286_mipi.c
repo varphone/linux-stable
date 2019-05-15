@@ -6183,6 +6183,35 @@ static int max9286_hardware_init(struct sensor_data *sensor)
 		max9271_write_reg(i, 0x07, 0x84);
 		msleep(2);
 
+		max9271_write_reg(i, 0x20, 0x07);
+		max9271_write_reg(i, 0x21, 0x06);
+		max9271_write_reg(i, 0x22, 0x05);
+		max9271_write_reg(i, 0x23, 0x04);
+		max9271_write_reg(i, 0x24, 0x03);
+		max9271_write_reg(i, 0x25, 0x02);
+		max9271_write_reg(i, 0x26, 0x01);
+		max9271_write_reg(i, 0x27, 0x00);
+		max9271_write_reg(i, 0x30, 0x17);
+		max9271_write_reg(i, 0x31, 0x16);
+		max9271_write_reg(i, 0x32, 0x15);
+		max9271_write_reg(i, 0x33, 0x14);
+		max9271_write_reg(i, 0x34, 0x13);
+		max9271_write_reg(i, 0x35, 0x12);
+		max9271_write_reg(i, 0x36, 0x11);
+		max9271_write_reg(i, 0x37, 0x10);
+		max9271_write_reg(i, 0x3F, 0x0E);
+		max9271_write_reg(i, 0x40, 0x0F);
+		max9271_write_reg(i, 0x47, 0x25);
+		max9271_write_reg(i, 0x48, 0xC2);
+		max9271_write_reg(i, 0x49, 0xF9);
+		max9271_write_reg(i, 0x4C, 0xFF);
+		max9271_write_reg(i, 0x43, 0x25);
+		max9271_write_reg(i, 0x01, 0xD4);
+		max9271_write_reg(i, 0x09, 0x26);
+		max9271_write_reg(i, 0x0A, 0x20);
+		max9271_write_reg(i, 0x0B, 0x8A);
+		max9271_write_reg(i, 0x0C, 0x86);
+
 		max9271_write_reg(i, 0x01, ADDR_MAX9286 << 1);
 		max9271_write_reg(i, 0x09, (sensor_addr + i) << 1);
 		max9271_write_reg(i, 0x0A, sensor_addr << 1);
