@@ -1261,9 +1261,10 @@ static void __init mx6_phyflex_init(void)
 	/* i.MX6 DL and SL processors contain only one IPU - correct
 	 * default configuration in structures that use 1st IPU */
 	if (cpu_is_mx6dl() || cpu_is_mx6sl()) {
+#ifdef CONFIG_SOC_CAMERA
 		mxc_ipu_csi_pdata[1].ipu = 0;
-#ifndef CONFIG_SOC_CAMERA
-		&capture_data[1].ipu = 0;
+#else
+		capture_data[1].ipu = 0;
 #endif
 	}
 	
