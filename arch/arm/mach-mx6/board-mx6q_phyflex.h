@@ -30,6 +30,39 @@
 #define  PHYFLEX_PAD_NANDF_CS2__CCM_CLKO2		\
 		(_MX6Q_PAD_NANDF_CS2__CCM_CLKO2 | MUX_PAD_CTRL(PHYFLEX_CLK1_PAD_CTRL))
 
+#define PHYFLEX_IPU2_PAD_CTRL (PAD_CTL_PUS_100K_DOWN)
+
+#define PHYFLEX_PAD_EIM_DA9__CSI1_0                                            \
+	(_MX6Q_PAD_EIM_DA9__IPU2_CSI1_D_0 | MUX_PAD_CTRL(PHYFLEX_IPU2_PAD_CTRL))
+
+#define PHYFLEX_PAD_EIM_DA9__CSI1_1                                            \
+	(_MX6Q_PAD_EIM_DA8__IPU2_CSI1_D_1 | MUX_PAD_CTRL(PHYFLEX_IPU2_PAD_CTRL))
+
+#define PHYFLEX_PAD_EIM_DA7__CSI1_2                                            \
+	(_MX6Q_PAD_EIM_DA7__IPU2_CSI1_D_2 | MUX_PAD_CTRL(PHYFLEX_IPU2_PAD_CTRL))
+
+#define PHYFLEX_PAD_EIM_DA6__CSI1_3                                            \
+	(_MX6Q_PAD_EIM_DA6__IPU2_CSI1_D_3 | MUX_PAD_CTRL(PHYFLEX_IPU2_PAD_CTRL))
+
+#define PHYFLEX_PAD_EIM_EB1__IPU2_CSI1_D_10                                    \
+	(_MX6Q_PAD_EIM_EB1__IPU2_CSI1_D_10 |                                   \
+	 MUX_PAD_CTRL(PHYFLEX_IPU2_PAD_CTRL))
+
+#define PHYFLEX_PAD_EIM_EB0__IPU2_CSI1_D_11                                    \
+	(_MX6Q_PAD_EIM_EB0__IPU2_CSI1_D_11 |                                   \
+	 MUX_PAD_CTRL(PHYFLEX_IPU2_PAD_CTRL))
+
+#define PHYFLEX_PAD_GPIO_1__GPIO_1_1                                           \
+	(_MX6Q_PAD_GPIO_1__GPIO_1_1 | MUX_PAD_CTRL(PHYFLEX_IPU2_PAD_CTRL))
+
+#define PHYFLEX_PAD_EIM_DA10__GPIO_3_10                                        \
+	(_MX6Q_PAD_EIM_DA10__GPIO_3_10 | MUX_PAD_CTRL(PAD_CTL_PUS_100K_UP))
+
+#define PHYFLEX_PAD_EIM_EB1__IPU2_CSI1_D_10_HIGH                               \
+	(_MX6Q_PAD_EIM_EB1__IPU2_CSI1_D_10 | MUX_PAD_CTRL(PAD_CTL_PUS_100K_UP))
+
+#define PHYFLEX_PAD_EIM_EB0__IPU2_CSI1_D_11_HIGH                               \
+	(_MX6Q_PAD_EIM_EB0__IPU2_CSI1_D_11 | MUX_PAD_CTRL(PAD_CTL_PUS_100K_UP))
 
 /* Common pads for PhyFlex board */
 static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
@@ -177,7 +210,8 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_EIM_A25__HDMI_TX_CEC_LINE,
 
 	/* USBOTG ID pin */
-	MX6Q_PAD_GPIO_1__USBOTG_ID,
+	/* MX6Q_PAD_GPIO_1__USBOTG_ID, */ /* OTG Changed to HOST */
+	MX6Q_PAD_GPIO_1__GPIO_1_1,
 	MX6Q_PAD_KEY_ROW4__GPIO_4_15, /* MX6Q_PAD_KEY_ROW4__USBOH3_USBOTG_PWR */
 	MX6Q_PAD_KEY_COL4__USBOH3_USBOTG_OC,
 	MX6Q_PAD_GPIO_0__GPIO_1_0,
@@ -200,11 +234,11 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_CSI0_MCLK__IPU1_CSI0_HSYNC,
 	MX6Q_PAD_CSI0_PIXCLK__IPU1_CSI0_PIXCLK,
 	MX6Q_PAD_CSI0_VSYNC__IPU1_CSI0_VSYNC,
-	MX6Q_PAD_CSI0_DATA_EN__GPIO_5_20,
+	/* MX6Q_PAD_CSI0_DATA_EN__GPIO_5_20, */ /* Not used */
 	PHYFLEX_PAD_GPIO_5__CCM_CLKO,	// conflict with interrupt ts 1 soc1362.0
 	MX6Q_PAD_ENET_RX_ER__GPIO_1_24,
-	MX6Q_PAD_CSI0_DAT10__IPU1_CSI0_D_10,
-	MX6Q_PAD_CSI0_DAT11__IPU1_CSI0_D_11,
+	/* MX6Q_PAD_CSI0_DAT10__IPU1_CSI0_D_10, */ /* Not used */
+	/* MX6Q_PAD_CSI0_DAT11__IPU1_CSI0_D_11, */ /* Not used */
 	MX6Q_PAD_CSI0_DAT12__IPU1_CSI0_D_12,
 	MX6Q_PAD_CSI0_DAT13__IPU1_CSI0_D_13,
 	MX6Q_PAD_CSI0_DAT14__IPU1_CSI0_D_14,
@@ -218,6 +252,8 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_EIM_A16__IPU2_CSI1_PIXCLK,
 	MX6Q_PAD_EIM_DA11__IPU2_CSI1_HSYNC,
 	MX6Q_PAD_EIM_DA12__IPU2_CSI1_VSYNC,
+	/* The ipu2 csi1 is for BT656, data pin[DATA12 - DATA19] */
+	/*
 	MX6Q_PAD_EIM_DA10__GPIO_3_10,
 	MX6Q_PAD_EIM_DA9__IPU2_CSI1_D_0,
 	MX6Q_PAD_EIM_DA8__IPU2_CSI1_D_1,
@@ -231,6 +267,7 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_EIM_DA0__IPU2_CSI1_D_9,
 	MX6Q_PAD_EIM_EB1__IPU2_CSI1_D_10,
 	MX6Q_PAD_EIM_EB0__GPIO_2_28,
+	*/
 	MX6Q_PAD_EIM_A17__IPU2_CSI1_D_12,
 	MX6Q_PAD_EIM_A18__IPU2_CSI1_D_13,
 	MX6Q_PAD_EIM_A19__IPU2_CSI1_D_14,
@@ -239,6 +276,13 @@ static iomux_v3_cfg_t mx6q_phytec_common_pads[] = {
 	MX6Q_PAD_EIM_A22__IPU2_CSI1_D_17,
 	MX6Q_PAD_EIM_A23__IPU2_CSI1_D_18,
 	MX6Q_PAD_EIM_A24__IPU2_CSI1_D_19,
+
+	/* Pull down DATA[0,1,10,11] */
+	PHYFLEX_PAD_EIM_DA9__CSI1_0,
+	PHYFLEX_PAD_EIM_DA9__CSI1_1,
+	PHYFLEX_PAD_EIM_EB1__IPU2_CSI1_D_10,
+	PHYFLEX_PAD_EIM_EB0__IPU2_CSI1_D_11,
+	PHYFLEX_PAD_GPIO_1__GPIO_1_1, /* Pull down USB ID */
 
     /* Enable CAM1 clocking only if it is needed for camera 1 lvds */
 	PHYFLEX_PAD_NANDF_CS2__CCM_CLKO2,
