@@ -135,6 +135,8 @@
 // #define MX6_PHYFLEX_CAP_TCH_INT1	IMX_GPIO_NR(5, 7)
 #define MX6_PHYFLEX_POWER_OFF_INT  	IMX_GPIO_NR(5, 8) /* 单片机向IMX6发送断电中断 */
 #define MX6_PHYFLEX_POWER_OFF_FIN  	IMX_GPIO_NR(5, 7) /* IMX6向单片机发送断电完成 */
+#define MX6_PHYFLEX_TLVAIC31_RST	IMX_GPIO_NR(4, 5) /* 第二版使用的音频复位，必须复位否则音频芯片不工作 */
+// #define MX6_PHYFLEX_TLVAIC31_RST	IMX_GPIO_NR(5, 7) /* 第一版 1362.2版使用的是GPIO(5,7)复位的音频 */
 #define MX6_PHYFLEX_KAPA_TOUCH_INT0	IMX_GPIO_NR(7, 12)
  
 #define MX6_PHYFLEX_DISP0_DET_INT	IMX_GPIO_NR(3, 31)
@@ -380,7 +382,7 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 	{
 		I2C_BOARD_INFO("max1037", 0x64),
 	}, {
-		I2C_BOARD_INFO("tlv320aic3007", 0x18),
+		I2C_BOARD_INFO("tlv320aic3x", 0x18),
 	}, {
 		I2C_BOARD_INFO("rtc8564", 0x51),
 	}, {
@@ -836,7 +838,7 @@ static struct pm_platform_data mx6_phyflex_pm_data __initconst = {
 };
 
 
-#ifdef CONFIG_SND_SOC_IMX_TLV320AIC3007
+#if defined(CONFIG_SND_SOC_IMX_TLV320AIC3007) ||  defined(CONFIG_SND_SOC_IMX_TLV320AIC31)
 static struct regulator_consumer_supply tlv320aic3007_phyflex_consumer_iovdd = {
 	.supply		= "IOVDD",
 	.dev_name	= "1-0018",
@@ -924,7 +926,7 @@ static struct platform_device tlv320aic3007_phyflex_drvdd_reg_devices = {
 		.platform_data = &tlv320aic3007_phyflex_drvdd_reg_config,
 	},
 };
-#endif /* CONFIG_SND_SOC_TLV320AIC3007 */
+#endif /* CONFIG_SND_SOC_TLV320AIC3007 || CONFIG_SND_SOC_IMX_TLV320AIC31 */
 
 static struct regulator_consumer_supply phyflex_vmmc_consumers[] = {
 	REGULATOR_SUPPLY("vmmc", "sdhci-esdhc-imx.1"),
@@ -954,6 +956,15 @@ static struct platform_device phyflex_vmmc_reg_devices = {
 
 static struct mxc_audio_platform_data mx6_phyflex_audio_data;
 
+static int mxc_tlv320aic31_init(void)
+{
+	gpio_request(MX6_PHYFLEX_TLVAIC31_RST, "audio-reset");
+	gpio_direction_output(MX6_PHYFLEX_TLVAIC31_RST, 0);
+	msleep(200);
+	gpio_set_value(MX6_PHYFLEX_TLVAIC31_RST, 1);
+	return 0;
+}
+
 static struct imx_ssi_platform_data mx6_phyflex_ssi_pdata = {
 	.flags = IMX_SSI_DMA | IMX_SSI_SYN,
 };
@@ -963,10 +974,11 @@ static struct mxc_audio_platform_data mx6_phyflex_audio_data = {
 	.src_port = 2,
 	.ext_port = 5,
 	.hp_gpio = -1,
+	.init = mxc_tlv320aic31_init,
 };
 
 static struct platform_device mx6_phyflex_audio_device = {
-	.name = "tlv320aic3007",
+	.name = "tlv320aic3x",
 };
 
 static int __init mx6_phyflex_init_audio(void)
@@ -976,7 +988,7 @@ static int __init mx6_phyflex_init_audio(void)
 			&mx6_phyflex_audio_data);
 	imx6q_add_imx_ssi(1, &mx6_phyflex_ssi_pdata);
 
-#ifdef CONFIG_SND_SOC_IMX_TLV320AIC3007
+#if defined(CONFIG_SND_SOC_IMX_TLV320AIC3007) ||  defined(CONFIG_SND_SOC_IMX_TLV320AIC31)
 	platform_device_register(&tlv320aic3007_phyflex_iovdd_reg_devices);
 	platform_device_register(&tlv320aic3007_phyflex_dvdd_reg_devices);
 	platform_device_register(&tlv320aic3007_phyflex_avdd_reg_devices);
