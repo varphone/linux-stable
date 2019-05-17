@@ -38,6 +38,9 @@ obj-$(CONFIG_MXC_CAMERA_ADV7842CAMERA_M) += adv7842camera_camera.o
 adv7842pal_camera-objs := adv7842pal.o
 obj-$(CONFIG_MXC_CAMERA_ADV7842PAL_M) += adv7842pal_camera.o
 
+adv7842vga_camera-objs := adv7842vga.o
+obj-$(CONFIG_MXC_CAMERA_ADV7842VGA_M) += adv7842vga_camera.o
+
 hv7161_camera-objs := hv7161.o
 obj-$(CONFIG_MXC_CAMERA_HV7161) += hv7161_camera.o
 
