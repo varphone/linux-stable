@@ -40,7 +40,6 @@
 #include <media/v4l2-dev.h>
 #include <media/v4l2-int-device.h>
 
-
 #define FRAME_NUM 10
 
 /*!
@@ -85,16 +84,16 @@ typedef struct {
 /* Sensor control function */
 /* Only for old version.  Will go away soon. */
 struct camera_sensor {
-	void (*set_color) (int bright, int saturation, int red, int green,
-			   int blue);
-	void (*get_color) (int *bright, int *saturation, int *red, int *green,
-			   int *blue);
-	void (*set_ae_mode) (int ae_mode);
-	void (*get_ae_mode) (int *ae_mode);
-	sensor_interface *(*config) (int *frame_rate, int high_quality);
-	sensor_interface *(*reset) (void);
-	void (*get_std) (v4l2_std_id *std);
-	void (*set_std) (v4l2_std_id std);
+	void (*set_color)(int bright, int saturation, int red, int green,
+			  int blue);
+	void (*get_color)(int *bright, int *saturation, int *red, int *green,
+			  int *blue);
+	void (*set_ae_mode)(int ae_mode);
+	void (*get_ae_mode)(int *ae_mode);
+	sensor_interface *(*config)(int *frame_rate, int high_quality);
+	sensor_interface *(*reset)(void);
+	void (*get_std)(v4l2_std_id *std);
+	void (*set_std)(v4l2_std_id std);
 	unsigned int csi;
 };
 
@@ -152,7 +151,7 @@ typedef struct _cam_data {
 
 	/* v4l2 format */
 	struct v4l2_format v2f;
-	int rotation;	/* for IPUv1 and IPUv3, this means encoder rotation */
+	int rotation; /* for IPUv1 and IPUv3, this means encoder rotation */
 	int vf_rotation; /* viewfinder rotation only for IPUv1 and IPUv3 */
 	struct v4l2_mxc_offset offset;
 
@@ -176,20 +175,21 @@ typedef struct _cam_data {
 	struct v4l2_rect crop_defrect;
 	struct v4l2_rect crop_current;
 
-	int (*enc_update_eba) (unsigned int csi, struct ipu_soc *ipu, dma_addr_t eba, int *bufferNum);
-	int (*enc_enable) (void *private);
-	int (*enc_disable) (void *private);
-	int (*enc_enable_csi) (void *private);
-	int (*enc_disable_csi) (void *private);
-	void (*enc_callback) (u32 mask, void *dev);
-	int (*vf_start_adc) (void *private);
-	int (*vf_stop_adc) (void *private);
-	int (*vf_start_sdc) (void *private);
-	int (*vf_stop_sdc) (void *private);
-	int (*vf_enable_csi) (void *private);
-	int (*vf_disable_csi) (void *private);
-	int (*csi_start) (void *private);
-	int (*csi_stop) (void *private);
+	int (*enc_update_eba)(unsigned int csi, struct ipu_soc *ipu,
+			      dma_addr_t eba, int *bufferNum);
+	int (*enc_enable)(void *private);
+	int (*enc_disable)(void *private);
+	int (*enc_enable_csi)(void *private);
+	int (*enc_disable_csi)(void *private);
+	void (*enc_callback)(u32 mask, void *dev);
+	int (*vf_start_adc)(void *private);
+	int (*vf_stop_adc)(void *private);
+	int (*vf_start_sdc)(void *private);
+	int (*vf_stop_sdc)(void *private);
+	int (*vf_enable_csi)(void *private);
+	int (*vf_disable_csi)(void *private);
+	int (*csi_start)(void *private);
+	int (*csi_stop)(void *private);
 
 	/* misc status flag */
 	bool overlay_on;
@@ -201,13 +201,13 @@ typedef struct _cam_data {
 	unsigned int ipu_id;
 	unsigned int csi;
 	u8 mclk_source;
-	bool mclk_on[2];	/* two mclk sources at most now */
+	bool mclk_on[2]; /* two mclk sources at most now */
 	int current_input;
 
 	int local_buf_num;
 
 	/* camera sensor interface */
-	struct camera_sensor *cam_sensor; 	/* old version */
+	struct camera_sensor *cam_sensor; /* old version */
 	struct v4l2_int_device *all_sensors[2];
 	struct v4l2_int_device *sensor;
 	struct v4l2_int_device *self;
@@ -249,4 +249,4 @@ struct sensor_data {
 };
 
 void set_mclk_rate(uint32_t *p_mclk_freq, uint32_t csi);
-#endif				/* __MXC_V4L2_CAPTURE_H__ */
+#endif /* __MXC_V4L2_CAPTURE_H__ */
