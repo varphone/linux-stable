@@ -407,6 +407,8 @@ static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 		.irq = gpio_to_irq(MX6_PHYFLEX_CAP_TCH_INT1),
 		.platform_data = (void *)&stmpe811_data1,
 	}, {*/
+		I2C_BOARD_INFO("ds1339", 0x68),
+	}, {
 		I2C_BOARD_INFO("adv7340", 0xD6>>1),
 	},{
 		I2C_BOARD_INFO("pca9538", 0x70),
