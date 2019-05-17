@@ -1107,7 +1107,13 @@ struct tw9910_video_info tw9910_info = {
 static void mx6_csi0_io_init(void)
 {
 	printk("::: mx6_csi0_io_init\n");
-	mxc_iomux_set_gpr_register(1, 19, 2, 1);
+	mxc_iomux_set_gpr_register(1, 19, 1, 1);  //设置csi0 为并口模式
+}
+
+static void mx6_csi1_io_init(void)
+{
+	printk("::: mx6_csi1_io_init\n");
+	mxc_iomux_set_gpr_register(1, 20, 1, 1);  //设置csi1为并口模式
 }
 
 static struct fsl_mxc_capture_platform_data capture_data[] = {
@@ -1120,26 +1126,39 @@ static struct fsl_mxc_capture_platform_data capture_data[] = {
 	[1] = {
 		.csi = 1,
 		.ipu = 1, /*changes to 0 in runtame for mx6dl and mx6sl */
-		.mclk_source = 0,
+		.mclk_source = 1,  //by lwx
 		.is_mipi = 0,
 	},
 };
 
-static struct fsl_mxc_camera_platform_data camera_data = {
-	.mclk		= 26000000,
-	.mclk_source	= 0,
-	.csi		= 0,
-	.io_init	= mx6_csi0_io_init,
+static struct fsl_mxc_tvin_platform_data tvin_datas[] = {
+	[0] = {
+		.io_init = mx6_csi0_io_init,
+		.cvbs = false,
+	},
+	[1] = {
+		.io_init = mx6_csi1_io_init,
+		.cvbs = false,
+	}
 };
 
-/* Camera CSI 0 */
-static struct i2c_board_info camera_i2c[] = {
+/* Camera 7842 CSI 0  in I2C-2*/
+static struct i2c_board_info camera_i2c2[] = {
 	{
-		I2C_BOARD_INFO("mt9m111", 0x48),
-		.platform_data = (void *)&camera_data,
-	}, {
-		I2C_BOARD_INFO("mt9m001", 0x5d),
-		.platform_data = (void *)&camera_data,
+		I2C_BOARD_INFO("adv7842camera", 0x20),
+		.platform_data = (void *)&tvin_datas[0],
+	},
+};
+
+/* VGA 7842 CSI 1  in I2C-1*/
+static struct i2c_board_info camera_i2c1[] = {
+	{
+#if defined(CONFIG_MXC_CAMERA_ADV7842PAL_M)
+		I2C_BOARD_INFO("adv7842pal", 0x20),
+#else
+		I2C_BOARD_INFO("adv7842vga", 0x20),
+#endif
+		.platform_data = (void *)&tvin_datas[1],
 	},
 };
 #endif
@@ -1371,6 +1390,7 @@ if(cpu_is_mx6q() || cpu_is_mx6dl()) {
 		if(strcmp("VM-009",csi0_cam_type)==0){csi0_cam_type="mt9m111";}
 		if(strcmp("VM-010",csi0_cam_type)==0){csi0_cam_type="mt9v022";}
 		if(strcmp("VM-011",csi0_cam_type)==0){csi0_cam_type="mt9p031";}
+		if(strcmp("VM-055",csi0_cam_type)==0){csi0_cam_type="adv7842pal";} // 7842 pal by lwx
 	}
         if(csi1_cam_type!=NULL){
             	if(strcmp("VM-006",csi1_cam_type)==0){csi1_cam_type="mt9m001";}
@@ -1378,6 +1398,7 @@ if(cpu_is_mx6q() || cpu_is_mx6dl()) {
         	if(strcmp("VM-009",csi1_cam_type)==0){csi1_cam_type="mt9m111";}
             	if(strcmp("VM-010",csi1_cam_type)==0){csi1_cam_type="mt9v022";}
             	if(strcmp("VM-011",csi1_cam_type)==0){csi1_cam_type="mt9p031";}
+		if(strcmp("VM-056",csi1_cam_type)==0){csi1_cam_type="adv7842vga";} //7842 vga by lwx
         }
 
 #ifdef CONFIG_SOC_CAMERA
@@ -1559,7 +1580,8 @@ if(cpu_is_mx6q() || cpu_is_mx6dl()) {
 	imx6q_add_v4l2_capture(1, &capture_data[1]);
 
 	/* Registering cameras */
-	i2c_register_board_info(2, camera_i2c, ARRAY_SIZE(camera_i2c));
+	i2c_register_board_info(2, camera_i2c2, ARRAY_SIZE(camera_i2c2));
+	i2c_register_board_info(1, camera_i2c1, ARRAY_SIZE(camera_i2c1));
 #endif
 
 	gpio_request(MX6_PHYFLEX_CAM0_LVDS_PWRDN, "CSI0<->LVDS bridge #PWDN");
