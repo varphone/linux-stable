@@ -87,8 +87,10 @@ static int imx_ssi_set_dai_tdm_slot(struct snd_soc_dai *cpu_dai,
 	sccr |= SSI_STCCR_DC(slots - 1);
 	writel(sccr, ssi->base + SSI_SRCCR);
 
+#if 0 /* NOTE: Changed by xym, but i don't know why -- Varphone Wong */
 	writel(tx_mask, ssi->base + SSI_STMSK);
 	writel(rx_mask, ssi->base + SSI_SRMSK);
+#endif
 
 	return 0;
 }
@@ -108,7 +110,11 @@ static int imx_ssi_set_dai_fmt(struct snd_soc_dai *cpu_dai, unsigned int fmt)
 	switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
 	case SND_SOC_DAIFMT_I2S:
 		/* data on rising edge of bclk, frame low 1clk before data */
+#if 0 /* NOTE: Changed by xym, but i don't know why -- Varphone Wong */
 		strcr |= SSI_STCR_TFSI | SSI_STCR_TEFS | SSI_STCR_TXBIT0;
+#else
+		strcr |= SSI_STCR_TFSL | SSI_STCR_TFSI | SSI_STCR_TEFS | SSI_STCR_TXBIT0;
+#endif
 		break;
 	case SND_SOC_DAIFMT_LEFT_J:
 		/* data on rising edge of bclk, frame high with data */
@@ -137,7 +143,9 @@ static int imx_ssi_set_dai_fmt(struct snd_soc_dai *cpu_dai, unsigned int fmt)
 		strcr |= SSI_STCR_TFSI | SSI_STCR_TSCKP;
 		break;
 	case SND_SOC_DAIFMT_NB_NF:
+#if 0 /* NOTE: Changed by xym, but i don't know why -- Varphone Wong */
 		strcr &= ~SSI_STCR_TFSI;
+#endif
 		strcr |= SSI_STCR_TSCKP;
 		break;
 	}
@@ -317,8 +325,16 @@ static int imx_ssi_hw_params(struct snd_pcm_substream *substream,
 	if (channels == 1) {
 		scr &= ~SSI_SCR_NET;
 		scr &= ~SSI_I2S_MODE_MASK;
-	} else
+	} else {
+#if 0 /* NOTE: Changed by xym, but i don't know why -- Varphone Wong */
 		scr |= SSI_SCR_NET;
+#else
+		if ((scr & SSI_I2S_MODE_MASK) == SSI_SCR_I2S_MODE_SLAVE)
+			scr &= ~SSI_SCR_NET;
+		else
+			scr |= SSI_SCR_NET;
+#endif
+	}
 
 	writel(scr, ssi->base + SSI_SCR);
 	return 0;
@@ -842,7 +858,11 @@ static int imx_ssi_probe(struct platform_device *pdev)
 	
 	/* Next line was committed 
 	because chip hangs at access to SSI register in AC97 mode.*/
+#if 0 /* NOTE: Changed by xym, but i don't know by -- Varphone Wong */
 	//clk_disable(ssi->clk);
+#else
+	clk_disable(ssi->clk);
+#endif
 
 	ssi->dma_params_rx.dma_addr = res->start + SSI_SRX0;
 	ssi->dma_params_tx.dma_addr = res->start + SSI_STX0;
