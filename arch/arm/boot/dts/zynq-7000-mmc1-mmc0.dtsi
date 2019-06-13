@@ -120,6 +120,14 @@
 			reg = <0xe0004000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tp103@48 {
+				compatible = "ti,tmp103";
+				reg = <0x48>;
+			};
+			apds9306@52 {
+				compatible = "tdc,apds9306";
+				reg = <0x52>;
+			};
 		};
 
 		i2c1: i2c@e0005000 {

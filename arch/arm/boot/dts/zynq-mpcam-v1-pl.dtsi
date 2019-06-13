@@ -11,7 +11,7 @@
 			#size-cells = <1>;
 			compatible = "tdc,mpcam";
 			ranges;
-			reg = <0x23100000 0xFFFFFF>;   /* Filler: Bin Frame Buffers */
+			reg = <0x1e800000 0x1000000>;	/* Filler: Bin Frame Buffers */
 
 			status = "disabled";
 
@@ -19,71 +19,91 @@
 			port@0 {
 				interrupt-names = "interrupt";
 				interrupt-parent = <&intc>;
-				interrupts = <0 29 1>;
-				reg = <0x43c80000 0x10000>;
+				interrupts = <0 33 1>;
+				reg = <0x43c20000 0x10000>;
 			};
 
 			/* IR Write */
 			port@1 {
 				interrupt-names = "interrupt";
 				interrupt-parent = <&intc>;
-				interrupts = <0 33 1>;
-				reg = <0x43c70000 0x10000>;
+				interrupts = <0 31 1>;
+				reg = <0x43c00000 0x10000>;
 			};
            
 			/* VIS Read */ 
             		port@2 {
                 		interrupt-names = "interrupt";
                 		interrupt-parent = <&intc>;
-                		interrupts = <0 30 1>;
-                		reg = <0x43c40000 0x10000>;
+				interrupts = <0 36 1>;
+				reg = <0x43c90000 0x10000>;
             		};
 
 			/* VIS Write */
             		port@3 {
                 		interrupt-names = "interrupt";
                 		interrupt-parent = <&intc>;
-                		interrupts = <0 34 1>;
-                		reg = <0x43c30000 0x10000>;
+				interrupts = <0 35 1>;
+				reg = <0x43c80000 0x10000>;
             		};
 
 			/* Generic Config */
            		port@4 {
-                		reg = <0x43c00000 0x10000>;
+				reg = <0x43ca0000 0x10000>;
             		};
 
-			/* IR VIS Merge*/
+			/* Merge_bin*/
             		port@5 {
-                		reg = <0x43c50000 0x10000>;
+				interrupt-names = "interrupt";
+				interrupt-parent = <&intc>;
+				interrupts = <0 34 1>;
+				reg = <0x43c30000 0x10000>;
             		};
-			
-			/* IR Process */
+
+			/* Merge_frequency_lut*/
 			port@6 {
-				reg = <0x43c90000 0x10000>;
+				reg = <0x43c60000 0x10000>;
+			};
+
+			/* Video_mask */
+			port@7 {
+				reg = <0x43c40000 0x10000>;
+			};
+
+			/* Video_tailor_ir	 */
+			port@8 {
+				reg = <0x43c50000 0x10000>;
+			};
+
+			/* Video_tailor_vis */
+			port@9 {
+				reg = <0x43c70000 0x10000>;
 			};
 			
-			/* Read IR Process */
-                        port@7 {
-				interrupt-names = "interrupt";
+			/* Bin Read */
+				/* Framebuffer_rd_bin */
+                        port@10 {
+                                interrupt-names = "interrupt";
+                                interrupt-parent = <&intc>;
+                                interrupts = <0 30 1>;
+                                reg = <0x43cc0000 0x10000>;
+                        };
+				/* Framebuffer_rd_ir2bin */
+                        port@11 {
+                                interrupt-names = "interrupt";
                                 interrupt-parent = <&intc>;
                                 interrupts = <0 32 1>;
-                                reg = <0x43c60000 0x10000>;
-                        };
-
-			/* Bin Read */
-                        port@8 {
-                                interrupt-names = "interrupt";
-                                interrupt-parent = <&intc>;
-                                interrupts = <0 31 1>;
-                                reg = <0x43c20000 0x10000>;
-                        };
-
-                        /* Bin Write */
-                        port@9 {
-                                interrupt-names = "interrupt";
-                                interrupt-parent = <&intc>;
-                                interrupts = <0 35 1>;
                                 reg = <0x43c10000 0x10000>;
+                        };
+
+
+            /* Bin Write */
+				/* Framebuffer_wr_bin */
+                        port@12 {
+                                interrupt-names = "interrupt";
+                                interrupt-parent = <&intc>;
+                                interrupts = <0 29 1>;
+                                reg = <0x43cb0000 0x10000>;
                         };
 		};
 	};
