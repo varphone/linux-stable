@@ -283,12 +283,33 @@ static void __init imx6q_axi_init(void)
 		/* Increase IPU read QoS priority */
 		regmap_update_bits(gpr, IOMUXC_GPR6,
 				IMX6Q_GPR6_IPU1_ID00_RD_QOS_MASK |
-				IMX6Q_GPR6_IPU1_ID01_RD_QOS_MASK,
-				(0xf << 16) | (0x7 << 20));
+				IMX6Q_GPR6_IPU1_ID01_RD_QOS_MASK |
+				IMX6Q_GPR6_IPU1_ID10_RD_QOS_MASK |
+				IMX6Q_GPR6_IPU1_ID11_RD_QOS_MASK,
+				(0xf << 16) | (0xf << 20) |
+				(0xf << 24) | (0xf << 28));
 		regmap_update_bits(gpr, IOMUXC_GPR7,
 				IMX6Q_GPR7_IPU2_ID00_RD_QOS_MASK |
-				IMX6Q_GPR7_IPU2_ID01_RD_QOS_MASK,
-				(0xf << 16) | (0x7 << 20));
+				IMX6Q_GPR7_IPU2_ID01_RD_QOS_MASK |
+				IMX6Q_GPR7_IPU2_ID10_RD_QOS_MASK |
+				IMX6Q_GPR7_IPU2_ID11_RD_QOS_MASK,
+				(0xf << 16) | (0xf << 20) |
+				(0xf << 24) | (0xf << 28));
+		/* Reduce IPU write QoS priority */
+		regmap_update_bits(gpr, IOMUXC_GPR6,
+				IMX6Q_GPR6_IPU1_ID00_WR_QOS_MASK |
+				IMX6Q_GPR6_IPU1_ID01_WR_QOS_MASK |
+				IMX6Q_GPR6_IPU1_ID10_WR_QOS_MASK |
+				IMX6Q_GPR6_IPU1_ID11_WR_QOS_MASK,
+				(0x7 << 0) | (0x7 << 4) |
+				(0x7 << 8) | (0x7 << 12));
+		regmap_update_bits(gpr, IOMUXC_GPR7,
+				IMX6Q_GPR7_IPU2_ID00_WR_QOS_MASK |
+				IMX6Q_GPR7_IPU2_ID01_WR_QOS_MASK |
+				IMX6Q_GPR7_IPU2_ID10_WR_QOS_MASK |
+				IMX6Q_GPR7_IPU2_ID11_WR_QOS_MASK,
+				(0x7 << 0) | (0x7 << 4) |
+				(0x7 << 8) | (0x7 << 12));
 	} else {
 		pr_warn("failed to find fsl,imx6q-iomuxc-gpr regmap\n");
 	}
