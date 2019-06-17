@@ -2761,6 +2761,16 @@ int32_t ipu_init_sync_panel(struct ipu_soc *ipu, int disp, uint32_t pixel_clk,
 		di_gen |= (1 << 10);
 	}
 
+#if defined(CONFIG_MXC_IPU_V3_DI_DLCOSE)
+	/* Force recovery VSYNC error */
+	di_gen |= (1 << 10);
+
+	/* Drive the last component on synchronous flow error */
+	di_gen &= ~(1 << 11);
+
+	dev_dbg(ipu->dev, "DI_GENERAL=%08X\n", di_gen);
+#endif
+
 	ipu_di_write(ipu, disp, di_gen, DI_GENERAL);
 
 	if((pixel_fmt == IPU_PIX_FMT_BT656) || (pixel_fmt == IPU_PIX_FMT_BT1120))

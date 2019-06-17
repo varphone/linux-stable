@@ -19,3 +19,11 @@ config MXC_IPU_V3_PRE
 	  This enables support for the IPUv3 prefetch engine to improve
 	  the system memory performance.  The engine has the capability
 	  to resolve framebuffers in tile pixel format to linear.
+
+config MXC_IPU_V3_DI_DLCOSE
+	bool "DI: Drive the Last Component on SYNC Error"
+	default y
+	depends on MXC_IPU_V3
+	help
+	  This enables support for the DI Drive the Last Component
+	  on SYNC error.
