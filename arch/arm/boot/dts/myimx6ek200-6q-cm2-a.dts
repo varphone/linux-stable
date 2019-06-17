@@ -44,11 +44,11 @@
 };
 
 &hdmi_audio {
-	status = "okay";
+	status = "dsiabled";
 };
 
 &hdmi_cec {
-	status = "okay";
+	status = "disabled";
 };
 
 &hdmi_core {
