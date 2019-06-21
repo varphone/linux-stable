@@ -286,7 +286,7 @@ static void __init imx6q_axi_init(void)
 				IMX6Q_GPR6_IPU1_ID01_RD_QOS_MASK |
 				IMX6Q_GPR6_IPU1_ID10_RD_QOS_MASK |
 				IMX6Q_GPR6_IPU1_ID11_RD_QOS_MASK,
-				(0x7 << 16) | (0x6 << 20) |
+				(0xf << 16) | (0x7 << 20) |
 				(0x5 << 24) | (0x4 << 28));
 		regmap_update_bits(gpr, IOMUXC_GPR7,
 				IMX6Q_GPR7_IPU2_ID00_RD_QOS_MASK |
