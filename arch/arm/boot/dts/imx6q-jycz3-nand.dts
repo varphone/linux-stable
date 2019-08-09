@@ -1,0 +1,114 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (C) 2018 PHYTEC Messtechnik GmbH
+ * Author: Martin Podolszki <m.podolszki@phytec.de>
+ */
+
+/dts-v1/;
+#include "imx6q.dtsi"
+#include "imx6qdl-phytec-phycore-som.dtsi"
+#include "imx6qdl-phytec-nunki.dtsi"
+#include "imx6qdl-phytec-nunki-peb-av-02.dtsi"
+
+/ {
+	model = "JYCZ3 with NAND";
+	compatible = "tdc,imx6q-jycz3", "phytec,imx6q-pbac11", "phytec,imx6qdl-pcm058",
+		     "fsl,imx6q";
+
+	chosen {
+		linux,stdout-path = &uart2;
+	};
+};
+
+&can1 {
+	status = "okay";
+};
+
+&sata {
+	status = "okay";
+};
+
+&fec {
+	status = "okay";
+};
+
+&m25p80 {
+	status = "okay";
+};
+
+&gpmi {
+	status = "okay";
+
+	partition@0 {
+		label = "barebox";
+		reg = <0x0 0x1000000>;
+	};
+
+	partition@1000000 {
+		label = "barebox-environment";
+		reg = <0x1000000 0x100000>;
+	};
+
+	partition@1100000 {
+		label = "root-primary";
+		reg = <0x1100000 0x8000000>;
+	};
+
+	partition@9100000 {
+		label = "root-secondary";
+		reg = <0x9100000 0x8000000>;
+	};
+
+	partition@11100000 {
+		label = "data";
+		reg = <0x11100000 0x0>;
+	};
+};
+
+&hdmi {
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+};
+
+&i2c2 {
+	status = "okay";
+};
+
+&i2c_rtc {
+	status = "okay";
+};
+
+&pca9533 {
+	status = "okay";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pwm1 {
+	status = "okay";
+};
+
+&uart2 {
+	status = "okay";
+};
+
+&uart3 {
+	status = "okay";
+};
+
+&usbh1 {
+	status = "okay";
+};
+
+&usbotg {
+	status = "okay";
+};
+
+&usdhc1 {
+	status = "okay";
+};
