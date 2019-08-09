@@ -432,6 +432,7 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
 	imx6q-icore-ofcap10.dtb \
 	imx6q-icore-ofcap12.dtb \
 	imx6q-icore-rqs.dtb \
+	imx6q-jycz3-nand.dtb \
 	imx6q-marsboard.dtb \
 	imx6q-mccmon6.dtb \
 	imx6q-nitrogen6x.dtb \
