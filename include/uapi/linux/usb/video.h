@@ -54,6 +54,8 @@
 #define UVC_VS_FORMAT_FRAME_BASED			0x10
 #define UVC_VS_FRAME_FRAME_BASED			0x11
 #define UVC_VS_FORMAT_STREAM_BASED			0x12
+#define UVC_VS_FORMAT_H264				0x13
+#define UVC_VS_FRAME_H264				0x14
 
 /* A.7. Video Class-Specific Endpoint Descriptor Subtypes */
 #define UVC_EP_UNDEFINED				0x00
@@ -303,7 +305,7 @@ struct uvc_processing_unit_descriptor {
 	__u8  iProcessing;
 } __attribute__((__packed__));
 
-#define UVC_DT_PROCESSING_UNIT_SIZE(n)			(9+(n))
+#define UVC_DT_PROCESSING_UNIT_SIZE(n)			(10+(n))
 
 /* 3.7.2.6. Extension Unit Descriptor */
 struct uvc_extension_unit_descriptor {
@@ -525,6 +527,39 @@ struct uvc_format_mjpeg {
 } __attribute__((__packed__));
 
 #define UVC_DT_FORMAT_MJPEG_SIZE			11
+#define UVC_DT_FORMAT_H264_SIZE			11
+
+struct uvc_format_h264 {
+	__u8  bLength;
+	__u8  bDescriptorType;
+	__u8  bDescriptorSubType;
+	__u8  bFormatIndex;
+	__u8  bNumFrameDescriptors;
+	__u8  bmFlags;
+	__u8  bDefaultFrameIndex;
+	__u8  bAspectRatioX;
+	__u8  bAspectRatioY;
+	__u8  bmInterfaceFlags;
+	__u8  bCopyProtect;
+} __attribute__((__packed__));
+
+struct uvc_format_h264_base {
+	__u8  bLength;
+	__u8  bDescriptorType;
+	__u8  bDescriptorSubType;
+	__u8  bFormatIndex;
+	__u8  bNumFrameDescriptors;
+	__u8  guidFormat[16];
+	__u8  bBitsPerPixel;
+	__u8  bDefaultFrameIndex;
+	__u8  bAspectRatioX;
+	__u8  bAspectRatioY;
+	__u8  bmInterfaceFlags;
+	__u8  bCopyProtect;
+	__u8  bVariableSize;
+} __attribute__((__packed__));
+
+
 
 /* MJPEG Payload - 3.1.2. MJPEG Video Frame Descriptor */
 struct uvc_frame_mjpeg {
@@ -562,6 +597,48 @@ struct UVC_FRAME_MJPEG(n) {				\
 	__u32 dwMaxVideoFrameBufferSize;		\
 	__u32 dwDefaultFrameInterval;			\
 	__u8  bFrameIntervalType;			\
+	__u32 dwFrameInterval[n];			\
+} __attribute__ ((packed))
+
+#define UVC_DT_FRAME_H264_SIZE(n)			(26+4*(n))
+
+#define UVC_FRAME_H264(n) \
+	uvc_frame_h264_##n
+
+#define UVC_FRAME_H264_BASE(n) \
+	uvc_frame_h264_base##n
+
+#define DECLARE_UVC_FRAME_H264(n)			\
+struct UVC_FRAME_H264(n) {				\
+	__u8  bLength;					\
+	__u8  bDescriptorType;				\
+	__u8  bDescriptorSubType;			\
+	__u8  bFrameIndex;				\
+	__u8  bmCapabilities;				\
+	__u16 wWidth;					\
+	__u16 wHeight;					\
+	__u32 dwMinBitRate;				\
+	__u32 dwMaxBitRate;				\
+	__u32 dwMaxVideoFrameBufferSize;		\
+	__u32 dwDefaultFrameInterval;			\
+	__u8  bFrameIntervalType;			\
+	__u32 dwFrameInterval[n];			\
+} __attribute__ ((packed))
+
+#define DECLARE_UVC_FRAME_H264_BASE(n)			\
+struct UVC_FRAME_H264_BASE(n) {				\
+	__u8  bLength;					\
+	__u8  bDescriptorType;				\
+	__u8  bDescriptorSubType;			\
+	__u8  bFrameIndex;				\
+	__u8  bmCapabilities;				\
+	__u16 wWidth;					\
+	__u16 wHeight;					\
+	__u32 dwMinBitRate;				\
+	__u32 dwMaxBitRate;				\
+	__u32 dwDefaultFrameInterval;			\
+	__u8  bFrameIntervalType;			\
+	__u32 dwBytesPerLine;			\
 	__u32 dwFrameInterval[n];			\
 } __attribute__ ((packed))
 

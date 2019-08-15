@@ -144,6 +144,14 @@ struct ufs_dev_fix {
  */
 #define UFS_DEVICE_QUIRK_HOST_PA_SAVECONFIGTIME	(1 << 8)
 
+/*
+ * Fix Samsung device CMP ERROR problem.
+ * Samsung device may return different data when we read the same address
+ * multiple times.
+ * Disable write cache can avoid this problem.
+ */
+#define UFS_DEVICE_DISABLE_WRITE_CACHE	(1 << 9)
+
 struct ufs_hba;
 void ufs_advertise_fixup_device(struct ufs_hba *hba);
 

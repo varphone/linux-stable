@@ -35,6 +35,8 @@
 #include "gadget.h"
 #include "io.h"
 
+static void dwc3_gadget_sync_connected_status(struct dwc3 *dwc);
+
 /**
  * dwc3_gadget_set_test_mode - Enables USB2 Test Modes
  * @dwc: pointer to our context structure
@@ -247,7 +249,7 @@ int dwc3_send_gadget_ep_cmd(struct dwc3_ep *dep, unsigned cmd,
 		struct dwc3_gadget_ep_cmd_params *params)
 {
 	struct dwc3		*dwc = dep->dwc;
-	u32			timeout = 500;
+	u32			timeout = 5000;
 	u32			reg;
 
 	int			cmd_status = 0;
@@ -816,10 +818,41 @@ static void dwc3_prepare_one_trb(struct dwc3_ep *dep,
 	case USB_ENDPOINT_XFER_ISOC:
 		if (!node) {
 			trb->ctrl = DWC3_TRBCTL_ISOCHRONOUS_FIRST;
-
+			/*
+			 * USB Specification 2.0 Section 5.9.2 states that: "If
+			 * there is only a single transaction in the microframe,
+			 * only a DATA0 data packet PID is used.  If there are
+			 * two transactions per microframe, DATA1 is used for
+			 * the first transaction data packet and DATA0 is used
+			 * for the second transaction data packet.  If there are
+			 * three transactions per microframe, DATA2 is used for
+			 * the first transaction data packet, DATA1 is used for
+			 * the second, and DATA0 is used for the third."
+			 *
+			 * IOW, we should satisfy the following cases:
+			 *
+			 * 1) length <= maxpacket
+			 *	- DATA0
+			 *
+			 * 2) maxpacket < length <= (2 * maxpacket)
+			 *	- DATA1, DATA0
+			 *
+			 * 3) (2 * maxpacket) < length <= (3 * maxpacket)
+			 *	- DATA2, DATA1, DATA0
+			 */
 			if (speed == USB_SPEED_HIGH) {
 				struct usb_ep *ep = &dep->endpoint;
-				trb->size |= DWC3_TRB_SIZE_PCM1(ep->mult - 1);
+				//unsigned int mult = ep->mult - 1;
+				unsigned int mult = 2;  //backport commit 	ec5bb87e4e2a1d3a35563a7bcfac9febf67aba9d
+				unsigned int maxp = usb_endpoint_maxp(ep->desc);
+
+				if (length <= (2 * maxp))
+					mult--;
+
+				if (length <= maxp)
+					mult--;
+
+				trb->size |= DWC3_TRB_SIZE_PCM1(mult);
 			}
 		} else {
 			trb->ctrl = DWC3_TRBCTL_ISOCHRONOUS;
@@ -994,11 +1027,13 @@ static int __dwc3_gadget_kick_transfer(struct dwc3_ep *dep, u16 cmd_param)
 
 	memset(&params, 0, sizeof(params));
 
-	if (starting) {
+	if (starting && !(dep->flags&DWC3_EP_UPDATE)) {
 		params.param0 = upper_32_bits(req->trb_dma);
 		params.param1 = lower_32_bits(req->trb_dma);
 		cmd = DWC3_DEPCMD_STARTTRANSFER |
 			DWC3_DEPCMD_PARAM(cmd_param);
+		if (usb_endpoint_xfer_isoc(dep->endpoint.desc))
+			dep->flags |= DWC3_EP_UPDATE;
 	} else {
 		cmd = DWC3_DEPCMD_UPDATETRANSFER |
 			DWC3_DEPCMD_PARAM(dep->resource_index);
@@ -1030,8 +1065,6 @@ static int __dwc3_gadget_kick_transfer(struct dwc3_ep *dep, u16 cmd_param)
 static void __dwc3_gadget_start_isoc(struct dwc3 *dwc,
 		struct dwc3_ep *dep, u32 cur_uf)
 {
-	u32 uf;
-
 	if (list_empty(&dep->pending_list)) {
 		dwc3_trace(trace_dwc3_gadget,
 				"ISOC ep %s run out for requests",
@@ -1041,9 +1074,8 @@ static void __dwc3_gadget_start_isoc(struct dwc3 *dwc,
 	}
 
 	/* 4 micro frames in the future */
-	uf = cur_uf + dep->interval * 4;
-
-	__dwc3_gadget_kick_transfer(dep, uf);
+	dep->frame_number = cur_uf + max_t(u32, 4, dep->interval);
+	__dwc3_gadget_kick_transfer(dep, dep->frame_number);
 }
 
 static void dwc3_gadget_start_isoc(struct dwc3 *dwc,
@@ -1196,6 +1228,10 @@ static int dwc3_gadget_ep_dequeue(struct usb_ep *ep,
 	trace_dwc3_ep_dequeue(req);
 
 	spin_lock_irqsave(&dwc->lock, flags);
+
+
+    if (list_empty(&dep->pending_list) && list_empty(&dep->started_list) )
+		goto out0 ;
 
 	list_for_each_entry(r, &dep->pending_list, list) {
 		if (r == req)
@@ -2109,7 +2145,7 @@ static void dwc3_endpoint_transfer_complete(struct dwc3 *dwc,
 	if (!dep->endpoint.desc)
 		return;
 
-	if (!usb_endpoint_xfer_isoc(dep->endpoint.desc)) {
+	if (!usb_endpoint_xfer_isoc(dep->endpoint.desc) || (dep->flags&DWC3_EP_ENABLED)) {
 		int ret;
 
 		ret = __dwc3_gadget_kick_transfer(dep, 0);
@@ -2757,9 +2793,11 @@ static void dwc3_gadget_interrupt(struct dwc3 *dwc,
 	case DWC3_DEVICE_EVENT_OVERFLOW:
 		dwc3_trace(trace_dwc3_gadget, "Overflow");
 		break;
+
 	default:
 		dev_WARN(dwc->dev, "UNKNOWN IRQ %d\n", event->type);
 	}
+	dwc3_gadget_sync_connected_status(dwc);
 }
 
 static void dwc3_process_event_entry(struct dwc3 *dwc,
@@ -3005,6 +3043,8 @@ int dwc3_gadget_init(struct dwc3 *dwc)
 	if (ret)
 		goto err5;
 
+	dwc3_proc_init(dwc);
+
 	ret = usb_add_gadget_udc(dwc->dev, &dwc->gadget);
 	if (ret) {
 		dev_err(dwc->dev, "failed to register udc\n");
@@ -3041,6 +3081,8 @@ err0:
 void dwc3_gadget_exit(struct dwc3 *dwc)
 {
 	usb_del_gadget_udc(&dwc->gadget);
+
+	dwc3_proc_shutdown(dwc);
 
 	dwc3_gadget_free_endpoints(dwc);
 
@@ -3105,4 +3147,74 @@ void dwc3_gadget_process_pending_events(struct dwc3 *dwc)
 		dwc->pending_events = false;
 		enable_irq(dwc->irq_gadget);
 	}
+}
+
+/*
+ * dwc3_gadget_sync_connected_status() function just for
+ * user space get udc connected status. and this function
+ * just report three status: Disconnected, Connected host,
+ * Connected charger.
+ *
+ * After some tests, report connected udc connected status by
+ * DSTS register, [21:18]USB Link Status and [2:0] Connect Speed.
+ *
+ * How to identify whitch status is the UDC connected?
+ * 1. Host connected:
+ * Host would reset udc, so dwc3 core get reset event interrupt,
+ * dwc3_gadget_reset_interrupt() set dwc->connected = true,
+ * so check connected host by dwc->connected == true
+ *
+ * 2. Disconnected:
+ * When vbus detect 5V lose, dwc3 core generated a disconnect event intr.
+ * dwc3_gadget_disconnect_interrupt() set dwc->connected = false.
+ * so check disconnected by dwc->connected == false
+ *
+ * 3. Charger connected: (Fixedme)
+ * As dwc3 core size, DP keep pullup register when connected to charger.
+ * no any port reset action created, so dwc3 would entry FullSpeed mode.
+ * so chect connected charger by FullSpeed && dwc->connectd == false
+ *
+ */
+static void dwc3_gadget_sync_connected_status(struct dwc3 *dwc)
+{
+	u32 reg;
+	u8	speed;
+	u8  state;
+	static int prev = UDC_DISCONNECTED;
+
+	reg = dwc3_readl(dwc->regs, DWC3_DSTS);
+	speed = reg & DWC3_DSTS_CONNECTSPD;
+	state = DWC3_DSTS_USBLNKST(reg);
+
+	/*
+	 * step1 check is connected host?
+	 */
+	if (dwc->connected == true) {
+		if (prev != UDC_CONNECT_HOST)
+			dwc3_trace(trace_dwc3_gadget, "csts: Connect Host");
+		dwc->udc_connect_status = UDC_CONNECT_HOST;
+		goto out;
+	}
+
+	/*
+	 * step2 disconectd status && fullspeed mode,
+	 * as connected charger.
+	 */
+	if ((speed == DWC3_DSTS_FULLSPEED) && (state != DWC3_LINK_STATE_SS_DIS)) {
+		if (prev != UDC_CONNECT_CHARGER)
+			dwc3_trace(trace_dwc3_gadget, "csts: Connect Charger");
+		dwc->udc_connect_status = UDC_CONNECT_CHARGER;
+		goto out;
+	}
+
+	/*
+	 * step3 not host and charger connected, so just
+	 * disconnectd.
+	 */
+	if (prev != UDC_DISCONNECTED)
+		dwc3_trace(trace_dwc3_gadget, "csts: Disconnect");
+	dwc->udc_connect_status = UDC_DISCONNECTED;
+
+out:
+	prev = dwc->udc_connect_status;
 }
