@@ -105,6 +105,14 @@
                                 interrupts = <0 29 1>;
                                 reg = <0x43cb0000 0x10000>;
                         };
+			/* scaler ir */
+			port@13 {
+				reg = <0x43cf0000 0x10000>;
+			};
+			/* scaler vis */
+			port@14 {
+				reg = <0x43d00000 0x10000>;
+			};
 		};
 	};
 };
