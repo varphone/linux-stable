@@ -45,6 +45,15 @@
 
 #define SENSOR_NUM 4
 
+struct dev_chn_attribute {
+	struct device_attribute attr;
+	int chn;
+};
+
+#define DEV_CHN_ATTR(_name, _show, _store, _chn) \
+	struct dev_chn_attribute dev_attr_ch##_chn##_##_name = \
+		{ __ATTR(_name, S_IRUGO | S_IWUSR, _show, _store), _chn }
+
 unsigned int g_isl7998x_width = 720;
 unsigned int g_isl7998x_field_height = 288;
 unsigned int g_isl7998x_frame_height = 576;
@@ -1931,6 +1940,192 @@ static ssize_t isl7998x_set_vdelays_attr(struct device *dev,
 	return -EINVAL;
 }
 
+static ssize_t isl7998x_brightness_show(struct device *dev,
+					struct device_attribute *attr,
+					char *buf)
+{
+	struct dev_chn_attribute* dca = (struct dev_chn_attribute*)attr;
+	int value = isl7998x_get_brightness(dca->chn);
+	return scnprintf(buf, PAGE_SIZE, "%d\n", value);
+}
+
+static ssize_t isl7998x_brightness_store(struct device *dev,
+					 struct device_attribute *attr,
+					 const char *buf, size_t count)
+{
+	struct dev_chn_attribute* dca = (struct dev_chn_attribute*)attr;
+	int value = 0;
+	if (sscanf(buf, "%d", &value) == 1) {
+		isl7998x_set_brightness(value, dca->chn);
+		return count;
+	}
+	return -EINVAL;
+}
+
+DEV_CHN_ATTR(brightness, isl7998x_brightness_show, isl7998x_brightness_store, 1);
+DEV_CHN_ATTR(brightness, isl7998x_brightness_show, isl7998x_brightness_store, 2);
+DEV_CHN_ATTR(brightness, isl7998x_brightness_show, isl7998x_brightness_store, 3);
+DEV_CHN_ATTR(brightness, isl7998x_brightness_show, isl7998x_brightness_store, 4);
+
+static ssize_t isl7998x_contrast_show(struct device *dev,
+				      struct device_attribute *attr,
+				      char *buf)
+{
+	struct dev_chn_attribute* dca = (struct dev_chn_attribute*)attr;
+	int value = isl7998x_get_contrast(dca->chn);
+	return scnprintf(buf, PAGE_SIZE, "%d\n", value);
+}
+
+static ssize_t isl7998x_contrast_store(struct device *dev,
+				       struct device_attribute *attr,
+				       const char *buf, size_t count)
+{
+	struct dev_chn_attribute* dca = (struct dev_chn_attribute*)attr;
+	int value = 0;
+	if (sscanf(buf, "%d", &value) == 1) {
+		isl7998x_set_contrast(value, dca->chn);
+		return count;
+	}
+	return -EINVAL;
+}
+
+DEV_CHN_ATTR(contrast, isl7998x_contrast_show, isl7998x_contrast_store, 1);
+DEV_CHN_ATTR(contrast, isl7998x_contrast_show, isl7998x_contrast_store, 2);
+DEV_CHN_ATTR(contrast, isl7998x_contrast_show, isl7998x_contrast_store, 3);
+DEV_CHN_ATTR(contrast, isl7998x_contrast_show, isl7998x_contrast_store, 4);
+
+static ssize_t isl7998x_hue_show(struct device *dev,
+				 struct device_attribute *attr,
+				 char *buf)
+{
+	struct dev_chn_attribute* dca = (struct dev_chn_attribute*)attr;
+	int value = isl7998x_get_hue(dca->chn);
+	return scnprintf(buf, PAGE_SIZE, "%d\n", value);
+}
+
+static ssize_t isl7998x_hue_store(struct device *dev,
+				  struct device_attribute *attr,
+				  const char *buf, size_t count)
+{
+	struct dev_chn_attribute* dca = (struct dev_chn_attribute*)attr;
+	int value = 0;
+	if (sscanf(buf, "%d", &value) == 1) {
+		isl7998x_set_hue(value, dca->chn);
+		return count;
+	}
+	return -EINVAL;
+}
+
+DEV_CHN_ATTR(hue, isl7998x_hue_show, isl7998x_hue_store, 1);
+DEV_CHN_ATTR(hue, isl7998x_hue_show, isl7998x_hue_store, 2);
+DEV_CHN_ATTR(hue, isl7998x_hue_show, isl7998x_hue_store, 3);
+DEV_CHN_ATTR(hue, isl7998x_hue_show, isl7998x_hue_store, 4);
+
+static ssize_t isl7998x_saturation_show(struct device *dev,
+					struct device_attribute *attr,
+					char *buf)
+{
+	struct dev_chn_attribute* dca = (struct dev_chn_attribute*)attr;
+	int value = isl7998x_get_saturation(dca->chn);
+	return scnprintf(buf, PAGE_SIZE, "%d\n", value);
+}
+
+static ssize_t isl7998x_saturation_store(struct device *dev,
+					 struct device_attribute *attr,
+					 const char *buf, size_t count)
+{
+	struct dev_chn_attribute* dca = (struct dev_chn_attribute*)attr;
+	int value = 0;
+	if (sscanf(buf, "%d", &value) == 1) {
+		isl7998x_set_saturation(value, dca->chn);
+		return count;
+	}
+	return -EINVAL;
+}
+
+DEV_CHN_ATTR(saturation, isl7998x_saturation_show, isl7998x_saturation_store, 1);
+DEV_CHN_ATTR(saturation, isl7998x_saturation_show, isl7998x_saturation_store, 2);
+DEV_CHN_ATTR(saturation, isl7998x_saturation_show, isl7998x_saturation_store, 3);
+DEV_CHN_ATTR(saturation, isl7998x_saturation_show, isl7998x_saturation_store, 4);
+
+static ssize_t isl7998x_sharpness_show(struct device *dev,
+				       struct device_attribute *attr,
+				       char *buf)
+{
+	struct dev_chn_attribute* dca = (struct dev_chn_attribute*)attr;
+	int value = isl7998x_get_sharpness(dca->chn);
+	return scnprintf(buf, PAGE_SIZE, "%d\n", value);
+}
+
+static ssize_t isl7998x_sharpness_store(struct device *dev,
+					struct device_attribute *attr,
+					const char *buf, size_t count)
+{
+	struct dev_chn_attribute* dca = (struct dev_chn_attribute*)attr;
+	int value = 0;
+	if (sscanf(buf, "%d", &value) == 1) {
+		isl7998x_set_sharpness(value, dca->chn);
+		return count;
+	}
+	return -EINVAL;
+}
+
+DEV_CHN_ATTR(sharpness, isl7998x_sharpness_show, isl7998x_sharpness_store, 1);
+DEV_CHN_ATTR(sharpness, isl7998x_sharpness_show, isl7998x_sharpness_store, 2);
+DEV_CHN_ATTR(sharpness, isl7998x_sharpness_show, isl7998x_sharpness_store, 3);
+DEV_CHN_ATTR(sharpness, isl7998x_sharpness_show, isl7998x_sharpness_store, 4);
+
+static int isl7998x_get_burst_pll(int chn)
+{
+	int value = 0xC0;
+
+	ISL7998X_LOCK();
+	if (isl7998x_write_reg(0xFF, chn) == 0) {
+		value = isl7998x_read_reg(0x29);
+		isl7998x_write_reg(0xFF, 0x00);
+	}
+	ISL7998X_UNLOCK();
+
+	return value;
+}
+
+static void isl7998x_set_burst_pll(int value, int chn)
+{
+	ISL7998X_LOCK();
+	if (isl7998x_write_reg(0xFF, chn) == 0) {
+		isl7998x_write_reg(0x29, value & 0xff);
+		isl7998x_write_reg(0xFF, 0x00);
+	}
+	ISL7998X_UNLOCK();
+}
+
+static ssize_t isl7998x_burst_pll_show(struct device *dev,
+				       struct device_attribute *attr,
+				       char *buf)
+{
+	struct dev_chn_attribute* dca = (struct dev_chn_attribute*)attr;
+	int value = isl7998x_get_burst_pll(dca->chn);
+	return scnprintf(buf, PAGE_SIZE, "%d\n", value);
+}
+
+static ssize_t isl7998x_burst_pll_store(struct device *dev,
+					struct device_attribute *attr,
+					const char *buf, size_t count)
+{
+	struct dev_chn_attribute* dca = (struct dev_chn_attribute*)attr;
+	int value = 0;
+	if (sscanf(buf, "%d", &value) == 1) {
+		isl7998x_set_burst_pll(value, dca->chn);
+		return count;
+	}
+	return -EINVAL;
+}
+
+DEV_CHN_ATTR(burst_pll, isl7998x_burst_pll_show, isl7998x_burst_pll_store, 1);
+DEV_CHN_ATTR(burst_pll, isl7998x_burst_pll_show, isl7998x_burst_pll_store, 2);
+DEV_CHN_ATTR(burst_pll, isl7998x_burst_pll_show, isl7998x_burst_pll_store, 3);
+DEV_CHN_ATTR(burst_pll, isl7998x_burst_pll_show, isl7998x_burst_pll_store, 4);
+
 DEVICE_ATTR(channels_status, S_IRUGO, isl7998x_get_channels_status_attr, NULL);
 DEVICE_ATTR(device_interrupt_status, S_IRUGO, isl7998x_get_device_interrupt_status_attr, NULL);
 DEVICE_ATTR(mipi_csi_errors, S_IRUGO, isl7998x_get_mipi_csi_errors_attr, NULL);
@@ -1964,8 +2159,72 @@ static const struct attribute_group isl7998x_attr_group = {
 	.attrs = isl7998x_attrs,
 };
 
+static struct attribute *isl7998x_ch1_attrs[] = {
+	&dev_attr_ch1_brightness.attr.attr,
+	&dev_attr_ch1_contrast.attr.attr,
+	&dev_attr_ch1_hue.attr.attr,
+	&dev_attr_ch1_saturation.attr.attr,
+	&dev_attr_ch1_sharpness.attr.attr,
+	&dev_attr_ch1_burst_pll.attr.attr,
+	NULL
+};
+
+static struct attribute *isl7998x_ch2_attrs[] = {
+	&dev_attr_ch2_brightness.attr.attr,
+	&dev_attr_ch2_contrast.attr.attr,
+	&dev_attr_ch2_hue.attr.attr,
+	&dev_attr_ch2_saturation.attr.attr,
+	&dev_attr_ch2_sharpness.attr.attr,
+	&dev_attr_ch2_burst_pll.attr.attr,
+	NULL
+};
+
+static struct attribute *isl7998x_ch3_attrs[] = {
+	&dev_attr_ch3_brightness.attr.attr,
+	&dev_attr_ch3_contrast.attr.attr,
+	&dev_attr_ch3_hue.attr.attr,
+	&dev_attr_ch3_saturation.attr.attr,
+	&dev_attr_ch3_sharpness.attr.attr,
+	&dev_attr_ch3_burst_pll.attr.attr,
+	NULL
+};
+
+static struct attribute *isl7998x_ch4_attrs[] = {
+	&dev_attr_ch4_brightness.attr.attr,
+	&dev_attr_ch4_contrast.attr.attr,
+	&dev_attr_ch4_hue.attr.attr,
+	&dev_attr_ch4_saturation.attr.attr,
+	&dev_attr_ch4_sharpness.attr.attr,
+	&dev_attr_ch4_burst_pll.attr.attr,
+	NULL
+};
+
+static const struct attribute_group isl7998x_ch1_attr_group = {
+	.name = "ch1",
+	.attrs = isl7998x_ch1_attrs,
+};
+
+static const struct attribute_group isl7998x_ch2_attr_group = {
+	.name = "ch2",
+	.attrs = isl7998x_ch2_attrs,
+};
+
+static const struct attribute_group isl7998x_ch3_attr_group = {
+	.name = "ch3",
+	.attrs = isl7998x_ch3_attrs,
+};
+
+static const struct attribute_group isl7998x_ch4_attr_group = {
+	.name = "ch4",
+	.attrs = isl7998x_ch4_attrs,
+};
+
 static const struct attribute_group *isl7998x_attr_groups[] = {
 	&isl7998x_attr_group,
+	&isl7998x_ch1_attr_group,
+	&isl7998x_ch2_attr_group,
+	&isl7998x_ch3_attr_group,
+	&isl7998x_ch4_attr_group,
 	NULL,
 };
 
