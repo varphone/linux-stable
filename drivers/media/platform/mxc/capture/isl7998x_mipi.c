@@ -65,6 +65,7 @@ static int isl7998x_hactives[SENSOR_NUM] = { 720, 720, 720, 720 };
 static int isl7998x_hdelays[SENSOR_NUM] = { 8, 8, 8, 8 };
 static int isl7998x_vactives[SENSOR_NUM] = { 288, 288, 288, 288 };
 static int isl7998x_vdelays[SENSOR_NUM] = { 24, 24, 24, 24};
+static int isl7998x_burst_plls[SENSOR_NUM] = { 0xE0, 0xE0, 0xE0, 0xE0 };
 static int isl7998x_started = 0;
 static int isl7998x_state[SENSOR_NUM];
 static struct sensor_data isl7998x_data[SENSOR_NUM];
@@ -645,7 +646,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 			isl7998x_write_reg(0x1C, 0x08 | 0x07); // Standard Auto Detection
 		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
 		isl7998x_write_reg(0x28, 0x00); // Use search VMODE
-		isl7998x_write_reg(0x29, 0xE0); // Burst PLL center frequency control
+		isl7998x_write_reg(0x29, isl7998x_burst_plls[0]); // Burst PLL center frequency control
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
 		isl7998x_write_reg(0x33, 0xC5); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
@@ -669,7 +670,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 			isl7998x_write_reg(0x1C, 0x08 | 0x07); // Standard Auto Detection
 		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
 		isl7998x_write_reg(0x28, 0x00); // Use search VMODE
-		isl7998x_write_reg(0x29, 0xE0); // Burst PLL center frequency control
+		isl7998x_write_reg(0x29, isl7998x_burst_plls[1]); // Burst PLL center frequency control
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
 		isl7998x_write_reg(0x33, 0xC5); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
@@ -693,7 +694,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 			isl7998x_write_reg(0x1C, 0x08 | 0x07); // Standard Auto Detection
 		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
 		isl7998x_write_reg(0x28, 0x00); // Use search VMODE
-		isl7998x_write_reg(0x29, 0xE0); // Burst PLL center frequency control
+		isl7998x_write_reg(0x29, isl7998x_burst_plls[2]); // Burst PLL center frequency control
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
 		isl7998x_write_reg(0x33, 0xC5); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
@@ -717,7 +718,7 @@ static int isl7998x_hardware_init(struct sensor_data *sensor)
 			isl7998x_write_reg(0x1C, 0x08 | 0x07); // Standard Auto Detection
 		isl7998x_write_reg(0x1D, 0xFF); // Recognize All Standards
 		isl7998x_write_reg(0x28, 0x00); // Use search VMODE
-		isl7998x_write_reg(0x29, 0xE0); // Burst PLL center frequency control
+		isl7998x_write_reg(0x29, isl7998x_burst_plls[3]); // Burst PLL center frequency control
 		isl7998x_write_reg(0x2F, 0xE6); // CCS Blue Color
 		isl7998x_write_reg(0x33, 0xC5); // 50Hz Free run, Medium YNR
 		isl7998x_write_reg(0x3B, 0x04); // Power Down Short Detection
@@ -2096,6 +2097,7 @@ static void isl7998x_set_burst_pll(int value, int chn)
 		isl7998x_write_reg(0x29, value & 0xff);
 		isl7998x_write_reg(0xFF, 0x00);
 	}
+	isl7998x_burst_plls[chn - 1] = value;
 	ISL7998X_UNLOCK();
 }
 
