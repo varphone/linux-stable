@@ -62,6 +62,7 @@ struct lt8918
     struct camera_common_data* s_data;
     struct camera_common_pdata* pdata;
     /* STM32 */
+    u32 use_smc_reset;
     struct i2c_client* i2c_smc;
     struct regmap* regmap_smc;
     /* V4L2 Controls */
@@ -316,6 +317,29 @@ static inline void lt8918_write_bank(struct lt8918* priv, u8 bank)
     regmap_write(priv->regmap, 0xff, bank);
 }
 
+static void lt8918_hardware_reset(struct lt8918* priv)
+{
+    if (priv->use_smc_reset) {
+        smc_reset_camera(priv->regmap_smc);
+    }
+    else {
+        gpio_set_value(priv->pdata->reset_gpio, 0);
+	usleep_range(1000, 2000);
+	gpio_set_value(priv->pdata->reset_gpio, 1);
+	usleep_range(1000, 2000);
+    }
+}
+
+static void lt8918_hardware_shutdown(struct lt8918* priv)
+{
+    if (priv->use_smc_reset) {
+        smc_shutdown_camera(priv->regmap_smc);
+    }
+    else {
+        gpio_set_value(priv->pdata->reset_gpio, 0);
+    }
+}
+
 static int lt8918_hardware_init(struct regmap* regmap)
 {
     regmap_write(regmap, 0xff, 0x60);
@@ -435,7 +459,7 @@ static int lt8918_power_on(struct camera_common_data* s_data)
         return err;
     }
 
-    smc_reset_camera(priv->regmap_smc);
+    lt8918_hardware_reset(priv);
     lt8918_hardware_init(priv->regmap);
 
     pw->state = SWITCH_ON;
@@ -461,7 +485,7 @@ static int lt8918_power_off(struct camera_common_data* s_data)
         return err;
     }
 
-    smc_shutdown_camera(priv->regmap_smc);
+    lt8918_hardware_shutdown(priv);
 
 power_off_done:
     pw->state = SWITCH_OFF;
@@ -749,6 +773,7 @@ error:
 static struct camera_common_pdata*
 lt8918_parse_dt(struct i2c_client* client, struct camera_common_data* s_data)
 {
+    struct lt8918* priv = (struct lt8918*)s_data->priv;
     struct device_node* np = client->dev.of_node;
     struct camera_common_pdata* board_priv_pdata;
     const struct of_device_id* match;
@@ -782,6 +807,12 @@ lt8918_parse_dt(struct i2c_client* client, struct camera_common_data* s_data)
     if (err) {
         dev_err(&client->dev, "reset-gpios not found %d\n", err);
         board_priv_pdata->reset_gpio = 0;
+    }
+
+    err = of_property_read_u32(np, "use-smc-reset", &priv->use_smc_reset);
+    if (err) {
+        dev_warn(&client->dev, "use-smc-reset not found %d\n", err);
+        priv->use_smc_reset = 0;
     }
 
     return board_priv_pdata;
@@ -831,10 +862,21 @@ static int lt8918_probe(struct i2c_client* client,
 
     priv->i2c_main = client;
 
-    ret = smc_init_regmap(priv);
-    if (ret) {
-        dev_err(&client->dev, "Unable to allocate i2c client for SMC!\n");
-        return ret;
+    common_data->priv = (void*)priv;
+
+    if (client->dev.of_node)
+        priv->pdata = lt8918_parse_dt(client, common_data);
+    if (!priv->pdata) {
+        dev_err(&client->dev, "Unable to get platform data\n");
+        return -EFAULT;
+    }
+
+    if (priv->use_smc_reset) {
+        ret = smc_init_regmap(priv);
+        if (ret) {
+            dev_err(&client->dev, "Unable to allocate i2c client for SMC!\n");
+            return ret;
+        }
     }
 
     priv->regmap = devm_regmap_init_i2c(client, &sensor_regmap_config);
@@ -844,7 +886,7 @@ static int lt8918_probe(struct i2c_client* client,
         return -ENODEV;
     }
 
-    smc_reset_camera(priv->regmap_smc);
+    lt8918_hardware_reset(priv);
     lt8918_hardware_init(priv->regmap);
 
     ret = lt8918_get_chip_id(priv->regmap);
@@ -854,13 +896,6 @@ static int lt8918_probe(struct i2c_client* client,
         return -ENODEV;
     }
 
-    if (client->dev.of_node)
-        priv->pdata = lt8918_parse_dt(client, common_data);
-    if (!priv->pdata) {
-        dev_err(&client->dev, "Unable to get platform data\n");
-        return -EFAULT;
-    }
-
     common_data->ops = &lt8918_common_ops;
     common_data->ctrl_handler = &priv->ctrl_handler;
     common_data->dev = &client->dev;
@@ -868,7 +903,6 @@ static int lt8918_probe(struct i2c_client* client,
     common_data->colorfmt = camera_common_find_datafmt(LT8918_DEFAULT_DATAFMT);
     common_data->power = &priv->power;
     common_data->ctrls = priv->ctrls;
-    common_data->priv = (void*)priv;
     common_data->numctrls = ARRAY_SIZE(ctrl_config_list);
     common_data->numfmts = ARRAY_SIZE(lt8918_frmfmt);
     common_data->def_mode = LT8918_DEFAULT_MODE;
