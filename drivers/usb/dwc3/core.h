@@ -35,6 +35,8 @@
 #include <linux/phy/phy.h>
 
 #define DWC3_MSG_MAX	500
+#define DWC3_PIPE_TRANS_LIMIT_MASK	(0xf << 8)
+#define DWC3_PIPE_TRANS_LIMIT		(0x7 << 8)
 
 /* Global constants */
 #define DWC3_ZLP_BUF_SIZE	1024	/* size of a superspeed bulk */
@@ -386,6 +388,12 @@
 
 #define DWC3_DSTS_RXFIFOEMPTY		(1 << 17)
 
+#define DWC3_DSTS_MAX_SOFFN					0x3fff
+#define DWC3_EVENT_PRAM_MAX_SOFFN			DWC3_DSTS_MAX_SOFFN
+#define DWC3_EVENT_PRAM_SOFFN_MASK			0x3fff
+#define DWC3_EVENT_PRAM_SOFFN_EXTRA_MASK	0xc000
+#define DWC3_EVENT_PRAM_SOFFN_EXTRA(n)		(((n)&0x3) << 14)
+
 #define DWC3_DSTS_SOFFN_MASK		(0x3fff << 3)
 #define DWC3_DSTS_SOFFN(n)		(((n) & DWC3_DSTS_SOFFN_MASK) >> 3)
 
@@ -536,6 +544,7 @@ struct dwc3_ep {
 #define DWC3_EP_BUSY		(1 << 4)
 #define DWC3_EP_PENDING_REQUEST	(1 << 5)
 #define DWC3_EP_MISSED_ISOC	(1 << 6)
+#define DWC3_EP_UPDATE		(1 << 7)
 
 	/* This last one is specific to EP0 */
 #define DWC3_EP0_DIR_IN		(1 << 31)
@@ -557,6 +566,7 @@ struct dwc3_ep {
 	u8			resource_index;
 	u32			allocated_requests;
 	u32			queued_requests;
+	u32			frame_number;
 	u32			interval;
 
 	char			name[20];
@@ -941,6 +951,13 @@ struct dwc3 {
 	u8			lpm_nyet_threshold;
 	u8			hird_threshold;
 
+	struct proc_dir_entry* parent_entry;
+	struct proc_dir_entry* csts_entry;
+	u8			udc_connect_status;
+	#define UDC_DISCONNECTED 	0
+	#define UDC_CONNECT_HOST 	1
+	#define UDC_CONNECT_CHARGER	2
+
 	const char		*hsphy_interface;
 
 	unsigned		connected:1;
@@ -1174,6 +1191,9 @@ static inline int dwc3_send_gadget_generic_command(struct dwc3 *dwc,
 		int cmd, u32 param)
 { return 0; }
 #endif
+
+int dwc3_proc_init(struct dwc3 *dwc);
+int dwc3_proc_shutdown(struct dwc3 *dwc);
 
 /* power management interface */
 #if !IS_ENABLED(CONFIG_USB_DWC3_HOST)
