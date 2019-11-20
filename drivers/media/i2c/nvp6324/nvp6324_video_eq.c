@@ -1,0 +1,603 @@
+#include "nvp6324.h"
+
+static struct reg_base nvp6324_regs_eq_base[] = {
+	/* base */
+	{0x05, 0x65, 0xff, 0x0}, // eq_bypass
+	{0x05, 0x58, 0xff, 0x0}, // eq_band_sel
+	{0x05, 0x5c, 0xff, 0x0}, // eq_gain_sel
+	{0x0a, 0x3d, 0xff, 0x0}, // deq_a_on
+	{0x0a, 0x3c, 0xff, 0x0}, // deq_a_sel
+
+	/* coeff_ */
+	{0x0a, 0x30, 0xff, 0x0}, // deqA_01
+	{0x0a, 0x31, 0xff, 0x0}, // deqA_02
+	{0x0a, 0x32, 0xff, 0x0}, // deqA_03
+	{0x0a, 0x33, 0xff, 0x0}, // deqA_04
+	{0x0a, 0x34, 0xff, 0x0}, // deqA_05
+	{0x0a, 0x35, 0xff, 0x0}, // deqA_06
+	{0x0a, 0x36, 0xff, 0x0}, // deqA_07
+	{0x0a, 0x37, 0xff, 0x0}, // deqA_08
+	{0x0a, 0x38, 0xff, 0x0}, // deqA_09
+	{0x0a, 0x39, 0xff, 0x0}, // deqA_10
+	{0x0a, 0x3a, 0xff, 0x0}, // deqA_11
+	{0x0a, 0x3b, 0xff, 0x0}, // deqA_12
+
+	/* color */
+	{0x00, 0x24, 0xff, 0x0}, // contrast
+	{0x00, 0x30, 0xff, 0x0}, // y_peaking_mode
+	{0x00, 0x34, 0xff, 0x0}, // y_fir_mode
+	{0x05, 0x31, 0xff, 0x0}, // c_filter
+	{0x00, 0x5c, 0xff, 0x0}, // pal_cm_off
+	{0x00, 0x40, 0xff, 0x0}, // hue
+	{0x00, 0x44, 0xff, 0x0}, // u_gain
+	{0x00, 0x48, 0xff, 0x0}, // v_gain
+	{0x00, 0x4c, 0xff, 0x0}, // u_offset
+	{0x00, 0x50, 0xff, 0x0}, // v_offset
+	{0x00, 0x28, 0xff, 0x0}, // black_level
+	{0x05, 0x27, 0xff, 0x0}, // acc_ref
+	{0x05, 0x28, 0xff, 0x0}, // cti_delay
+	{0x05, 0x2b, 0xff, 0x0}, // saturation_b
+	{0x05, 0x24, 0xff, 0x0}, // burst_dec_a
+	{0x05, 0x5f, 0xff, 0x0}, // burst_dec_b
+	{0x05, 0xd1, 0xff, 0x0}, // burst_dec_c
+	{0x05, 0xd5, 0xff, 0x0}, // c_option
+	{0x0a, 0x25, 0xff, 0x0}, // y_filter_b
+	{0x0a, 0x27, 0xff, 0x0}, // y_filter_b_sel
+
+	/* timing_a */
+	{0x00, 0x68, 0xff, 0x0}, // h_delay_a
+	{0x05, 0x38, 0xff, 0x0}, // h_delay_b
+	{0x00, 0x6c, 0x0f, 0x0}, // h_delay_c
+	{0x00, 0x64, 0xff, 0x0}, // y_delay
+
+	{0x01, 0x84, 0xff, 0x0}, // clk_adc
+	{0x01, 0x88, 0xff, 0x0}, // clk_adc_pre
+	{0x01, 0x8c, 0xff, 0x0}, // clk_adc_post
+
+	{0x09, 0x96, 0xff, 0x0}, // h_scaler1
+	{0x09, 0x97, 0xff, 0x0}, // h_scaler2
+	{0x09, 0x98, 0xff, 0x0}, // h_scaler3
+	{0x09, 0x99, 0xff, 0x0}, // h_scaler4
+	{0x09, 0x9a, 0xff, 0x0}, // h_scaler5
+	{0x09, 0x9b, 0xff, 0x0}, // h_scaler6
+	{0x09, 0x9c, 0xff, 0x0}, // h_scaler7
+	{0x09, 0x9d, 0xff, 0x0}, // h_scaler8
+	{0x09, 0x9e, 0xff, 0x0}, // h_scaler9
+	{0x09, 0x40, 0xff, 0x0}, // pn_auto
+	{0x05, 0x90, 0xff, 0x0}, // comb_mode
+	{0x05, 0xb9, 0xff, 0x0}, // h_pll_op_a
+	{0x05, 0x57, 0xff, 0x0}, // mem_path
+	{0x05, 0x25, 0xff, 0x0}, // fsc_lock_speed
+	{0x00, 0x08, 0xff, 0x0}, // ahd_mode
+	{0x00, 0x04, 0xff, 0x0}, // sd_mode
+	{0x00, 0x0c, 0xff, 0x0}, // spl_mode
+	{0x00, 0x78, 0xff, 0x0}, // vblk_end
+	{0x05, 0x1d, 0xff, 0x0}, // afe_g_sel
+	{0x05, 0x01, 0xff, 0x0}, // afe_ctr_clp
+	{0x05, 0x05, 0xff, 0x0}, // d_agc_option
+};
+
+static u8 val_eq_1080p25_single[ARRAY_SIZE(nvp6324_regs_eq_base)] = {
+	/* base */
+	0x00, // eq_bypass
+	0x77, // eq_band_sel
+	0x78, // eq_gain_sel
+	0x00, // deq_a_on
+	0x00, // deq_a_sel
+
+	/* coeff_ */
+	0xac, // deqA_01
+	0x78, // deqA_02
+	0x17, // deqA_03
+	0xc1, // deqA_04
+	0x40, // deqA_05
+	0x00, // deqA_06
+	0xc3, // deqA_07
+	0x0a, // deqA_08
+	0x00, // deqA_09
+	0x02, // deqA_10
+	0x00, // deqA_11
+	0xb2, // deqA_12
+
+	/* color */
+	0x86, // contrast
+	0x00, // y_peaking_mode
+	0x00, // y_fir_mode
+	0x82, // c_filter
+	0x82, // pal_cm_off
+	0x00, // hue
+	0x00, // u_gain
+	0x00, // v_gain
+	0xfe, // u_offset
+	0xfb, // v_offset
+	0x80, // black_level
+	0x57, // acc_ref
+	0x80, // cti_delay
+	0xa8, // saturation_b
+	0x2a, // burst_dec_a
+	0x00, // burst_dec_b
+	0x30, // burst_dec_c
+	0x80, // c_option
+	0x10, // y_filter_b
+	0x1e, // y_filter_b_sel
+
+	/* timing_a */
+	0x48, // h_delay_a
+	0x13, // h_delay_b
+	0x00, // h_delay_c
+	0x05, // y_delay
+
+	0x04, // clk_adc
+	0x01, // clk_adc_pre
+	0x02, // clk_adc_post
+
+	0x00, // h_scaler1
+	0x00, // h_scaler2
+	0x00, // h_scaler3
+	0x00, // h_scaler4
+	0x00, // h_scaler5
+	0x00, // h_scaler6
+	0x00, // h_scaler7
+	0x00, // h_scaler8
+	0x00, // h_scaler9
+	0x00, // pn_auto
+	0x01, // comb_mode
+	0x72, // h_pll_op_a
+	0x00, // mem_path
+	0xdc, // fsc_lock_speed
+	0x03, // ahd_mode
+	0x00, // sd_mode
+	0x00, // spl_mode
+	0x21, // vblk_end
+	0x0c, // afe_g_sel
+	0x2c, // afe_ctr_clp
+	0x24, // d_agc_option
+};
+
+static u8 val_eq_720p25_single[ARRAY_SIZE(nvp6324_regs_eq_base)] = {
+	/* base */
+	0x00, // eq_bypass
+	0x77, // eq_band_sel
+	0x78, // eq_gain_sel
+	0x00, // deq_a_on
+	0x00, // deq_a_sel
+
+	/* coeff_ */
+	0xac, // deqA_01
+	0x78, // deqA_02
+	0x17, // deqA_03
+	0xc1, // deqA_04
+	0x40, // deqA_05
+	0x00, // deqA_06
+	0xc3, // deqA_07
+	0x0a, // deqA_08
+	0x00, // deqA_09
+	0x02, // deqA_10
+	0x00, // deqA_11
+	0xb2, // deqA_12
+
+	/* color */
+	0x88, // contrast
+	0x03, // y_peaking_mode
+	0x0f, // y_fir_mode
+	0x82, // c_filter
+	0x82, // pal_cm_off
+	0x00, // hue
+	0x00, // u_gain
+	0x00, // v_gain
+	0x00, // u_offset
+	0x00, // v_offset
+	0x84, // black_level
+	0x57, // acc_ref
+	0x80, // cti_delay
+	0xa8, // saturation_b
+	0x2a, // burst_dec_a
+	0x00, // burst_dec_b
+	0x30, // burst_dec_c
+	0x80, // c_option
+	0x10, // y_filter_b
+	0x1e, // y_filter_b_sel
+
+	/* timing_a */
+	0x43, // h_delay_a
+	0x13, // h_delay_b
+	0x00, // h_delay_c
+	0x05, // y_delay
+
+	0x04, // clk_adc
+	0x01, // clk_adc_pre
+	0x02, // clk_adc_post
+
+	0x00, // h_scaler1
+	0x00, // h_scaler2
+	0x00, // h_scaler3
+	0x00, // h_scaler4
+	0x00, // h_scaler5
+	0x00, // h_scaler6
+	0x00, // h_scaler7
+	0x00, // h_scaler8
+	0x00, // h_scaler9
+	0x00, // pn_auto
+	0x01, // comb_mode
+	0x72, // h_pll_op_a
+	0x00, // mem_path
+	0xdc, // fsc_lock_speed
+	0x0d, // ahd_mode
+	0x00, // sd_mode
+	0x00, // spl_mode
+	0x21, // vblk_end
+	0x0c, // afe_g_sel
+	0x2c, // afe_ctr_clp
+	0x24, // d_agc_option
+};
+
+static u8 val_eq_sdp25_single[ARRAY_SIZE(nvp6324_regs_eq_base)] = {
+	/* base */
+	0x00, // eq_bypass
+	0x77, // eq_band_sel
+	0x78, // eq_gain_sel
+	0x00, // deq_a_on
+	0x00, // deq_a_sel
+
+	/* coeff_ */
+	0xac, // deqA_01
+	0x78, // deqA_02
+	0x17, // deqA_03
+	0xc1, // deqA_04
+	0x40, // deqA_05
+	0x00, // deqA_06
+	0xc3, // deqA_07
+	0x0a, // deqA_08
+	0x00, // deqA_09
+	0x02, // deqA_10
+	0x00, // deqA_11
+	0xb2, // deqA_12
+
+	/* color */
+	0x90, // contrast
+	0x00, // y_peaking_mode
+	0x08, // y_fir_mode
+	0x02, // c_filter
+	0x82, // pal_cm_off
+	0x00, // hue
+	0x00, // u_gain
+	0x00, // v_gain
+	0x00, // u_offset
+	0x00, // v_offset
+	0x90, // black_level
+	0x57, // acc_ref
+	0x80, // cti_delay
+	0xc0, // saturation_b
+	0x2a, // burst_dec_a
+	0x00, // burst_dec_b
+	0x30, // burst_dec_c
+	0x80, // c_option
+	0x10, // y_filter_b
+	0x1e, // y_filter_b_sel
+
+	/* timing_a */
+	0x68, // h_delay_a
+	0x00, // h_delay_b
+	0x00, // h_delay_c
+	0x07, // y_delay
+
+	0x04, // clk_adc
+	0x01, // clk_adc_pre
+	0x02, // clk_adc_post
+
+	0x10, // h_scaler1
+	0x10, // h_scaler2
+	0x00, // h_scaler3
+	0x00, // h_scaler4
+	0x00, // h_scaler5
+	0x00, // h_scaler6
+	0x00, // h_scaler7
+	0x00, // h_scaler8
+	0x00, // h_scaler9
+	0x00, // pn_auto
+	0x0d, // comb_mode
+	0x72, // h_pll_op_a
+	0x00, // mem_path
+	0xcc, // fsc_lock_speed
+	0x00, // ahd_mode
+	0x0f, // sd_mode
+	0x00, // spl_mode
+	0x21, // vblk_end
+	0x0c, // afe_g_sel
+	0x2c, // afe_ctr_clp
+	0x20, // d_agc_option
+};
+
+static u8 val_eq_1080p30_single[ARRAY_SIZE(nvp6324_regs_eq_base)] = {
+	/* base */
+	0x00, // eq_bypass
+	0x77, // eq_band_sel
+	0x78, // eq_gain_sel
+	0x00, // deq_a_on
+	0x00, // deq_a_sel
+
+	/* coeff_ */
+	0xac, // deqA_01
+	0x78, // deqA_02
+	0x17, // deqA_03
+	0xc1, // deqA_04
+	0x40, // deqA_05
+	0x00, // deqA_06
+	0xc3, // deqA_07
+	0x0a, // deqA_08
+	0x00, // deqA_09
+	0x02, // deqA_10
+	0x00, // deqA_11
+	0xb2, // deqA_12
+
+	/* color */
+	0x86, // contrast
+	0x00, // y_peaking_mode
+	0x00, // y_fir_mode
+	0x82, // c_filter
+	0x82, // pal_cm_off
+	0x00, // hue
+	0x00, // u_gain
+	0x00, // v_gain
+	0xfe, // u_offset
+	0xfb, // v_offset
+	0x80, // black_level
+	0x57, // acc_ref
+	0x80, // cti_delay
+	0xa8, // saturation_b
+	0x2a, // burst_dec_a
+	0x00, // burst_dec_b
+	0x30, // burst_dec_c
+	0x80, // c_option
+	0x10, // y_filter_b
+	0x1e, // y_filter_b_sel
+
+	/* timing_a */
+	0x48, // h_delay_a
+	0x13, // h_delay_b
+	0x00, // h_delay_c
+	0x05, // y_delay
+
+	0x04, // clk_adc
+	0x01, // clk_adc_pre
+	0x02, // clk_adc_post
+
+	0x00, // h_scaler1
+	0x00, // h_scaler2
+	0x00, // h_scaler3
+	0x00, // h_scaler4
+	0x00, // h_scaler5
+	0x00, // h_scaler6
+	0x00, // h_scaler7
+	0x00, // h_scaler8
+	0x00, // h_scaler9
+	0x00, // pn_auto
+	0x01, // comb_mode
+	0x72, // h_pll_op_a
+	0x00, // mem_path
+	0xdc, // fsc_lock_speed
+	0x02, // ahd_mode
+	0x00, // sd_mode
+	0x00, // spl_mode
+	0x21, // vblk_end
+	0x0c, // afe_g_sel
+	0x2c, // afe_ctr_clp
+	0x24, // d_agc_option
+};
+
+static u8 val_eq_720p30_single[ARRAY_SIZE(nvp6324_regs_eq_base)] = {
+	/* base */
+	0x00, // eq_bypass
+	0x77, // eq_band_sel
+	0x78, // eq_gain_sel
+	0x00, // deq_a_on
+	0x00, // deq_a_sel
+
+	/* coeff_ */
+	0xac, // deqA_01
+	0x78, // deqA_02
+	0x17, // deqA_03
+	0xc1, // deqA_04
+	0x40, // deqA_05
+	0x00, // deqA_06
+	0xc3, // deqA_07
+	0x0a, // deqA_08
+	0x00, // deqA_09
+	0x02, // deqA_10
+	0x00, // deqA_11
+	0xb2, // deqA_12
+
+	/* color */
+	0x88, // contrast
+	0x03, // y_peaking_mode
+	0x0f, // y_fir_mode
+	0x82, // c_filter
+	0x82, // pal_cm_off
+	0x00, // hue
+	0x00, // u_gain
+	0x00, // v_gain
+	0x00, // u_offset
+	0x00, // v_offset
+	0x84, // black_level
+	0x57, // acc_ref
+	0x80, // cti_delay
+	0xa8, // saturation_b
+	0x2a, // burst_dec_a
+	0x00, // burst_dec_b
+	0x30, // burst_dec_c
+	0x80, // c_option
+	0x10, // y_filter_b
+	0x1e, // y_filter_b_sel
+
+	/* timing_a */
+	0x4a, // h_delay_a
+	0x00, // h_delay_b
+	0x00, // h_delay_c
+	0x05, // y_delay
+
+	0x04, // clk_adc
+	0x01, // clk_adc_pre
+	0x02, // clk_adc_post
+
+	0x00, // h_scaler1
+	0x00, // h_scaler2
+	0x00, // h_scaler3
+	0x00, // h_scaler4
+	0x00, // h_scaler5
+	0x00, // h_scaler6
+	0x00, // h_scaler7
+	0x00, // h_scaler8
+	0x00, // h_scaler9
+	0x00, // pn_auto
+	0x01, // comb_mode
+	0x72, // h_pll_op_a
+	0x00, // mem_path
+	0xdc, // fsc_lock_speed
+	0x0c, // ahd_mode
+	0x00, // sd_mode
+	0x00, // spl_mode
+	0x21, // vblk_end
+	0x0c, // afe_g_sel
+	0x2c, // afe_ctr_clp
+	0x24, // d_agc_option
+};
+
+static u8 val_eq_sdp30_single[ARRAY_SIZE(nvp6324_regs_eq_base)] = {
+	/* base */
+	0x00, // eq_bypass
+	0x77, // eq_band_sel
+	0x78, // eq_gain_sel
+	0x00, // deq_a_on
+	0x00, // deq_a_sel
+
+	/* coeff_ */
+	0xac, // deqA_01
+	0x78, // deqA_02
+	0x17, // deqA_03
+	0xc1, // deqA_04
+	0x40, // deqA_05
+	0x00, // deqA_06
+	0xc3, // deqA_07
+	0x0a, // deqA_08
+	0x00, // deqA_09
+	0x02, // deqA_10
+	0x00, // deqA_11
+	0xb2, // deqA_12
+
+	/* color */
+	0x90, // contrast
+	0x00, // y_peaking_mode
+	0x08, // y_fir_mode
+	0x82, // c_filter
+	0x82, // pal_cm_off
+	0x00, // hue
+	0x00, // u_gain
+	0x00, // v_gain
+	0x00, // u_offset
+	0x00, // v_offset
+	0x90, // black_level
+	0x57, // acc_ref
+	0x80, // cti_delay
+	0xc0, // saturation_b
+	0x2a, // burst_dec_a
+	0x00, // burst_dec_b
+	0x30, // burst_dec_c
+	0x80, // c_option
+	0x10, // y_filter_b
+	0x1e, // y_filter_b_sel
+
+	/* timing_a */
+	0x70, // h_delay_a
+	0x00, // h_delay_b
+	0x00, // h_delay_c
+	0x18, // y_delay
+
+	0x04, // clk_adc
+	0x01, // clk_adc_pre
+	0x02, // clk_adc_post
+
+	0x10, // h_scaler1
+	0x10, // h_scaler2
+	0x00, // h_scaler3
+	0x00, // h_scaler4
+	0x00, // h_scaler5
+	0x00, // h_scaler6
+	0x00, // h_scaler7
+	0x00, // h_scaler8
+	0x00, // h_scaler9
+	0x00, // pn_auto
+	0x01, // comb_mode
+	0x72, // h_pll_op_a
+	0x00, // mem_path
+	0xdc, // fsc_lock_speed
+	0x00, // ahd_mode
+	0x0e, // sd_mode
+	0x00, // spl_mode
+	0xc0, // vblk_end
+	0x0c, // afe_g_sel
+	0x2c, // afe_ctr_clp
+	0x20, // d_agc_option
+};
+
+struct nvp6324_mode_eq {
+	enum nvp6324_mode mode;
+	struct reg_pack reg_pack;
+};
+
+struct nvp6324_mode_eq nvp6324_mode_eq_data[nvp6324_input_max + 1][nvp6324_fps_max + 1][nvp6324_mode_max + 1] = {
+	{ /* single */
+		{ /* 25 fps */
+			{ nvp6324_mode_1080p,
+				{ nvp6324_regs_eq_base,
+				  val_eq_1080p25_single,
+				  ARRAY_SIZE(nvp6324_regs_eq_base),
+				},
+			},
+			{ nvp6324_mode_720p,
+				{ nvp6324_regs_eq_base,
+				  val_eq_720p25_single,
+				  ARRAY_SIZE(nvp6324_regs_eq_base),
+				},
+			},
+			{ nvp6324_mode_sd,
+				{ nvp6324_regs_eq_base,
+				  val_eq_sdp25_single,
+				  ARRAY_SIZE(nvp6324_regs_eq_base),
+				},
+			}
+		},
+		{ /* 30 fps */
+			{ nvp6324_mode_1080p,
+				{ nvp6324_regs_eq_base,
+				  val_eq_1080p30_single,
+				  ARRAY_SIZE(nvp6324_regs_eq_base),
+				},
+			},
+			{ nvp6324_mode_720p,
+				{ nvp6324_regs_eq_base,
+				  val_eq_720p30_single,
+				  ARRAY_SIZE(nvp6324_regs_eq_base),
+				},
+			},
+			{ nvp6324_mode_sd,
+				{ nvp6324_regs_eq_base,
+				  val_eq_sdp30_single,
+				  ARRAY_SIZE(nvp6324_regs_eq_base),
+				},
+			}
+		},
+	},
+	{ /* differential */
+	},
+};
+
+void nvp6324_video_eq_set(struct nvp6324 *self)
+{
+	enum nvp6324_analog_input input = self->analog_input;
+	enum nvp6324_fps fps = self->current_fps;
+	enum nvp6324_mode mode = nvp6324_video_current_mode(self);
+	struct nvp6324_mode_eq *eq = &nvp6324_mode_eq_data[input][fps][mode];
+
+	nvp6324_transfer_regs(self, &eq->reg_pack, 0, 4);
+}
+
