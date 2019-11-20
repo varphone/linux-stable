@@ -68,7 +68,7 @@
 		spi6 = &spi_bus6;
 		spi7 = &spi_bus7;
 
-        gpio0 = &gpio_chip0;
+		gpio0 = &gpio_chip0;
 		gpio1 = &gpio_chip1;
 		gpio2 = &gpio_chip2;
 		gpio3 = &gpio_chip3;
@@ -252,11 +252,14 @@
 &i2c_bus2 {
 	status = "okay";
 
+	#address-cells = <1>;
+	#size-cells = <0>;
+
 	nvp6324_mipi@30 {
 		compatible = "nextchip,nvp6324_mipi";
 		reg = <0x30>;
 		virtual-channel;
-		reset-gpios = <&gpio5 3 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio_chip5 3 1>;
 	};
 };
 
@@ -274,6 +277,16 @@
 
 &i2c_bus6 {
 	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	nvp6324_mipi@30 {
+		compatible = "nextchip,nvp6324_mipi";
+		reg = <0x30>;
+		virtual-channel;
+		reset-gpios = <&gpio_chip5 2 1>;
+	};
 };
 
 &i2c_bus7 {
