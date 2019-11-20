@@ -19,7 +19,7 @@
 #ifdef CONFIG_ARCH_HISI_BVT_AMP
 #include "hi3559av100-demb-amp.dts"
 #else
-#include "hi3559av100-jycz3-emmc.dts"
+#include "hi3559av100-jycz3.dts"
 #endif
 
 &mmc0 {
