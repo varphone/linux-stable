@@ -1,0 +1,22 @@
+config VIDEO_HI3XXX
+	tristate "Video Media Supports for Hisilicon Hi3XXX Platforms"
+	depends on VIDEO_V4L2 && VIDEO_V4L2_SUBDEV_API && OF
+	select V4L2_FWNODE
+	---help---
+	   Driver for Hisilicon Hi3XXX Platforms Video Media.
+
+if VIDEO_HI3XXX
+
+config VIDEO_HI3XXX_MEDIA
+	tristate "Media Controller Driver"
+	depends on VIDEO_HI3XXX
+	---help---
+	   Driver for the Hisilicon Hi3XXX Platforms.
+
+config VIDEO_HI3XXX_VICAP
+	tristate "Video Input Capture Driver"
+	depends on VIDEO_HI3XXX
+	---help---
+	   Driver for the Hisilicon Hi3XXX VICAP.
+
+endif # VIDEO_HI3XXX

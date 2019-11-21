@@ -195,6 +195,54 @@
 		device_type = "memory";
 		reg = <0x0 0x44000000 0x2 0x0>; /* system memory base */
 	};
+
+	soc {
+		hi3xxx_media: hi3xxx_media {
+			compatible = "hisilicon,hi3xxx-media", "simple-bus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			vicap0: vicap@0 {
+				compatible = "hisilicon,hi3xxx-vicap";
+				status = "okay";
+			};
+
+			vicap1: vicap@1 {
+				compatible = "hisilicon,hi3xxx-vicap";
+				status = "okay";
+			};
+
+			vicap2: vicap@2 {
+				compatible = "hisilicon,hi3xxx-vicap";
+				status = "okay";
+			};
+
+			vicap3: vicap@3 {
+				compatible = "hisilicon,hi3xxx-vicap";
+				status = "okay";
+			};
+
+			vicap4: vicap@4 {
+				compatible = "hisilicon,hi3xxx-vicap";
+				status = "okay";
+			};
+
+			vicap5: vicap@5 {
+				compatible = "hisilicon,hi3xxx-vicap";
+				status = "okay";
+			};
+
+			vicap6: vicap@6 {
+				compatible = "hisilicon,hi3xxx-vicap";
+				status = "okay";
+			};
+
+			vicap7: vicap@7 {
+				compatible = "hisilicon,hi3xxx-vicap";
+				status = "okay";
+			};
+		};
+	};
 };
 
 &ipcm {
@@ -260,6 +308,13 @@
 		reg = <0x30>;
 		virtual-channel;
 		reset-gpios = <&gpio_chip5 3 1>;
+
+		port {
+			nvp6324_1_ep: endpoint {
+				remote-endpoint = <&vicap4_ep>;
+				data-lanes = <12 13 14 15>;
+			};
+		};
 	};
 };
 
@@ -286,6 +341,13 @@
 		reg = <0x30>;
 		virtual-channel;
 		reset-gpios = <&gpio_chip5 2 1>;
+
+		port {
+			nvp6324_0_ep: endpoint {
+				remote-endpoint = <&vicap0_ep>;
+				data-lanes = <1 2 3 4>;
+			};
+		};
 	};
 };
 
@@ -673,3 +735,30 @@
 &hiedmacv310_1 {
 	status = "okay";
 };
+
+&vicap0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	port@0 {
+		reg = <0>;
+		vicap0_ep: endpoint {
+			remote-endpoint = <&nvp6324_0_ep>;
+			data-lanes = <1 2 3 4>;
+		};
+	};
+};
+
+&vicap4 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	port@0 {
+		reg = <0>;
+		vicap4_ep: endpoint {
+			remote-endpoint = <&nvp6324_1_ep>;
+			data-lanes = <12 13 14 15>;
+		};
+	};
+};
+
