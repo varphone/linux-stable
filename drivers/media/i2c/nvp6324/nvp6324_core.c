@@ -128,6 +128,7 @@ static int nvp6324_probe(struct i2c_client *client,
 	/* Initialize the lock */
 	mutex_init(&nvp6324->lock);
 
+#if 0
 	/* Initialize the media controller */
 	mdev = &nvp6324->mdev;
 	memset(mdev, 0, sizeof(*mdev));
@@ -153,6 +154,7 @@ static int nvp6324_probe(struct i2c_client *client,
 		dev_err(dev, "failed to register media controller: %d\n", ret);
 		goto err_media_device_register;
 	}
+#endif
 
 	ret = nvp6324_video_init(nvp6324);
 	if (ret < 0) {
@@ -163,11 +165,13 @@ static int nvp6324_probe(struct i2c_client *client,
 	return 0;
 
 err_nvp6324_video_init:
+#if 0
 err_media_device_register:
 	v4l2_device_unregister(vdev);
 err_v4l2_device_register:
 	media_device_cleanup(mdev);
 	mutex_destroy(&nvp6324->lock);
+#endif
 	return ret;
 }
 
@@ -177,9 +181,11 @@ static int nvp6324_remove(struct i2c_client *client)
 	struct nvp6324 *nvp6324 = subdev_to_sensor_data(sd);
 
 	nvp6324_video_exit(nvp6324);
-	v4l2_device_unregister(&nvp6324->v4l2_dev);
+#if 0
+	v4l2_async_unregister_subdev(&nvp6324->v4l2_dev);
 	media_device_unregister(&nvp6324->mdev);
 	media_device_cleanup(&nvp6324->mdev);
+#endif
 	mutex_destroy(&nvp6324->lock);
 
 	return 0;

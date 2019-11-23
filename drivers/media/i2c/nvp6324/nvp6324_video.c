@@ -1160,26 +1160,30 @@ int nvp6324_video_init(struct nvp6324 *self)
 	}
 
 	sd->entity.ops = &nvp6324_sd_media_ops;
-	ret = v4l2_device_register_subdev(&self->v4l2_dev, sd);
+	ret = v4l2_async_register_subdev(sd);
 	if (ret < 0) {
 		v4l2_err(sd, "failed to register subdev: %d\n", ret);
-		goto err_v4l2_device_register_subdev;
+		goto err_v4l2_async_register_subdev;
 	}
 
+#if 0
  	ret = v4l2_device_register_subdev_nodes(&self->v4l2_dev);
 	if (ret < 0) {
 		v4l2_err(sd, "failed to register subdev nodes: %d\n", ret);
 		goto err_v4l2_device_register_subdev_nodes;
 	}
+#endif
 
 	nvp6324_hardware_preinit(self);
 	nvp6324_hardware_init(self);
 
 	return 0;
 
+#if 0
 err_v4l2_device_register_subdev_nodes:
 	v4l2_device_unregister_subdev(sd);
-err_v4l2_device_register_subdev:
+#endif
+err_v4l2_async_register_subdev:
 	media_entity_cleanup(&sd->entity);
 err_media_entity_pads_init:
 	return ret;
@@ -1188,7 +1192,7 @@ err_media_entity_pads_init:
 void nvp6324_video_exit(struct nvp6324 *self)
 {
 	struct v4l2_subdev *sd = &self->v4l2_sd;
-	v4l2_device_unregister_subdev(sd);
+	v4l2_async_unregister_subdev(sd);
 	media_entity_cleanup(&sd->entity);
 	nvp6324_hardware_preinit(self);
 }

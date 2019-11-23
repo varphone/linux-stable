@@ -16,8 +16,6 @@
  * HISTORY:
  */
 #include <linux/bug.h>
-#include <linux/clk.h>
-#include <linux/clk-provider.h>
 #include <linux/device.h>
 #include <linux/errno.h>
 #include <linux/i2c.h>
@@ -29,31 +27,108 @@
 #include <linux/of_device.h>
 #include <linux/of_graph.h>
 #include <linux/platform_device.h>
-#include <linux/pm_runtime.h>
 #include <linux/types.h>
 #include <linux/slab.h>
-#include <media/v4l2-fwnode.h>
-#include <media/v4l2-async.h>
-#include <media/v4l2-ctrls.h>
-#include <media/media-device.h>
 
-#include "hi3xxx-media.h"
+#include "hi3xxx-media-dev.h"
+#include "hi3xxx-vicap.h"
+
+static int hi3xxx_media_register_nodes(struct hi3xxx_media *self, struct device_node *parent)
+{
+	int id = 0;
+	int ret = 0;
+	struct device_node *node;
+	struct hi3xxx_vicap *vicap;
+
+	for_each_available_child_of_node(parent, node) {
+		struct platform_device *pdev;
+
+		pdev = of_find_device_by_node(node);
+		if (!pdev)
+			continue;
+
+		printk(KERN_INFO "register node->name = %s\n", node->name);
+		if (strcmp(node->name, "vicap") == 0) {
+			id = of_alias_get_id(node, "videv");
+			if (id < 0 || id > HI3XXX_MEDIA_MAX_VICAPS) {
+				ret = -EINVAL;
+			}
+			else {
+				vicap = &self->vicaps[id];
+				vicap->parent = self;
+				vicap->pdev = pdev;
+				ret = hi3xxx_vicap_register(vicap);
+			}
+		}
+
+		put_device(&pdev->dev);
+		if (ret < 0)
+			break;
+	}
+
+	return ret;
+}
+
+static void hi3xxx_media_unregister_nodes(struct hi3xxx_media *self, struct device_node *parent)
+{
+	int id = 0;
+	int ret = 0;
+	struct device_node *node;
+	struct hi3xxx_vicap *vicap;
+
+	for_each_available_child_of_node(parent, node) {
+		struct platform_device *pdev;
+
+		pdev = of_find_device_by_node(node);
+		if (!pdev)
+			continue;
+
+		printk(KERN_INFO "unregister node->name = %s\n", node->name);
+		if (strcmp(node->name, "vicap") == 0) {
+			id = of_alias_get_id(node, "videv");
+			if (id < 0 || id > HI3XXX_MEDIA_MAX_VICAPS) {
+				ret = -EINVAL;
+			}
+			else {
+				vicap = &self->vicaps[id];
+				ret = hi3xxx_vicap_unregister(vicap);
+			}
+		}
+
+		put_device(&pdev->dev);
+		if (ret < 0)
+			break;
+	}
+}
 
 static int subdev_notifier_bound(struct v4l2_async_notifier *notifier,
 				 struct v4l2_subdev *sd,
 				 struct v4l2_async_subdev *asd)
 {
 	struct hi3xxx_media *self = container_of(notifier, struct hi3xxx_media, subdev_notifier);
-	printk(KERN_INFO "notifier=%p, sd=%p, asd=%p\n", notifier, sd, asd);
+	printk(KERN_INFO "notifier=%p, sd=%s @ %p, asd=%s\n", notifier, sd->name,
+	       sd, of_node_full_name(asd->match.of.node));
 	return 0;
 }
 
 static int subdev_notifier_complete(struct v4l2_async_notifier *notifier)
 {
+	int ret = 0;
 	struct hi3xxx_media *self = container_of(notifier, struct hi3xxx_media, subdev_notifier);
-	printk(KERN_INFO "self=%p, notifier=%p\n", self, notifier);
-	v4l2_device_register_subdev_nodes(&self->v4l2_dev);
-	media_device_register(&self->mdev);
+	struct device* dev = &self->pdev->dev;
+
+	ret = v4l2_device_register_subdev_nodes(&self->v4l2_dev);
+	if (ret < 0) {
+		dev_err(dev, "Failed to register subdev nodes, err: %d\n",
+			ret);
+		return ret;
+	}
+	ret = media_device_register(&self->media_dev);
+	if (ret < 0) {
+		dev_err(dev, "Failed to register media device, err: %d\n",
+			ret);
+		return ret;
+	}
 	return 0;
 }
 
@@ -66,6 +141,7 @@ static int hi3xxx_media_link_notify(struct media_link *link,
 				    unsigned int flags,
 				    unsigned int notification)
 {
+	printk(KERN_INFO "link=%p, flags=%u, notification=%u\n", link, flags, notification);
 	return 0;
 }
 
@@ -107,11 +183,15 @@ static int hi3xxx_media_probe(struct platform_device *pdev)
 		goto err_v4l2_device_register;
 	}
 
-	self->num_sensors = 0;
 	self->link_status = 0;
+	self->num_async_subdevs = 0;
 
-	v4l2_async_notifier_init(&self->subdev_notifier);
+	ret = hi3xxx_media_register_nodes(self, dev->of_node);
 
+#if 1
+	self->subdev_notifier.subdevs =
+		(struct v4l2_async_subdev**)(self->async_subdevs);
+	self->subdev_notifier.num_subdevs = self->num_async_subdevs;
 	self->subdev_notifier.bound = subdev_notifier_bound;
 	self->subdev_notifier.complete = subdev_notifier_complete;
 
@@ -119,8 +199,9 @@ static int hi3xxx_media_probe(struct platform_device *pdev)
 					   &self->subdev_notifier);
 	if (ret < 0) {
 		v4l2_err(v4l2_dev, "Failed to register v4l2_async_notifier: %d\n", ret);
-		goto err_v4l2_device_register;
+		goto err_v4l2_async_notifier_register;
 	}
+#endif
 
 	return 0;
 
@@ -135,11 +216,11 @@ static int hi3xxx_media_remove(struct platform_device *pdev)
 {
 	struct hi3xxx_media *self = platform_get_drvdata(pdev);
 
-	if (!self)
-		return 0;
+	hi3xxx_media_unregister_nodes(self, pdev->dev.of_node);
 
+#if 1
 	v4l2_async_notifier_unregister(&self->subdev_notifier);
-
+#endif
 	v4l2_device_unregister(&self->v4l2_dev);
 	media_device_unregister(&self->media_dev);
 	media_device_cleanup(&self->media_dev);

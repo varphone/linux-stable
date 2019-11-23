@@ -16,8 +16,6 @@
  * HISTORY:
  */
 #include <linux/bug.h>
-#include <linux/clk.h>
-#include <linux/clk-provider.h>
 #include <linux/device.h>
 #include <linux/errno.h>
 #include <linux/i2c.h>
@@ -29,15 +27,81 @@
 #include <linux/of_device.h>
 #include <linux/of_graph.h>
 #include <linux/platform_device.h>
-#include <linux/pm_runtime.h>
 #include <linux/types.h>
 #include <linux/slab.h>
-#include <media/v4l2-fwnode.h>
-#include <media/v4l2-async.h>
-#include <media/v4l2-ctrls.h>
-#include <media/media-device.h>
 
 #include "hi3xxx-vicap.h"
+#include "hi3xxx-media-dev.h"
+
+static int hi3xxx_vicap_enum_mbus_code(struct v4l2_subdev *sd,
+				       struct v4l2_subdev_pad_config *cfg,
+				       struct v4l2_subdev_mbus_code_enum *code)
+{
+	return 0;
+}
+
+static int hi3xxx_vicap_enum_framesizes(struct v4l2_subdev *sd,
+					struct v4l2_subdev_pad_config *cfg,
+					struct v4l2_subdev_frame_size_enum *fse)
+{
+	return 0;
+}
+
+static int hi3xxx_vicap_enum_frame_interval(struct v4l2_subdev *sd,
+					    struct v4l2_subdev_pad_config *cfg,
+					    struct v4l2_subdev_frame_interval_enum *fie)
+{
+	return -EINVAL;
+}
+
+static int hi3xxx_vicap_get_fmt(struct v4l2_subdev *sd,
+			   struct v4l2_subdev_pad_config *cfg,
+			   struct v4l2_subdev_format *fmt)
+{
+	return 0;
+}
+
+static int hi3xxx_vicap_set_fmt(struct v4l2_subdev *sd,
+				struct v4l2_subdev_pad_config *cfg,
+				struct v4l2_subdev_format *fmt)
+{
+	return 0;
+}
+
+static int hi3xxx_vicap_get_frame_desc(struct v4l2_subdev *sd, unsigned int pad,
+				       struct v4l2_mbus_frame_desc *fd)
+{
+	return 0;
+}
+
+static int hi3xxx_vicap_set_frame_desc(struct v4l2_subdev *sd,
+				       unsigned int pad,
+				       struct v4l2_mbus_frame_desc *fd)
+{
+	return 0;
+}
+
+static int hi3xxx_vicap_set_power(struct v4l2_subdev *sd, int on)
+{
+	return 0;
+}
+
+static int hi3xxx_vicap_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *a)
+{
+	return 0;
+}
+
+static int hi3xxx_vicap_g_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *parm)
+{
+	// FIXME:
+	return 0;
+}
+
+static int hi3xxx_vicap_s_stream(struct v4l2_subdev *sd, int enable)
+{
+	// FIXME:
+	return 0;
+}
 
 static int hi3xxx_vicap_link_setup(struct media_entity *entity,
 				   const struct media_pad *local,
@@ -56,72 +120,100 @@ static int hi3xxx_vicap_link_setup(struct media_entity *entity,
 	return 0;
 }
 
+static const struct v4l2_subdev_pad_ops hi3xxx_vicap_pad_ops = {
+	.enum_mbus_code         = hi3xxx_vicap_enum_mbus_code,
+	.enum_frame_size        = hi3xxx_vicap_enum_framesizes,
+	.enum_frame_interval    = hi3xxx_vicap_enum_frame_interval,
+	.get_fmt                = hi3xxx_vicap_get_fmt,
+	.set_fmt                = hi3xxx_vicap_set_fmt,
+	.get_frame_desc         = hi3xxx_vicap_get_frame_desc,
+	.set_frame_desc         = hi3xxx_vicap_set_frame_desc,
+};
+
+static const struct v4l2_subdev_core_ops hi3xxx_vicap_core_ops = {
+	.s_power	= hi3xxx_vicap_set_power,
+};
+
+static const struct v4l2_subdev_video_ops hi3xxx_vicap_video_ops = {
+	.s_parm		= hi3xxx_vicap_s_parm,
+	.g_parm		= hi3xxx_vicap_g_parm,
+	.s_stream	= hi3xxx_vicap_s_stream,
+};
+
+static const struct v4l2_subdev_ops hi3xxx_vicap_subdev_ops = {
+	.core	= &hi3xxx_vicap_core_ops,
+	.pad	= &hi3xxx_vicap_pad_ops,
+	.video	= &hi3xxx_vicap_video_ops,
+};
+
 static const struct media_entity_operations hi3xxx_vicap_sd_media_ops = {
 	.link_setup = hi3xxx_vicap_link_setup,
 };
 
-static const struct v4l2_subdev_internal_ops hi3xxx_vicap_sd_internal_ops = {
-	.registered = hi3xxx_vicap_subdev_registered,
-	.unregistered = hi3xxx_vicap_subdev_unregistered,
-};
-
-int hi3xxx_vicap_initialize_subdev(struct hi3xxx_vicap *self)
+static int hi3xxx_vicap_add_to_async_subdevs(struct hi3xxx_vicap *self)
 {
-	struct v4l2_subdev *sd = &self->v4l2_sd;
-	int ret;
+	struct hi3xxx_media* parent = self->parent;
+	struct device *dev = &self->pdev->dev;
+	struct device_node *node = dev->of_node;
+	struct device_node *local = NULL;
+	struct device_node *remote = NULL;
+	struct hi3xxx_async_subdev* asd = NULL;
+	int ret = 0;
 
-	v4l2_subdev_init(sd, &hi3xxx_vicap_subdev_ops);
-	sd->flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
-	snprintf(sd->name, sizeof(sd->name), "mxc_isi.%d", self->id);
+	local = of_graph_get_next_endpoint(node, local);
+	if (!local) {
+		dev_err(dev, "Could not parse the endpoint\n");
+		ret = -EINVAL;
+		goto err_of_graph_get_next_endpoint;
+	}
 
-	sd->entity.function = MEDIA_ENT_F_IO_V4L;
-	self->sink_pads[0].flags = MEDIA_PAD_FL_SINK;
-	ret = media_entity_pads_init(&sd->entity, 1, &self->sink_pads);
-	if (ret)
-		return ret;
+	remote = of_graph_get_remote_port_parent(local);
+	if (!remote) {
+		dev_err(dev, "Remote device at %s not found\n",
+			local->full_name);
+		ret = -EINVAL;
+		goto err_of_graph_get_remote_port_parent;
+	}
 
-	sd->entity.ops = &hi3xxx_vicap_sd_media_ops;
-	sd->internal_ops = &hi3xxx_vicap_sd_internal_ops;
-	v4l2_set_subdevdata(sd, self);
+	asd = devm_kzalloc(dev, sizeof(*asd), GFP_KERNEL);
+	if (!asd) {
+		ret = -ENOMEM;
+		goto err_devm_kzalloc;
+	}
 
-	return 0;
-}
+	asd->base.match_type = V4L2_ASYNC_MATCH_OF;
+	asd->base.match.of.node = remote;
+	asd->sd = &self->base;
 
-void hi3xxx_vicap_unregister_subdev(struct hi3xxx_vicap *self)
-{
-	struct v4l2_subdev *sd = &self->v4l2_sd;
+	parent->async_subdevs[parent->num_async_subdevs++] = asd;
 
-	v4l2_device_unregister_subdev(sd);
-	media_entity_cleanup(&sd->entity);
-	v4l2_set_subdevdata(sd, NULL);
+err_devm_kzalloc:
+	of_node_put(remote);
+err_of_graph_get_remote_port_parent:
+	of_node_put(local);
+err_of_graph_get_next_endpoint:
+	return ret;
 }
 
 static int hi3xxx_vicap_parse_dt(struct hi3xxx_vicap *self)
 {
+	struct hi3xxx_media* parent = self->parent;
 	struct device *dev = &self->pdev->dev;
 	struct device_node *node = dev->of_node;
 	int ret = 0;
 
-	self->id = of_alias_get_id(node, "vicap");
+	self->id = of_alias_get_id(node, "videv");
 
-	return 0;
+	return ret;
 }
 
-static int hi3xxx_vicap_probe(struct platform_device *pdev)
+int hi3xxx_vicap_register(struct hi3xxx_vicap *self)
 {
-	struct device *dev = &pdev->dev;
-	struct hi3xxx_vicap *self;
-	struct resource *res;
-	const struct of_device_id *of_id;
+	struct device *dev = &self->pdev->dev;
+	struct v4l2_subdev *sd;
 	int ret = 0;
 
-	self = devm_kzalloc(dev, sizeof(*self), GFP_KERNEL);
-	if (!self)
-		return -ENOMEM;
-
-	self->pdev = pdev;
-
-	ret = mxc_isi_parse_dt(self);
+	ret = hi3xxx_vicap_parse_dt(self);
 	if (ret < 0)
 		return ret;
 
@@ -131,52 +223,53 @@ static int hi3xxx_vicap_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	ret = hi3xxx_vicap_initialize_subdev(self);
-	if (ret < 0) {
-		dev_err(dev, "failed to init cap subdev (%d)\n", ret);
-		goto err_clk;
+	sd = &self->base;
+	v4l2_subdev_init(sd, &hi3xxx_vicap_subdev_ops);
+
+	sd->flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
+	snprintf(sd->name, sizeof(sd->name), "hi3xxx-vicap.%d", self->id);
+
+	sd->entity.function = MEDIA_ENT_F_IO_V4L;
+	self->pads[0].flags = MEDIA_PAD_FL_SINK;
+	ret = media_entity_pads_init(&sd->entity, 1, self->pads);
+	if (ret) {
+		v4l2_err(sd, "Failed to init media entity: %d\n", ret);
+		goto err_media_entity_pads_init;
 	}
 
-	platform_set_drvdata(pdev, self);
+	sd->entity.ops = &hi3xxx_vicap_sd_media_ops;
+	ret = v4l2_device_register_subdev(&self->parent->v4l2_dev, sd);
+	if (ret < 0) {
+		v4l2_err(sd, "Failed to async register subdev: %d\n", ret);
+		goto err_v4l2_device_register_subdev;
+	}
+
+	ret = hi3xxx_vicap_add_to_async_subdevs(self);
+	if (ret < 0)
+		goto err_hi3xxx_vicap_add_to_async_subdevs;
+
+	v4l2_set_subdevdata(sd, self);
+	platform_set_drvdata(self->pdev, self);
 
 	dev_dbg(dev, "hi3xxx_vicap.%d registered successfully\n", self->id);
 
 	return 0;
-
-err_clk:
-	mxc_isi_unregister_capture_subdev(self);
+err_hi3xxx_vicap_add_to_async_subdevs:
+	v4l2_device_unregister_subdev(sd);
+err_v4l2_device_register_subdev:
+	media_entity_cleanup(&sd->entity);
+err_media_entity_pads_init:
 	return ret;
 }
 
-static int hi3xxx_vicap_remove(struct platform_device *pdev)
+int hi3xxx_vicap_unregister(struct hi3xxx_vicap *self)
 {
-	struct hi3xxx_vicap *hi3xxx_vicap = platform_get_drvdata(pdev);
-	struct device *dev = &pdev->dev;
+	struct v4l2_subdev *sd = &self->base;
 
-	hi3xxx_vicap_unregister_subdev(hi3xxx_vicap);
+	v4l2_device_unregister_subdev(sd);
+	media_entity_cleanup(&sd->entity);
+	v4l2_set_subdevdata(sd, NULL);
+	platform_set_drvdata(self->pdev, NULL);
 
 	return 0;
 }
-
-static const struct of_device_id hi3xxx_vicap_of_match[] = {
-	{.compatible = "hisilicon,hi3xxx-vicap", .data = NULL },
-	{ /* sentinel */ },
-};
-MODULE_DEVICE_TABLE(of, hi3xxx_vicap_of_match);
-
-static struct platform_driver hi3xxx_vicap_driver = {
-	.probe		= hi3xxx_vicap_probe,
-	.remove		= hi3xxx_vicap_remove,
-	.driver = {
-		.of_match_table = hi3xxx_vicap_of_match,
-		.name		= HI3XXX_VICAP_DRIVER_NAME,
-	}
-};
-
-module_platform_driver(hi3xxx_vicap_driver);
-
-MODULE_AUTHOR("CETC55, Technology Development CO.,LTD.");
-MODULE_AUTHOR("Varphone Wong <varphone@qq.com>");
-MODULE_DESCRIPTION("Video Input driver for Hi3XXX Platforms");
-MODULE_ALIAS("platform:" HI3XXX_VICAP_DRIVER_NAME);
-MODULE_LICENSE("GPL");

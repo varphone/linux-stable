@@ -105,6 +105,7 @@ static inline struct nvp6324 *subdev_to_sensor_data(struct v4l2_subdev *sd)
 	return container_of(sd, struct nvp6324, v4l2_sd);
 }
 
+#if 0
 static inline int nvp6324_read_reg(struct nvp6324 *self, u8 reg)
 {
 	int val;
@@ -142,6 +143,23 @@ static inline int nvp6324_set_reg_bank(struct nvp6324 *self, u8 bank)
 	self->current_bank = bank;
 	return 0;
 }
+#else
+static inline int nvp6324_read_reg(struct nvp6324 *self, u8 reg)
+{
+	if (reg == 0xf4)
+		return 0xb0;
+	return 0;
+}
+static inline int nvp6324_write_reg(struct nvp6324 *self,
+				    u8 reg, u8 val)
+{
+	return 0;
+}
+static inline int nvp6324_set_reg_bank(struct nvp6324 *self, u8 bank)
+{
+	return 0;
+}
+#endif
 
 int nvp6324_transfer_regs(struct nvp6324 *self, const struct reg_pack *reg_pack,
 			  u32 channel, u32 counts);

@@ -1,5 +1,5 @@
 /*
- * File: hi3xxx-media.h
+ * File: hi3xxx-media-dev.h
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  * V4L2 Media Device for Hisilicon Hi3XXX Platforms
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -15,31 +15,25 @@
  * ---------------------------------------------------------------------------
  * HISTORY:
  */
-#ifndef HI3XXX_MEDIA_H
-#define HI3XXX_MEDIA_H
+#ifndef HI3XXX_MEDIA_DEV_H
+#define HI3XXX_MEDIA_DEV_H
 
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
-#include <linux/errno.h>
-#include <linux/bug.h>
-#include <linux/interrupt.h>
 #include <linux/device.h>
 #include <linux/platform_device.h>
-#include <linux/pm_runtime.h>
-#include <linux/list.h>
-#include <linux/mfd/syscon.h>
-#include <linux/io.h>
-#include <linux/of.h>
-#include <linux/of_device.h>
-#include <linux/slab.h>
-#include <linux/clk.h>
 #include <media/media-device.h>
 #include <media/media-entity.h>
+#include <media/v4l2-async.h>
+#include <media/v4l2-ctrls.h>
+#include <media/v4l2-device.h>
 #include <media/v4l2-subdev.h>
+#include "hi3xxx-vicap.h"
 
 #define HI3XXX_MEDIA_DRIVER_NAME "hi3xxx-media"
-#define HI3XXX_MEDIA_MAX_SENSORS 8
+#define HI3XXX_MEDIA_MAX_VICAPS  8
+#define HI3XXX_MEDIA_MAX_SUBDEVS 16
 
 /*
  * The subdevices' group IDs.
@@ -55,16 +49,23 @@ enum hi3xxx_media_subdev_index {
 	IDX_MAX,
 };
 
+struct hi3xxx_async_subdev {
+	struct v4l2_async_subdev base;
+	struct v4l2_subdev *sd;
+};
+
 struct hi3xxx_media {
 	struct media_device media_dev;
 	struct v4l2_device v4l2_dev;
 	struct platform_device *pdev;
 
+	struct hi3xxx_vicap vicaps[HI3XXX_MEDIA_MAX_VICAPS];
+
 	int link_status;
-	int num_sensors;
+	int num_async_subdevs;
 
 	struct v4l2_async_notifier subdev_notifier;
-	struct v4l2_async_subdev *async_subdevs[HI3XXX_MEDIA_MAX_SENSORS];
+	struct hi3xxx_async_subdev *async_subdevs[HI3XXX_MEDIA_MAX_SUBDEVS];
 };
 
-#endif /* HI3XXX_MEDIA_H */
+#endif /* HI3XXX_MEDIA_DEV_H */
