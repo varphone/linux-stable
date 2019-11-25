@@ -305,29 +305,38 @@
 	nvp6324_mipi@30 {
 		compatible = "nextchip,nvp6324_mipi";
 		reg = <0x30>;
-		is_mipi;
-		virtual-channel;
 		reset-gpios = <&gpio_chip5 0 1>;
+		nvp,is_mipi;
 
+		#address-cells = <1>;
+		#size-cells = <0>;
 		port@0 {
+			reg = <0>;
+			hi3xxx,phy-channel;
 			nvp6324_0_mipi_vc0: endpoint {
 				remote-endpoint = <&vicap0_mipi>;
 				data-lanes = <0 1 2 3>;
 			};
 		};
 		port@1 {
+			reg = <1>;
+			hi3xxx,virtual-channel;
 			nvp6324_0_mipi_vc1: endpoint {
 				remote-endpoint = <&vicap1_mipi>;
 				data-lanes = <0xff 0xff 0xff 0xff>;
 			};
 		};
 		port@2 {
+			reg = <2>;
+			hi3xxx,virtual-channel;
 			nvp6324_0_mipi_vc2: endpoint {
 				remote-endpoint = <&vicap2_mipi>;
 				data-lanes = <0xff 0xff 0xff 0xff>;
 			};
 		};
 		port@3 {
+			reg = <3>;
+			hi3xxx,virtual-channel;
 			nvp6324_0_mipi_vc3: endpoint {
 				remote-endpoint = <&vicap3_mipi>;
 				data-lanes = <0xff 0xff 0xff 0xff>;
@@ -346,25 +355,35 @@
 		reg = <0x30>;
 		reset-gpios = <&gpio_chip5 1 1>;
 
+		#address-cells = <1>;
+		#size-cells = <0>;
 		port@0 {
+			reg = <0>;
+			hi3xxx,phy-channel;
 			nvp6324_1_bt656_0: endpoint {
 				remote-endpoint = <&lt8918_4_bt656>;
 				data-lanes = <0 1>;
 			};
 		};
 		port@1 {
+			reg = <1>;
+			hi3xxx,virtual-channel;
 			nvp6324_1_bt656_1: endpoint {
 				remote-endpoint = <&lt8918_5_bt656>;
 				data-lanes = <0 1>;
 			};
 		};
 		port@2 {
+			reg = <2>;
+			hi3xxx,virtual-channel;
 			nvp6324_1_bt656_2: endpoint {
 				remote-endpoint = <&lt8918_6_bt656>;
 				data-lanes = <0 1>;
 			};
 		};
 		port@3 {
+			reg = <3>;
+			hi3xxx,virtual-channel;
 			nvp6324_1_bt656_3: endpoint {
 				remote-endpoint = <&lt8918_7_bt656>;
 				data-lanes = <0 1>;
@@ -391,13 +410,19 @@
 		reg = <0x20>;
 		reset-gpios = <&gpio_chip3 2 1>;
 
+		#address-cells = <1>;
+		#size-cells = <0>;
 		port@0 {
+			reg = <0>;
+			hi3xxx,uplink;
 			lt8918_4_bt656: endpoint {
 				remote-endpoint = <&nvp6324_1_bt656_0>;
 				data-lanes = <0 0 0 0>;
 			};
 		};
 		port@1 {
+			reg = <1>;
+			hi3xxx,downlink;
 			lt8918_4_mipi: endpoint {
 				remote-endpoint = <&vicap4_mipi>;
 				data-lanes = <0 1>;
@@ -416,15 +441,21 @@
 		reg = <0x20>;
 		reset-gpios = <&gpio_chip3 6 1>;
 
+		#address-cells = <1>;
+		#size-cells = <0>;
 		port@0 {
+			reg = <0>;
+			hi3xxx,uplink;
 			lt8918_5_bt656: endpoint {
 				remote-endpoint = <&nvp6324_1_bt656_1>;
 				data-lanes = <0 0 0 0>;
 			};
 		};
 		port@1 {
+			reg = <1>;
+			hi3xxx,downlink;
 			lt8918_5_mipi: endpoint {
-				remote-endpoint = <&vicap4_mipi>;
+				remote-endpoint = <&vicap5_mipi>;
 				data-lanes = <0 1>;
 			};
 		};
@@ -441,13 +472,19 @@
 		reg = <0x20>;
 		reset-gpios = <&gpio_chip4 2 1>;
 
+		#address-cells = <1>;
+		#size-cells = <0>;
 		port@0 {
+			reg = <0>;
+			hi3xxx,uplink;
 			lt8918_6_bt656: endpoint {
 				remote-endpoint = <&nvp6324_1_bt656_2>;
 				data-lanes = <0 0 0 0>;
 			};
 		};
 		port@1 {
+			reg = <1>;
+			hi3xxx,downlink;
 			lt8918_6_mipi: endpoint {
 				remote-endpoint = <&vicap6_mipi>;
 				data-lanes = <0 1>;
@@ -466,13 +503,19 @@
 		reg = <0x20>;
 		reset-gpios = <&gpio_chip4 6 1>;
 
+		#address-cells = <1>;
+		#size-cells = <0>;
 		port@0 {
+			reg = <0>;
+			hi3xxx,uplink;
 			lt8918_7_bt656: endpoint {
 				remote-endpoint = <&nvp6324_1_bt656_3>;
 				data-lanes = <0 0 0 0>;
 			};
 		};
 		port@1 {
+			reg = <1>;
+			hi3xxx,downlink;
 			lt8918_7_mipi: endpoint {
 				remote-endpoint = <&vicap7_mipi>;
 				data-lanes = <0 1>;
@@ -869,6 +912,7 @@
 	#size-cells = <0>;
 	port@0 {
 		reg = <0>;
+		hi3xxx,phy-channel;
 		vicap0_mipi: endpoint {
 			remote-endpoint = <&nvp6324_0_mipi_vc0>;
 			data-lanes = <1 2 3 4>;
@@ -883,6 +927,7 @@
 	#size-cells = <0>;
 	port@0 {
 		reg = <0>;
+		hi3xxx,virtual-channel;
 		vicap1_mipi: endpoint {
 			remote-endpoint = <&nvp6324_0_mipi_vc1>;
 			data-lanes = <0xff 0xff 0xff 0xff>;
@@ -897,6 +942,7 @@
 	#size-cells = <0>;
 	port@0 {
 		reg = <0>;
+		hi3xxx,virtual-channel;
 		vicap2_mipi: endpoint {
 			remote-endpoint = <&nvp6324_0_mipi_vc2>;
 			data-lanes = <0xff 0xff 0xff 0xff>;
@@ -911,6 +957,7 @@
 	#size-cells = <0>;
 	port@0 {
 		reg = <0>;
+		hi3xxx,virtual-channel;
 		vicap3_mipi: endpoint {
 			remote-endpoint = <&nvp6324_0_mipi_vc3>;
 			data-lanes = <0xff 0xff 0xff 0xff>;

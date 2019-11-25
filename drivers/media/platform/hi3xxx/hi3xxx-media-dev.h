@@ -65,7 +65,7 @@ struct hi3xxx_media {
 	int num_async_subdevs;
 
 	struct v4l2_async_notifier subdev_notifier;
-	struct hi3xxx_async_subdev *async_subdevs[HI3XXX_MEDIA_MAX_SUBDEVS];
+	struct v4l2_async_subdev *async_subdevs[HI3XXX_MEDIA_MAX_SUBDEVS];
 };
 
 #endif /* HI3XXX_MEDIA_DEV_H */

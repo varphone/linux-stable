@@ -29,6 +29,7 @@
 #include <linux/platform_device.h>
 #include <linux/types.h>
 #include <linux/slab.h>
+#include <media/v4l2-of.h>
 
 #include "hi3xxx-vicap.h"
 #include "hi3xxx-media-dev.h"
@@ -150,49 +151,70 @@ static const struct media_entity_operations hi3xxx_vicap_sd_media_ops = {
 	.link_setup = hi3xxx_vicap_link_setup,
 };
 
-static int hi3xxx_vicap_add_to_async_subdevs(struct hi3xxx_vicap *self)
+static bool has_uplink(struct device_node *node)
 {
-	struct hi3xxx_media* parent = self->parent;
-	struct device *dev = &self->pdev->dev;
-	struct device_node *node = dev->of_node;
+	struct device_node *child = NULL;
+	for_each_available_child_of_node(node, child) {
+		if (of_property_read_bool(child, "hi3xxx,uplink"))
+			return true;
+		of_node_put(child);
+	}
+	return false;
+}
+
+static void iter_linked_devices(struct device_node *node,
+				struct device_node *refer,
+				void (*callback)(struct device_node *node, void* opaque),
+				void* opaque)
+{
 	struct device_node *local = NULL;
-	struct device_node *remote = NULL;
-	struct hi3xxx_async_subdev* asd = NULL;
-	int ret = 0;
+	struct device_node *port = NULL;
+	struct v4l2_of_link link;
+	bool vc = false;
 
-	local = of_graph_get_next_endpoint(node, local);
-	if (!local) {
-		dev_err(dev, "Could not parse the endpoint\n");
-		ret = -EINVAL;
-		goto err_of_graph_get_next_endpoint;
+	while ((local = of_graph_get_next_endpoint(node, local))) {
+		if (v4l2_of_parse_link(local, &link) == 0) {
+			port = of_graph_get_port_by_id(link.remote_node, link.remote_port);
+			if (link.remote_node == refer)
+				goto skip;
+			if (has_uplink(link.remote_node)) {
+				iter_linked_devices(link.remote_node, link.local_node, callback, opaque);
+			}
+			vc = of_property_read_bool(port, "hi3xxx,virtual-channel");
+			if (!vc && callback) {
+				callback(link.remote_node, opaque);
+			}
+skip:
+			of_node_put(port);
+			v4l2_of_put_link(&link);
+		}
+		of_node_put(local);
 	}
+}
 
-	remote = of_graph_get_remote_port_parent(local);
-	if (!remote) {
-		dev_err(dev, "Remote device at %s not found\n",
-			local->full_name);
-		ret = -EINVAL;
-		goto err_of_graph_get_remote_port_parent;
-	}
+static void handle_linked_device(struct device_node *node, void* opaque)
+{
+	struct hi3xxx_vicap *self = (struct hi3xxx_vicap*)opaque;
+	struct device *dev = &self->pdev->dev;
+	struct v4l2_async_subdev* asd = NULL;
 
 	asd = devm_kzalloc(dev, sizeof(*asd), GFP_KERNEL);
 	if (!asd) {
-		ret = -ENOMEM;
-		goto err_devm_kzalloc;
+		dev_warn(dev, "Failed allocate v4l2_async_subdev for %s\n",
+			 node->full_name);
+		return;
 	}
+	asd->match_type = V4L2_ASYNC_MATCH_OF;
+	asd->match.of.node = node;
+	self->parent->async_subdevs[self->parent->num_async_subdevs++] = asd;
+}
 
-	asd->base.match_type = V4L2_ASYNC_MATCH_OF;
-	asd->base.match.of.node = remote;
-	asd->sd = &self->base;
+static void add_linked_async_subdevs(struct hi3xxx_vicap *self)
+{
+	struct device *dev = &self->pdev->dev;
+	struct device_node *node = dev->of_node;
 
-	parent->async_subdevs[parent->num_async_subdevs++] = asd;
-
-err_devm_kzalloc:
-	of_node_put(remote);
-err_of_graph_get_remote_port_parent:
-	of_node_put(local);
-err_of_graph_get_next_endpoint:
-	return ret;
+	iter_linked_devices(node, NULL, handle_linked_device, self);
 }
 
 static int hi3xxx_vicap_parse_dt(struct hi3xxx_vicap *self)
@@ -244,18 +266,15 @@ int hi3xxx_vicap_register(struct hi3xxx_vicap *self)
 		goto err_v4l2_device_register_subdev;
 	}
 
-	ret = hi3xxx_vicap_add_to_async_subdevs(self);
-	if (ret < 0)
-		goto err_hi3xxx_vicap_add_to_async_subdevs;
+	add_linked_async_subdevs(self);
 
 	v4l2_set_subdevdata(sd, self);
 	platform_set_drvdata(self->pdev, self);
 
-	dev_dbg(dev, "hi3xxx_vicap.%d registered successfully\n", self->id);
+	dev_dbg(dev, "vicap%d registered\n", self->id);
 
 	return 0;
-err_hi3xxx_vicap_add_to_async_subdevs:
-	v4l2_device_unregister_subdev(sd);
+
 err_v4l2_device_register_subdev:
 	media_entity_cleanup(&sd->entity);
 err_media_entity_pads_init:
