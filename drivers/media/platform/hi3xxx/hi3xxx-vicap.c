@@ -164,49 +164,100 @@ static bool has_uplink(struct device_node *node)
 
 static void iter_linked_devices(struct device_node *node,
 				struct device_node *refer,
-				void (*callback)(struct device_node *node, void* opaque),
+				void (*callback)(struct device_node *refer, struct v4l2_of_link *link, void* opaque),
 				void* opaque)
 {
 	struct device_node *local = NULL;
 	struct device_node *port = NULL;
 	struct v4l2_of_link link;
-	bool vc = false;
 
 	while ((local = of_graph_get_next_endpoint(node, local))) {
 		if (v4l2_of_parse_link(local, &link) == 0) {
-			port = of_graph_get_port_by_id(link.remote_node, link.remote_port);
 			if (link.remote_node == refer)
 				goto skip;
 			if (has_uplink(link.remote_node)) {
-				iter_linked_devices(link.remote_node, link.local_node, callback, opaque);
+				iter_linked_devices(link.remote_node,
+						    link.local_node,
+						    callback, opaque);
 			}
-			vc = of_property_read_bool(port, "hi3xxx,virtual-channel");
-			if (!vc && callback) {
-				callback(link.remote_node, opaque);
-			}
+			if (callback)
+				callback(refer, &link, opaque);
 skip:
-			of_node_put(port);
 			v4l2_of_put_link(&link);
 		}
 		of_node_put(local);
 	}
 }
 
-static void handle_linked_device(struct device_node *node, void* opaque)
+static struct hi3xxx_async_subdev* find_async_subdev_for_device(
+	struct device_node *node,
+	struct hi3xxx_async_subdev **async_subdevs,
+	int num_async_subdevs)
+{
+	int i = 0;
+	for (; i < num_async_subdevs; i++) {
+		if (async_subdevs[i]->base.match.of.node == node)
+			return async_subdevs[i];
+	}
+	return NULL;
+}
+
+static void handle_linked_device(struct device_node *refer, struct v4l2_of_link *link, void* opaque)
 {
 	struct hi3xxx_vicap *self = (struct hi3xxx_vicap*)opaque;
 	struct device *dev = &self->pdev->dev;
-	struct v4l2_async_subdev* asd = NULL;
+	struct device_node *port = NULL;
+	struct hi3xxx_async_subdev* asd = NULL;
+	int idx = 0;
 
-	asd = devm_kzalloc(dev, sizeof(*asd), GFP_KERNEL);
-	if (!asd) {
-		dev_warn(dev, "Failed allocate v4l2_async_subdev for %s\n",
-			 node->full_name);
-		return;
+	port = of_graph_get_port_by_id(link->remote_node, link->remote_port);
+	if (of_property_read_bool(port, "hi3xxx,virtual-channel")) {
+		asd = find_async_subdev_for_device(link->remote_node,
+						   self->parent->async_subdevs,
+						   self->parent->num_async_subdevs);
+		if (!asd) {
+			dev_warn(dev, "Could not found v4l2_async_subdev for %s\n",
+				 of_node_full_name(link->remote_node));
+			goto done;
+		}
+		asd->links[asd->num_links].local_port = link->local_port;
+		asd->links[asd->num_links].remote_port = link->remote_port;
+		if (refer) {
+			asd->links[asd->num_links].local_refer = link->local_node;
+			asd->links[asd->num_links].local_sd = NULL;
+		}
+		else {
+			asd->links[asd->num_links].local_refer = NULL;
+			asd->links[asd->num_links].local_sd = &self->base;
+		}
+		asd->links[asd->num_links].remote_sd = NULL;
+		asd->num_links++;
 	}
-	asd->match_type = V4L2_ASYNC_MATCH_OF;
-	asd->match.of.node = node;
-	self->parent->async_subdevs[self->parent->num_async_subdevs++] = asd;
+	else {
+		asd = devm_kzalloc(dev, sizeof(*asd), GFP_KERNEL);
+		if (!asd) {
+			dev_warn(dev, "Failed allocate v4l2_async_subdev for %s\n",
+				 of_node_full_name(link->remote_node));
+			goto done;
+		}
+		asd->base.match_type = V4L2_ASYNC_MATCH_OF;
+		asd->base.match.of.node = link->remote_node;
+		asd->num_links = 1;
+		asd->links[0].local_port = link->local_port;
+		asd->links[0].remote_port = link->remote_port;
+		if (refer) {
+			asd->links[0].local_refer = link->local_node;
+			asd->links[0].local_sd = NULL;
+		}
+		else {
+			asd->links[0].local_refer = NULL;
+			asd->links[0].local_sd = &self->base;
+		}
+		asd->links[0].remote_sd = NULL;
+		self->parent->async_subdevs[self->parent->num_async_subdevs++] = asd;
+	}
+done:
+	of_node_put(port);
 }
 
 static void add_linked_async_subdevs(struct hi3xxx_vicap *self)

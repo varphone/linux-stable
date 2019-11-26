@@ -34,6 +34,7 @@
 #define HI3XXX_MEDIA_DRIVER_NAME "hi3xxx-media"
 #define HI3XXX_MEDIA_MAX_VICAPS  8
 #define HI3XXX_MEDIA_MAX_SUBDEVS 16
+#define HI3XXX_MEDIA_MAX_VCS     4
 
 /*
  * The subdevices' group IDs.
@@ -51,7 +52,14 @@ enum hi3xxx_media_subdev_index {
 
 struct hi3xxx_async_subdev {
 	struct v4l2_async_subdev base;
-	struct v4l2_subdev *sd;
+	int num_links;
+	struct {
+		int local_port;
+		int remote_port;
+		struct device_node *local_refer;
+		struct v4l2_subdev *local_sd;
+		struct v4l2_subdev *remote_sd;
+	} links[HI3XXX_MEDIA_MAX_VCS];
 };
 
 struct hi3xxx_media {
@@ -65,7 +73,7 @@ struct hi3xxx_media {
 	int num_async_subdevs;
 
 	struct v4l2_async_notifier subdev_notifier;
-	struct v4l2_async_subdev *async_subdevs[HI3XXX_MEDIA_MAX_SUBDEVS];
+	struct hi3xxx_async_subdev *async_subdevs[HI3XXX_MEDIA_MAX_SUBDEVS];
 };
 
 #endif /* HI3XXX_MEDIA_DEV_H */

@@ -47,7 +47,6 @@ static int hi3xxx_media_register_nodes(struct hi3xxx_media *self, struct device_
 		if (!pdev)
 			continue;
 
-		printk(KERN_INFO "register node->name = %s\n", node->name);
 		if (strcmp(node->name, "vicap") == 0) {
 			id = of_alias_get_id(node, "videv");
 			if (id < 0 || id > HI3XXX_MEDIA_MAX_VICAPS) {
@@ -106,17 +105,62 @@ static int subdev_notifier_bound(struct v4l2_async_notifier *notifier,
 				 struct v4l2_subdev *sd,
 				 struct v4l2_async_subdev *asd)
 {
-	struct hi3xxx_media* self = asd->match.custom.priv;
-	printk(KERN_INFO "notifier=%p, sd=%s @ %p, asd=%p\n", notifier, sd->name,
-	       sd, asd);
+	struct hi3xxx_async_subdev* xasd = (struct hi3xxx_async_subdev*)asd;
+	int i;
+
+	for (i = 0; i < xasd->num_links; i++) {
+		xasd->links[i].remote_sd = sd;
+	}
+
 	return 0;
+}
+
+static struct v4l2_subdev* find_refer_subdev(struct device_node* node,
+	struct hi3xxx_async_subdev **async_subdevs, int num_async_subdevs)
+{
+	struct hi3xxx_async_subdev *xasd;
+	int i;
+
+	for (i = 0; i < num_async_subdevs; i++) {
+		xasd = async_subdevs[i];
+		if (xasd->base.match.of.node != node)
+			continue;
+		return xasd->links[0].remote_sd;
+	}
+	return NULL;
 }
 
 static int subdev_notifier_complete(struct v4l2_async_notifier *notifier)
 {
-	int ret = 0;
 	struct hi3xxx_media *self = container_of(notifier, struct hi3xxx_media, subdev_notifier);
+	struct hi3xxx_async_subdev* xasd = NULL;
 	struct device* dev = &self->pdev->dev;
+	int i, j, ret;
+
+	for (i = 0; i < self->num_async_subdevs; i++) {
+		xasd = self->async_subdevs[i];
+		for (j = 0; j < xasd->num_links; j++) {
+			if (xasd->links[j].local_refer) {
+				xasd->links[j].local_sd =
+					find_refer_subdev(xasd->links[j].local_refer,
+							  self->async_subdevs,
+							  self->num_async_subdevs);
+			}
+			if (xasd->links[j].local_sd == NULL)
+				continue;
+			ret = media_create_pad_link(
+				&(xasd->links[j].remote_sd->entity),
+				xasd->links[j].remote_port,
+				&(xasd->links[j].local_sd->entity),
+				xasd->links[j].local_port,
+				MEDIA_LNK_FL_IMMUTABLE|MEDIA_LNK_FL_ENABLED);
+			if (ret < 0) {
+				dev_err(dev, "Failed to create pad link, err: %d\n",
+					ret);
+				return ret;
+			}
+		}
+	}
 
 	ret = v4l2_device_register_subdev_nodes(&self->v4l2_dev);
 	if (ret < 0) {
@@ -139,12 +183,6 @@ static int subdev_notifier_complete(struct v4l2_async_notifier *notifier)
 static void subdev_notify(struct v4l2_subdev *sd, unsigned int notification, void *arg)
 {
 	printk(KERN_INFO "sd=%p, notification=%u, arg=%p\n", sd, notification, arg);
-}
-
-static bool subdev_match(struct device *dev, struct v4l2_async_subdev *asd)
-{
-	printk(KERN_INFO "subdev_match(dev=%p, asd=%p\n", dev, asd);
-	return true;
 }
 
 static int hi3xxx_media_link_notify(struct media_link *link,
@@ -198,7 +236,8 @@ static int hi3xxx_media_probe(struct platform_device *pdev)
 
 	ret = hi3xxx_media_register_nodes(self, dev->of_node);
 
-	self->subdev_notifier.subdevs = self->async_subdevs;
+	self->subdev_notifier.subdevs =
+		(struct v4l2_async_subdev**)(self->async_subdevs);
 	self->subdev_notifier.num_subdevs = self->num_async_subdevs;
 	self->subdev_notifier.bound = subdev_notifier_bound;
 	self->subdev_notifier.complete = subdev_notifier_complete;
