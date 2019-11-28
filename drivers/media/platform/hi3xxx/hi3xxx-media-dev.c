@@ -134,31 +134,53 @@ static int subdev_notifier_complete(struct v4l2_async_notifier *notifier)
 {
 	struct hi3xxx_media *self = container_of(notifier, struct hi3xxx_media, subdev_notifier);
 	struct hi3xxx_async_subdev* xasd = NULL;
+	struct hi3xxx_async_link* link = NULL;
 	struct device* dev = &self->pdev->dev;
+	struct media_entity* source;
+	struct media_entity* sink;
+	struct media_pad* source_pad;
+	struct media_pad* sink_pad;
+	struct v4l2_subdev* sd;
 	int i, j, ret;
 
 	for (i = 0; i < self->num_async_subdevs; i++) {
 		xasd = self->async_subdevs[i];
 		for (j = 0; j < xasd->num_links; j++) {
-			if (xasd->links[j].local_refer) {
-				xasd->links[j].local_sd =
-					find_refer_subdev(xasd->links[j].local_refer,
+			link = &xasd->links[j];
+			if (link->local_refer) {
+				link->local_sd =
+					find_refer_subdev(link->local_refer,
 							  self->async_subdevs,
 							  self->num_async_subdevs);
 			}
-			if (xasd->links[j].local_sd == NULL)
+			if (link->local_sd == NULL)
 				continue;
 			ret = media_create_pad_link(
-				&(xasd->links[j].remote_sd->entity),
-				xasd->links[j].remote_port,
-				&(xasd->links[j].local_sd->entity),
-				xasd->links[j].local_port,
-				MEDIA_LNK_FL_IMMUTABLE|MEDIA_LNK_FL_ENABLED);
+				&link->remote_sd->entity,
+				link->remote_port,
+				&link->local_sd->entity,
+				link->local_port,
+				MEDIA_LNK_FL_IMMUTABLE/*|MEDIA_LNK_FL_ENABLED*/);
 			if (ret < 0) {
 				dev_err(dev, "Failed to create pad link, err: %d\n",
 					ret);
 				return ret;
 			}
+			if (link->local_sd->entity.pads[link->local_port].flags & MEDIA_PAD_FL_SOURCE) {
+				source = &link->local_sd->entity;
+				source_pad = &link->local_sd->entity.pads[link->local_port];
+				sink = &link->remote_sd->entity;
+				sink_pad = &link->remote_sd->entity.pads[link->remote_port];
+			}
+			else {
+				sink = &link->local_sd->entity;
+				sink_pad = &link->local_sd->entity.pads[link->local_port];
+				source = &link->remote_sd->entity;
+				source_pad = &link->remote_sd->entity.pads[link->remote_port];
+			}
+			dev_info(dev, "link_setup on %s\n", source->name);
+			media_entity_call(source, link_setup, source_pad,
+					  sink_pad, MEDIA_LNK_FL_ENABLED);
 		}
 	}
 

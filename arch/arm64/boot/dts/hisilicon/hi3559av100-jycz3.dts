@@ -302,8 +302,8 @@
 
 	#address-cells = <1>;
 	#size-cells = <0>;
-	nvp6324_mipi@30 {
-		compatible = "nextchip,nvp6324_mipi";
+	nvp6324@30 {
+		compatible = "nextchip,nvp6324";
 		reg = <0x30>;
 		reset-gpios = <&gpio_chip5 0 1>;
 		nvp,is_mipi;
@@ -350,8 +350,8 @@
 
 	#address-cells = <1>;
 	#size-cells = <0>;
-	nvp6324_mipi@30 {
-		compatible = "nextchip,nvp6324_mipi";
+	nvp6324@30 {
+		compatible = "nextchip,nvp6324";
 		reg = <0x30>;
 		reset-gpios = <&gpio_chip5 1 1>;
 

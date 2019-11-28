@@ -50,16 +50,18 @@ enum hi3xxx_media_subdev_index {
 	IDX_MAX,
 };
 
+struct hi3xxx_async_link {
+	int local_port;
+	int remote_port;
+	struct device_node *local_refer;
+	struct v4l2_subdev *local_sd;
+	struct v4l2_subdev *remote_sd;
+};
+
 struct hi3xxx_async_subdev {
 	struct v4l2_async_subdev base;
 	int num_links;
-	struct {
-		int local_port;
-		int remote_port;
-		struct device_node *local_refer;
-		struct v4l2_subdev *local_sd;
-		struct v4l2_subdev *remote_sd;
-	} links[HI3XXX_MEDIA_MAX_VCS];
+	struct hi3xxx_async_link links[HI3XXX_MEDIA_MAX_VCS];
 };
 
 struct hi3xxx_media {
