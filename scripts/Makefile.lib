@@ -408,3 +408,9 @@ quiet_cmd_xzmisc = XZMISC  $@
 cmd_xzmisc = (cat $(filter-out FORCE,$^) | \
 	xz --check=crc32 --lzma2=dict=1MiB) > $@ || \
 	(rm -f $@ ; false)
+
+# CAT
+# ---------------------------------------------------------------------------
+# Use cat to concat multiple files to single.
+quiet_cmd_cat = CAT     $@
+      cmd_cat = (cat $(filter-out FORCE,$^) > $@)
