@@ -406,6 +406,16 @@ config VIDEO_NVP6324
 	  To compile this driver as a module, choose M here: the
 	  module will be called nvp6324.
 
+config VIDEO_LT8918
+	tristate "Lontium LT8918 MIPI DSI/CSI-2 Transmitter"
+	depends on VIDEO_V4L2 && I2C && VIDEO_V4L2_SUBDEV_API
+	select HDMI
+	---help---
+	  Support for the Lontium LT8918 MIPI DSI/CSI-2 Transmitter.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called lt8918.
+
 comment "Video and audio decoders"
 
 config VIDEO_SAA717X
