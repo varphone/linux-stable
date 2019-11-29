@@ -87,6 +87,14 @@
 		gpio16 = &gpio_chip16;
 		gpio17 = &gpio_chip17;
 		gpio18 = &gpio_chip18;
+		videv0 = &vicap0;
+		videv1 = &vicap1;
+		videv2 = &vicap2;
+		videv3 = &vicap3;
+		videv4 = &vicap4;
+		videv5 = &vicap5;
+		videv6 = &vicap6;
+		videv7 = &vicap7;
 	};
 
 	chosen {
@@ -195,6 +203,54 @@
 		device_type = "memory";
 		reg = <0x0 0x44000000 0x2 0x0>; /* system memory base */
 	};
+
+	soc {
+		hi3xxx_media: hi3xxx_media {
+			compatible = "hisilicon,hi3xxx-media", "simple-bus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			vicap0: vicap@0 {
+				compatible = "hisilicon,hi3xxx-vicap";
+				status = "disabled";
+			};
+
+			vicap1: vicap@1 {
+				compatible = "hisilicon,hi3xxx-vicap";
+				status = "disabled";
+			};
+
+			vicap2: vicap@2 {
+				compatible = "hisilicon,hi3xxx-vicap";
+				status = "disabled";
+			};
+
+			vicap3: vicap@3 {
+				compatible = "hisilicon,hi3xxx-vicap";
+				status = "disabled";
+			};
+
+			vicap4: vicap@4 {
+				compatible = "hisilicon,hi3xxx-vicap";
+				status = "disabled";
+			};
+
+			vicap5: vicap@5 {
+				compatible = "hisilicon,hi3xxx-vicap";
+				status = "disabled";
+			};
+
+			vicap6: vicap@6 {
+				compatible = "hisilicon,hi3xxx-vicap";
+				status = "disabled";
+			};
+
+			vicap7: vicap@7 {
+				compatible = "hisilicon,hi3xxx-vicap";
+				status = "disabled";
+			};
+		};
+	};
 };
 
 &ipcm {
@@ -243,24 +299,101 @@
 
 &i2c_bus0 {
 	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	nvp6324@30 {
+		compatible = "nextchip,nvp6324";
+		reg = <0x30>;
+		reset-gpios = <&gpio_chip5 0 1>;
+		nvp,is_mipi;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			hi3xxx,phy-channel;
+			nvp6324_0_mipi_vc0: endpoint {
+				remote-endpoint = <&vicap0_mipi>;
+				data-lanes = <0 1 2 3>;
+			};
+		};
+		port@1 {
+			reg = <1>;
+			hi3xxx,virtual-channel;
+			nvp6324_0_mipi_vc1: endpoint {
+				remote-endpoint = <&vicap1_mipi>;
+				data-lanes = <0xff 0xff 0xff 0xff>;
+			};
+		};
+		port@2 {
+			reg = <2>;
+			hi3xxx,virtual-channel;
+			nvp6324_0_mipi_vc2: endpoint {
+				remote-endpoint = <&vicap2_mipi>;
+				data-lanes = <0xff 0xff 0xff 0xff>;
+			};
+		};
+		port@3 {
+			reg = <3>;
+			hi3xxx,virtual-channel;
+			nvp6324_0_mipi_vc3: endpoint {
+				remote-endpoint = <&vicap3_mipi>;
+				data-lanes = <0xff 0xff 0xff 0xff>;
+			};
+		};
+	};
 };
 
 &i2c_bus1 {
 	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	nvp6324@30 {
+		compatible = "nextchip,nvp6324";
+		reg = <0x30>;
+		reset-gpios = <&gpio_chip5 1 1>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			hi3xxx,phy-channel;
+			nvp6324_1_bt656_0: endpoint {
+				remote-endpoint = <&lt8918_4_bt656>;
+				data-lanes = <0 1>;
+			};
+		};
+		port@1 {
+			reg = <1>;
+			hi3xxx,virtual-channel;
+			nvp6324_1_bt656_1: endpoint {
+				remote-endpoint = <&lt8918_5_bt656>;
+				data-lanes = <0 1>;
+			};
+		};
+		port@2 {
+			reg = <2>;
+			hi3xxx,virtual-channel;
+			nvp6324_1_bt656_2: endpoint {
+				remote-endpoint = <&lt8918_6_bt656>;
+				data-lanes = <0 1>;
+			};
+		};
+		port@3 {
+			reg = <3>;
+			hi3xxx,virtual-channel;
+			nvp6324_1_bt656_3: endpoint {
+				remote-endpoint = <&lt8918_7_bt656>;
+				data-lanes = <0 1>;
+			};
+		};
+	};
 };
 
 &i2c_bus2 {
 	status = "okay";
-
-	#address-cells = <1>;
-	#size-cells = <0>;
-
-	nvp6324_mipi@30 {
-		compatible = "nextchip,nvp6324_mipi";
-		reg = <0x30>;
-		virtual-channel;
-		reset-gpios = <&gpio_chip5 3 1>;
-	};
 };
 
 &i2c_bus3 {
@@ -269,10 +402,64 @@
 
 &i2c_bus4 {
 	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	lt8918@20 {
+		compatible = "lontium,lt8918";
+		reg = <0x20>;
+		reset-gpios = <&gpio_chip3 2 1>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			hi3xxx,uplink;
+			lt8918_4_bt656: endpoint {
+				remote-endpoint = <&nvp6324_1_bt656_0>;
+				data-lanes = <0 0 0 0>;
+			};
+		};
+		port@1 {
+			reg = <1>;
+			hi3xxx,downlink;
+			lt8918_4_mipi: endpoint {
+				remote-endpoint = <&vicap4_mipi>;
+				data-lanes = <0 1>;
+			};
+		};
+	};
 };
 
 &i2c_bus5 {
 	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	lt8918@20 {
+		compatible = "lontium,lt8918";
+		reg = <0x20>;
+		reset-gpios = <&gpio_chip3 6 1>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			hi3xxx,uplink;
+			lt8918_5_bt656: endpoint {
+				remote-endpoint = <&nvp6324_1_bt656_1>;
+				data-lanes = <0 0 0 0>;
+			};
+		};
+		port@1 {
+			reg = <1>;
+			hi3xxx,downlink;
+			lt8918_5_mipi: endpoint {
+				remote-endpoint = <&vicap5_mipi>;
+				data-lanes = <0 1>;
+			};
+		};
+	};
 };
 
 &i2c_bus6 {
@@ -280,17 +467,61 @@
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	lt8918@20 {
+		compatible = "lontium,lt8918";
+		reg = <0x20>;
+		reset-gpios = <&gpio_chip4 2 1>;
 
-	nvp6324_mipi@30 {
-		compatible = "nextchip,nvp6324_mipi";
-		reg = <0x30>;
-		virtual-channel;
-		reset-gpios = <&gpio_chip5 2 1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			hi3xxx,uplink;
+			lt8918_6_bt656: endpoint {
+				remote-endpoint = <&nvp6324_1_bt656_2>;
+				data-lanes = <0 0 0 0>;
+			};
+		};
+		port@1 {
+			reg = <1>;
+			hi3xxx,downlink;
+			lt8918_6_mipi: endpoint {
+				remote-endpoint = <&vicap6_mipi>;
+				data-lanes = <0 1>;
+			};
+		};
 	};
 };
 
 &i2c_bus7 {
 	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	lt8918@20 {
+		compatible = "lontium,lt8918";
+		reg = <0x20>;
+		reset-gpios = <&gpio_chip4 6 1>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			hi3xxx,uplink;
+			lt8918_7_bt656: endpoint {
+				remote-endpoint = <&nvp6324_1_bt656_3>;
+				data-lanes = <0 0 0 0>;
+			};
+		};
+		port@1 {
+			reg = <1>;
+			hi3xxx,downlink;
+			lt8918_7_mipi: endpoint {
+				remote-endpoint = <&vicap7_mipi>;
+				data-lanes = <0 1>;
+			};
+		};
+	};
 };
 
 &i2c_bus8 {
@@ -672,4 +903,120 @@
 
 &hiedmacv310_1 {
 	status = "okay";
+};
+
+&vicap0 {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	port@0 {
+		reg = <0>;
+		hi3xxx,phy-channel;
+		vicap0_mipi: endpoint {
+			remote-endpoint = <&nvp6324_0_mipi_vc0>;
+			data-lanes = <1 2 3 4>;
+		};
+	};
+};
+
+&vicap1 {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	port@0 {
+		reg = <0>;
+		hi3xxx,virtual-channel;
+		vicap1_mipi: endpoint {
+			remote-endpoint = <&nvp6324_0_mipi_vc1>;
+			data-lanes = <0xff 0xff 0xff 0xff>;
+		};
+	};
+};
+
+&vicap2 {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	port@0 {
+		reg = <0>;
+		hi3xxx,virtual-channel;
+		vicap2_mipi: endpoint {
+			remote-endpoint = <&nvp6324_0_mipi_vc2>;
+			data-lanes = <0xff 0xff 0xff 0xff>;
+		};
+	};
+};
+
+&vicap3 {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	port@0 {
+		reg = <0>;
+		hi3xxx,virtual-channel;
+		vicap3_mipi: endpoint {
+			remote-endpoint = <&nvp6324_0_mipi_vc3>;
+			data-lanes = <0xff 0xff 0xff 0xff>;
+		};
+	};
+};
+
+&vicap4 {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	port@0 {
+		reg = <0>;
+		vicap4_mipi: endpoint {
+			remote-endpoint = <&lt8918_4_mipi>;
+			data-lanes = <8 10>;
+		};
+	};
+};
+
+&vicap5 {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	port@0 {
+		reg = <0>;
+		vicap5_mipi: endpoint {
+			remote-endpoint = <&lt8918_5_mipi>;
+			data-lanes = <9 11>;
+		};
+	};
+};
+
+&vicap6 {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	port@0 {
+		reg = <0>;
+		vicap6_mipi: endpoint {
+			remote-endpoint = <&lt8918_6_mipi>;
+			data-lanes = <12 14>;
+		};
+	};
+};
+
+&vicap7 {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	port@0 {
+		reg = <0>;
+		vicap7_mipi: endpoint {
+			remote-endpoint = <&lt8918_7_mipi>;
+			data-lanes = <13 15>;
+		};
+	};
 };
