@@ -83,10 +83,8 @@ struct nvp6324 {
 	struct v4l2_subdev v4l2_sd;
 	struct v4l2_mbus_framefmt format;
 	struct v4l2_captureparm streamcap;
-#ifdef CONFIG_MEDIA_CONTROLLER
 	struct media_device mdev;
 	struct media_pad pads[MIPI_CSI2_SENS_VCX_PADS_NUM];
-#endif
 	bool pending_change;
 	u32 running;
 	bool is_mipi;

@@ -694,9 +694,6 @@ static int nvp6324_get_fmt(struct v4l2_subdev *sd,
 	struct nvp6324 *nvp6324 = subdev_to_sensor_data(sd);
 	struct v4l2_mbus_framefmt *mf;
 
-	if (fmt->pad)
-		return -EINVAL;
-
 	mutex_lock(&nvp6324->lock);
 
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY)
@@ -766,9 +763,6 @@ static int nvp6324_set_fmt(struct v4l2_subdev *sd,
 	const struct nvp6324_mode_info *new_mode;
 	struct v4l2_mbus_framefmt *mf = &fmt->format;
 	int ret = 0;
-
-	if (fmt->pad)
-		return -EINVAL;
 
 	mutex_lock(&nvp6324->lock);
 
@@ -963,7 +957,38 @@ static int nvp6324_link_setup(struct media_entity *entity,
 			      const struct media_pad *local,
 			      const struct media_pad *remote, u32 flags)
 {
-	return 0;
+	struct v4l2_subdev *sdl = media_entity_to_v4l2_subdev(entity);
+	struct v4l2_subdev *sdr = NULL;
+	struct v4l2_subdev_format fmt;
+	int ret = 0;
+
+	v4l2_info(sdl, "nvp6324_link_setup(%p)\n", entity);
+
+	if (!is_media_entity_v4l2_subdev(remote->entity))
+		return -ENODEV;
+
+	sdr = media_entity_to_v4l2_subdev(remote->entity);
+
+	memset(&fmt, 0, sizeof(fmt));
+
+	/* Get current format of the local pad */
+	fmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+	fmt.pad = local->index;
+	ret = v4l2_subdev_call(sdl, pad, get_fmt, NULL, &fmt);
+	if (ret < 0) {
+		v4l2_err(sdl, "Unable to get current format!\n");
+		goto done;
+	}
+	/* Set current format to remote pad */
+	fmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+	fmt.pad = remote->index;
+	ret = v4l2_subdev_call(sdr, pad, set_fmt, NULL, &fmt);
+	if (ret < 0) {
+		v4l2_err(sdr, "Unable to set to upstream format!\n");
+		goto done;
+	}
+done:
+	return ret;
 }
 
 static const struct v4l2_subdev_pad_ops nvp6324_pad_ops = {
@@ -974,7 +999,6 @@ static const struct v4l2_subdev_pad_ops nvp6324_pad_ops = {
 	.set_fmt                = nvp6324_set_fmt,
 	.get_frame_desc         = nvp6324_get_frame_desc,
 	.set_frame_desc         = nvp6324_set_frame_desc,
-
 };
 
 static const struct v4l2_subdev_core_ops nvp6324_core_ops = {
@@ -1160,16 +1184,10 @@ int nvp6324_video_init(struct nvp6324 *self)
 	}
 
 	sd->entity.ops = &nvp6324_sd_media_ops;
-	ret = v4l2_device_register_subdev(&self->v4l2_dev, sd);
+	ret = v4l2_async_register_subdev(sd);
 	if (ret < 0) {
 		v4l2_err(sd, "failed to register subdev: %d\n", ret);
-		goto err_v4l2_device_register_subdev;
-	}
-
- 	ret = v4l2_device_register_subdev_nodes(&self->v4l2_dev);
-	if (ret < 0) {
-		v4l2_err(sd, "failed to register subdev nodes: %d\n", ret);
-		goto err_v4l2_device_register_subdev_nodes;
+		goto err_v4l2_async_register_subdev;
 	}
 
 	nvp6324_hardware_preinit(self);
@@ -1177,9 +1195,7 @@ int nvp6324_video_init(struct nvp6324 *self)
 
 	return 0;
 
-err_v4l2_device_register_subdev_nodes:
-	v4l2_device_unregister_subdev(sd);
-err_v4l2_device_register_subdev:
+err_v4l2_async_register_subdev:
 	media_entity_cleanup(&sd->entity);
 err_media_entity_pads_init:
 	return ret;
@@ -1188,7 +1204,7 @@ err_media_entity_pads_init:
 void nvp6324_video_exit(struct nvp6324 *self)
 {
 	struct v4l2_subdev *sd = &self->v4l2_sd;
-	v4l2_device_unregister_subdev(sd);
+	v4l2_async_unregister_subdev(sd);
 	media_entity_cleanup(&sd->entity);
 	nvp6324_hardware_preinit(self);
 }
