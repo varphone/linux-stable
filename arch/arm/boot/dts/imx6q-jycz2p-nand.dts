@@ -11,8 +11,8 @@
 #include "imx6qdl-phytec-nunki-peb-av-02.dtsi"
 
 / {
-	model = "JYCZ3 with NAND";
-	compatible = "tdc,imx6q-jycz3", "phytec,imx6q-pbac11", "phytec,imx6qdl-pcm058",
+	model = "JYCZ2P with NAND";
+	compatible = "tdc,imx6q-jycz2p", "phytec,imx6q-pbac11", "phytec,imx6qdl-pcm058",
 		     "fsl,imx6q";
 
 	chosen {
