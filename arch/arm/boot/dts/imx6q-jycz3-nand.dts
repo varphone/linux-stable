@@ -81,6 +81,10 @@
 	status = "okay";
 };
 
+&mipi_csi {
+	status = "okay";
+};
+
 &pca9533 {
 	status = "okay";
 };
