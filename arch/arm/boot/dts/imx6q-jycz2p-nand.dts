@@ -71,6 +71,24 @@
 
 &i2c1 {
 	status = "okay";
+
+	nvp6324_mipi@30 {
+		compatible = "nextchip,nvp6324_mipi";
+		reg = <0x30>;
+		clocks = <&clks IMX6QDL_CLK_CKO>;
+		clock-names = "capture_mclk";
+		mclk = <27000000>;
+		mclk_source = <0>;
+		virtual-channel;
+		pwn-gpios = <&gpio4 10 GPIO_ACTIVE_LOW>;
+
+		port {
+			nvp6324_mipi_csi_out: endpoint {
+				remote-endpoint = <&mipi_csi_in>;
+				data-lanes = <1 2 3 4>;
+			};
+		};
+	};
 };
 
 &i2c2 {
@@ -83,6 +101,15 @@
 
 &mipi_csi {
 	status = "okay";
+
+	port@0 {
+		reg = <0>;
+		mipi_csi_in: endpoint {
+			remote-endpoint = <&nvp6324_mipi_csi_out>;
+			clock-lanes = <0>;
+			data-lanes = <1 2 3 4>;
+		};
+	};
 };
 
 &pca9533 {
