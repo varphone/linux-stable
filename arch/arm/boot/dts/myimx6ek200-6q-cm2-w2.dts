@@ -41,6 +41,7 @@
 	status = "okay";
 
 	lvds-channel@0 {
+		crtc = "ipu2-di0";
 		fsl,data-mapping = "spwg";
 		fsl,data-width = <18>;
 		primary;
@@ -63,6 +64,7 @@
 	};
 
 	lvds-channel@1 {
+		crtc = "ipu2-di1";
 		fsl,data-mapping = "spwg";
 		fsl,data-width = <18>;
 		status = "okay";
