@@ -353,7 +353,7 @@
 	nvp6324@30 {
 		compatible = "nextchip,nvp6324";
 		reg = <0x30>;
-		reset-gpios = <&gpio_chip5 1 1>;
+		reset-gpios = <&gpio_chip5 2 1>;
 
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -401,7 +401,7 @@
 };
 
 &i2c_bus4 {
-	status = "okay";
+	status = "disabled";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -415,16 +415,16 @@
 		port@0 {
 			reg = <0>;
 			hi3xxx,uplink;
-			lt8918_4_bt656: endpoint {
-				remote-endpoint = <&nvp6324_1_bt656_0>;
+			lt8918_5_bt656: endpoint {
+				remote-endpoint = <&nvp6324_1_bt656_1>;
 				data-lanes = <0 0 0 0>;
 			};
 		};
 		port@1 {
 			reg = <1>;
 			hi3xxx,downlink;
-			lt8918_4_mipi: endpoint {
-				remote-endpoint = <&vicap4_mipi>;
+			lt8918_5_mipi: endpoint {
+				remote-endpoint = <&vicap5_mipi>;
 				data-lanes = <0 1>;
 			};
 		};
@@ -446,17 +446,17 @@
 		port@0 {
 			reg = <0>;
 			hi3xxx,uplink;
-			lt8918_5_bt656: endpoint {
-				remote-endpoint = <&nvp6324_1_bt656_1>;
+			lt8918_4_bt656: endpoint {
+				remote-endpoint = <&nvp6324_1_bt656_0>;
 				data-lanes = <0 0 0 0>;
 			};
 		};
 		port@1 {
 			reg = <1>;
 			hi3xxx,downlink;
-			lt8918_5_mipi: endpoint {
-				remote-endpoint = <&vicap5_mipi>;
-				data-lanes = <0 1>;
+			lt8918_4_mipi: endpoint {
+				remote-endpoint = <&vicap4_mipi>;
+				data-lanes = <0 1 2 3>;
 			};
 		};
 	};
@@ -573,7 +573,7 @@
 };
 
 &spi_bus0{
-	status = "okay";
+	status = "disabled";
 
 	spidev@0 {
 		compatible = "rohm,dh2228fv";
@@ -593,7 +593,7 @@
 };
 
 &spi_bus1{
-	status = "okay";
+	status = "disabled";
 
 	spidev@0 {
 		compatible = "rohm,dh2228fv";
@@ -613,7 +613,7 @@
 };
 
 &spi_bus2{
-	status = "okay";
+	status = "disabled";
 
 	spidev@0 {
 		compatible = "rohm,dh2228fv";
@@ -633,7 +633,7 @@
 };
 
 &spi_bus3{
-	status = "okay";
+	status = "disabled";
 
 	spidev@0 {
 		compatible = "rohm,dh2228fv";
@@ -653,7 +653,7 @@
 };
 
 &spi_bus4{
-	status = "okay";
+	status = "disabled";
 
 	spidev@0 {
 		compatible = "rohm,dh2228fv";
@@ -974,13 +974,13 @@
 		reg = <0>;
 		vicap4_mipi: endpoint {
 			remote-endpoint = <&lt8918_4_mipi>;
-			data-lanes = <8 10>;
+			data-lanes = <8 9 10 11>;
 		};
 	};
 };
 
 &vicap5 {
-	status = "okay";
+	status = "disabled";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
