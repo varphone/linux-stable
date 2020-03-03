@@ -21,4 +21,7 @@ obj-$(CONFIG_MXC_TVIN_ADV7180) += adv7180_tvin.o
 isl7998x_tvin_mipi-objs := isl7998x_mipi.o
 obj-$(CONFIG_MXC_TVIN_ISL7998X_MIPI) += isl7998x_tvin_mipi.o
 
+ch7026_rgbin_tv-objs := ch7026_composite.o
+obj-$(CONFIG_MXC_RGBIN_CH7026_TV) += ch7026_rgbin_tv.o
+
 obj-$(CONFIG_VIDEO_V4L2_MXC_INT_DEVICE) += v4l2-int-device.o

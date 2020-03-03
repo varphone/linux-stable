@@ -28,6 +28,10 @@
 };
 
 &i2c1 {
+	ch7026@76 {
+                compatible = "tdc,ch7026";
+                reg = <0x76>;
+        };
 
 	atm88pa@7a {
 		power {
@@ -50,14 +54,14 @@
 		display-timings {
 			native-mode = <&timing0>;
 			timing0: hsd100pxn1 {
-				clock-frequency = <30815400>;/* clock-frequency = <46815400>; */
-				hactive = <1024>;
+				clock-frequency = <27000000>;
+				hactive = <720>;
 				vactive = <576>;
-				hback-porch = <80>;
-				hfront-porch = <48>;
-				vback-porch = <9>;
-				vfront-porch = <3>;
-				hsync-len = <32>;
+				hback-porch = <68>;
+				hfront-porch = <2>;
+				vback-porch = <39>;
+				vfront-porch = <5>;
+				hsync-len = <74>;
 				vsync-len = <5>;
 			};
 		};
@@ -72,14 +76,14 @@
 		display-timings {
 			native-mode = <&timing1>;
 			timing1: hsd100pxn1 {
-				clock-frequency = <30815400>;/* clock-frequency = <46815400>; */
-				hactive = <1024>;
+				clock-frequency = <27000000>;
+				hactive = <720>;
 				vactive = <576>;
-				hback-porch = <80>;
-				hfront-porch = <48>;
-				vback-porch = <9>;
-				vfront-porch = <3>;
-				hsync-len = <32>;
+				hback-porch = <68>;
+				hfront-porch = <2>;
+				vback-porch = <39>;
+				vfront-porch =<5>;
+				hsync-len = <74>;
 				vsync-len = <5>;
 			};
 		};
