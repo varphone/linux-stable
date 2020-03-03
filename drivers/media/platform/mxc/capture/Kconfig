@@ -39,6 +39,12 @@ config MXC_TVIN_ISL7998X_MIPI
 	---help---
 	  If you plan to use the isl7998x Video Decoder with your MXC system, say Y here.
 
+config MXC_RGBIN_CH7026_TV
+        tristate "Chrontel CH7025/CH7026 TV/VGA Encoder support"
+        depends on !VIDEO_MXC_EMMA_CAMERA && I2C
+        ---help---
+          If you plan to use the CH7025/CH7026 TV/VGA Encoder with your MXC system, say Y here.
+
 choice
 	prompt "Select Overlay Rounting"
 	default MXC_IPU_DEVICE_QUEUE_SDC
