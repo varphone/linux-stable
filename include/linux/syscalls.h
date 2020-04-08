@@ -902,5 +902,7 @@ asmlinkage long sys_pkey_mprotect(unsigned long start, size_t len,
 				  unsigned long prot, int pkey);
 asmlinkage long sys_pkey_alloc(unsigned long flags, unsigned long init_val);
 asmlinkage long sys_pkey_free(int pkey);
+asmlinkage long sys_statx(int dfd, const char __user *path, unsigned flags,
+			  unsigned mask, void __user *buffer);
 
 #endif

@@ -443,6 +443,25 @@ SYSCALL_DEFINE4(fstatat64, int, dfd, const char __user *, filename,
 }
 #endif /* __ARCH_WANT_STAT64 || __ARCH_WANT_COMPAT_STAT64 */
 
+/**
+ * sys_statx - System call to get enhanced stats
+ * @dfd: Base directory to pathwalk from *or* fd to stat.
+ * @filename: File to stat *or* NULL.
+ * @flags: AT_* flags to control pathwalk.
+ * @mask: Parts of statx struct actually required.
+ * @buffer: Result buffer.
+ *
+ * Note that if filename is NULL, then it does the equivalent of fstat() using
+ * dfd to indicate the file of interest.
+ */
+SYSCALL_DEFINE5(statx,
+		int, dfd, const char __user *, filename, unsigned, flags,
+		unsigned int, mask,
+		void __user *, buffer)
+{
+	return -ENOSYS;
+}
+
 /* Caller is here responsible for sufficient locking (ie. inode->i_lock) */
 void __inode_add_bytes(struct inode *inode, loff_t bytes)
 {
