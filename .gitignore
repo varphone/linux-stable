@@ -114,3 +114,6 @@ all.config
 
 # Kdevelop4
 *.kdev4
+
+**/Image.gz-dtb
+**/uImage
