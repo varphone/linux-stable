@@ -59,6 +59,15 @@
 	status = "okay";
 };
 
+&i2c1 {
+	atm88pa@7a {
+		power {
+			/* poweroff GPIO5_IO20, ACTIVE_LOW */
+			gpios = <&gpio5 20 1>;
+			};
+		};
+};
+
 &i2c2 {
 	status = "okay";
 };
