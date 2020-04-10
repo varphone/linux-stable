@@ -44,7 +44,6 @@ static void atm88pa_keypad_process_keys(struct atm88pa_keypad *kp, u8 new_keys)
 void atm88pa_keypad_update(struct atm88pa *atm)
 {
 	int ret;
-
 	ret = atm88pa_read(atm, ATM88PA_REG_KEYS);
 	if (ret < 0) {
 		dev_warn(atm->dev, "read keys failed, err: %d\n", ret);
@@ -92,6 +91,7 @@ int atm88pa_keypad_register(struct atm88pa *atm)
 	__set_bit(KEY_SLEEP, idev->keybit);
 	__set_bit(KEY_WAKEUP, idev->keybit);
 	__set_bit(KEY_SYSRQ, idev->keybit);
+	__set_bit(KEY_F12, idev->keybit);
 
 	/* Clear reserved key */
 	__clear_bit(KEY_RESERVED, idev->keybit);

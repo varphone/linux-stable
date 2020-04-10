@@ -118,4 +118,7 @@
  */
 #define ATM88PA_REG_SW_VER	0x20 /* R */
 
+#define ATM88PA_REG_DATA_LEN	0x30 /* R */
+#define ATM88PA_REG_DATA	0x31 /* R/W */
+
 #endif /* MFD_ATM88PA_H */
