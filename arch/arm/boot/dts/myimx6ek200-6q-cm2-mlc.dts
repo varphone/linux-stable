@@ -9,7 +9,7 @@
 #include "myimx6ek200-cm.dtsi"
 
 / {
-	model = "TDC Car Video Recorder for Military (V2-A)";
+	model = "TDC Car Video Recorder for Military (V2-MLC)";
 	compatible = "tdc,cvr-mil-v2", "myzr,myimx6", "myzr,myimx6q", "myzr,myimx6cb200", "myzr,myimx6ek200", "fsl,imx6q", "fsl,imx6q-ldb";
 
 	reserved-memory {
