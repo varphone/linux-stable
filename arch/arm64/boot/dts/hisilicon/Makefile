@@ -4,7 +4,9 @@ dtb-$(CONFIG_ARCH_HISI) += hip06-d03.dtb
 dtb-$(CONFIG_ARCH_HI3559AV100)	+= hi3559av100-demb-flash.dtb
 dtb-$(CONFIG_ARCH_HI3559AV100)	+= hi3559av100-demb-emmc.dtb
 dtb-$(CONFIG_ARCH_HI3559AV100)	+= hi3559av100-demb-ufs.dtb
+dtb-$(CONFIG_ARCH_HI3559AV100)	+= hi3559av100-jycz3-flash.dtb
 dtb-$(CONFIG_ARCH_HI3559AV100)	+= hi3559av100-jycz3-emmc.dtb
+dtb-$(CONFIG_ARCH_HI3559AV100)	+= hi3559av100-jycz3-ufs.dtb
 
 always		:= $(dtb-y)
 subdir-y	:= $(dts-dirs)
