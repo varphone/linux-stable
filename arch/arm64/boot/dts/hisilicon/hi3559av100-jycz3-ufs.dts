@@ -23,10 +23,10 @@
 #endif
 
 &mmc0 {
-	status = "okay";
+	status = "disabled";
 };
 
 &ufs {
-	status = "disabled";
+	status = "okay";
 };
 

@@ -19,11 +19,11 @@
 /* reserved for warmreset */
 /* reserved for arm trustedfirmware */
 /* Modify this configuration according to the system framework */
-/memreserve/ 0x47000000 0x00200000;
+/memreserve/ 0x53000000 0x00200000;
 #include "hi3559av100.dtsi"
 
 / {
-	model = "JYCZ3 Based on Hisilicon HI3559AV100";
+	model = "JYCZ3 Based on Hisilicon HI3559AV100 (AMP)";
 	compatible = "tdc,jycz3", "hisilicon,hi3559av100";
 
 	aliases {
@@ -105,7 +105,6 @@
 			device_type = "cpu";
 			reg = <0x0 0x0>;
 			enable-method = "psci";
-			clock-latency = <100000>; /* From legacy driver */
 			cpu-idle-states = <&CPU_POWERDOWN &CPU_STANDBY>;
 		};
 
@@ -114,89 +113,28 @@
 			device_type = "cpu";
 			reg = <0x0 0x1>;
 			enable-method = "psci";
-			clock-latency = <200000>; /* From legacy driver */
 			cpu-idle-states = <&CPU_POWERDOWN &CPU_STANDBY>;
 		};
-
 		cpu@2 {
 			compatible = "arm,cortex-a73";
 			device_type = "cpu";
 			reg = <0x0 0x100>;
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_POWERDOWN &CPU_STANDBY>;
-			vcc-supply = <&a73_regulator>;
 		};
-
 		cpu@3 {
 			compatible = "arm,cortex-a73";
 			device_type = "cpu";
 			reg = <0x0 0x101>;
 			enable-method = "psci";
-			operating-points = <
-				792000 796000
-				1296000 888000
-				1608000 988000
-			>;
-			clocks = <&clock HI3559AV100_A73_MUX>,
-				 <&clock HI3559AV100_FIXED_24M>,
-				 <&clock HI3559AV100_APLL_CLK>,
-				 <&clock HI3559AV100_FIXED_1000M>;
-			clock-names = "a73_mux","24m","apll","1000m";
-			clock-latency = <400000>; /* From legacy driver */
 			cpu-idle-states = <&CPU_POWERDOWN &CPU_STANDBY>;
-			vcc-supply = <&a73_regulator>;
-		};
-
-	};
-
-	avs {
-		compatible = "hi3559a,avs";
-		avs-num = <3>;
-		avs-name-array = "cpu-avs","media-avs","gpu-avs";
-		cpu_avs: cpu_avs{
-			avs-name = "cpu-avs";
-			opp-num = <6>;
-			opp-freq = <1250000 1150000 1000000 930000 792000 594000 >;
-			opp-volt-min = <870000 870000 800000 800000 740000 740000>;
-			opp-hpm = <310 310 280 280 250 250>;
-			opp-div = <24 22 19 18 15 11>;
-			opp-volt-max = <1060000>;
-		};
-
-		media_avs: media_avs {
-			avs-name = "media-avs";
-			opp-num = <4>;
-			opp-prof-num = <2>;
-			opp-temp-num = <2>;
-			opp-temp = <50 200>;
-			opp-freq = <1 2 3 4>;
-			opp-volt-min = <
-				/* profile2 profile3*/
-				770000 770000
-				770000 770000
-			>;
-			opp-hpm = <
-				/* profile2 profile3*/
-				210 215
-				190 215
-			>;
-			opp-div = <3 3 3 3>;
-			opp-volt-max = <
-				/* profile2 profile3*/
-				977000 977000
-				977000 977000
-			>;
-		};
-
-		gpu_avs: gpu_avs{
-			avs-name = "gpu-avs";
 		};
 
 	};
 
 	memory {
 		device_type = "memory";
-		reg = <0x0 0x44000000 0x2 0x0>; /* system memory base */
+		reg = <0x0 0x50000000 0x2 0x0>; /* system memory base */
 	};
 };
 
@@ -209,7 +147,7 @@
 };
 
 &uart1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &uart2 {
@@ -245,35 +183,35 @@
 };
 
 &i2c_bus0 {
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c_bus1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c_bus2 {
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c_bus3 {
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c_bus4 {
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c_bus5 {
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c_bus6 {
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c_bus7 {
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c_bus8 {
@@ -289,7 +227,7 @@
 };
 
 &i2c_bus11 {
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c_bus12 {
@@ -617,21 +555,25 @@
 	};
 };
 
+#if 0
 &mdio1 {
 	ethphy1: ethernet-phy@3 {
 		reg = <3>;
 	};
 };
+#endif
 
 &higmac {
 	phy-handle = <&ethphy>;
 	phy-mode = "rgmii";
 };
 
+#if 0
 &higmac1 {
 	phy-handle = <&ethphy1>;
 	phy-mode = "rgmii";
 };
+#endif
 
 &mmc1 {
 	status = "okay";
