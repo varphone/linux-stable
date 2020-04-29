@@ -28,6 +28,7 @@
 #include <linux/ipv6.h>
 #include <net/ipv6.h>
 
+#include <linux/of_address.h>
 #include <linux/of_net.h>
 #include <linux/of_mdio.h>
 #include <linux/clk.h>
@@ -62,6 +63,49 @@ static int tx_flow_ctrl_deactive_threshold =
 static int debug = -1;
 module_param(debug, int, 0000);
 MODULE_PARM_DESC(debug, "Debug level (0=none,...,16=all)");
+
+static char ethaddrs[64] = {0};
+module_param_string(ethaddrs, ethaddrs, 64, 0644);
+MODULE_PARM_DESC(ethaddrs, "MAC Address(es): xx:xx:...[,xx:xx:...]");
+
+static const char* higmac_get_user_mac_address(struct device_node *np)
+{
+	static char mac_addrs[2][8] = {{0}, {0}};
+	static int splited = 0;
+	struct resource res;
+	char *cur = ethaddrs;
+	char *token = NULL;
+	int i = 0;
+
+	/* Split mac address from ethaddrs on first run */
+	if (!splited) {
+		memset(mac_addrs, 0, 16);
+		while ((token = strsep(&cur, ","))) {
+			if (0 == *token)
+				break;
+			mac_pton(token, mac_addrs[i++]);
+		}
+		splited = 1;
+	}
+
+	/* Determine the index of the ether with start of the register */
+	of_address_to_resource(np, 0, &res);
+	i = res.start == 0x101c0000 ? 0 : 1;
+	cur = mac_addrs[i];
+
+	return *cur ? cur : NULL;
+}
+
+#ifndef MODULE
+static int __init ethaddrs_setup(char *str)
+{
+	strncpy(ethaddrs, str, 64);
+	ethaddrs[63] = '\0';
+	return 1;
+}
+
+__setup("ethaddrs=", ethaddrs_setup);
+#endif
 
 static void higmac_config_port(struct net_device *dev, u32 speed, u32 duplex)
 {
@@ -2883,6 +2927,8 @@ static int higmac_dev_probe(struct platform_device *pdev)
 	}
 
 	mac_addr = of_get_mac_address(node);
+	if (!mac_addr)
+		mac_addr = higmac_get_user_mac_address(node);
 	if (mac_addr)
 		ether_addr_copy(ndev->dev_addr, mac_addr);
 	if (!is_valid_ether_addr(ndev->dev_addr)) {
