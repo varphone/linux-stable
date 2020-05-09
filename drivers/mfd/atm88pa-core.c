@@ -633,18 +633,28 @@ static ssize_t atm88pa_set_keypad_data_attr(struct device *dev,
 		   &wd_data[6]) != 7) {
 		return -EINVAL;
 	}
-	while (retries-- > 0) {
-		ret = atm88pa_read(atm, ATM88PA_REG_INT_CTRL);
-		if ((ret >= 0 ) && (ret & 0x80))
-			break;
-		msleep(5);
-	}
-	if (retries <= 0) {
-		dev_err(atm->dev, "register write prohibited, err: %d\n", ret);
-		return -1;
-	}
 	atm88pa_write_block_data(atm, ATM88PA_REG_DATA, 7, wd_data);
 	return count;
+}
+
+static ssize_t atm88pa_get_keypad_int_ctrl_attr(struct device *dev,
+					       struct device_attribute *attr,
+					       char *buf)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int val, ret;
+	/* Only for v8.00 */
+	if (atm->chip_ver != 0xf5f5)
+		return -ENXIO;
+	ret = atm88pa_read(atm, ATM88PA_REG_INT_CTRL);
+	if(ret < 0) {
+		return ret;
+	}
+	if(ret & 0x80)
+		val = 1;
+	else
+		val = 0;
+	return scnprintf(buf, PAGE_SIZE, "%d\n", val);
 }
 
 
@@ -665,6 +675,7 @@ DEVICE_ATTR(temperature, S_IRUGO, atm88pa_get_temperature_attr, NULL);
 DEVICE_ATTR(ttymxc1_switch, S_IRUGO | S_IWUSR, atm88pa_get_ttymxc1_switch_attr, atm88pa_set_ttymxc1_switch_attr);
 DEVICE_ATTR(version, S_IRUGO, atm88pa_get_version_attr, NULL);
 DEVICE_ATTR(keypad_data, S_IRUGO | S_IWUSR, atm88pa_get_keypad_data_attr, atm88pa_set_keypad_data_attr);
+DEVICE_ATTR(keypad_int_ctrl, S_IRUGO, atm88pa_get_keypad_int_ctrl_attr, NULL);
 
 static struct attribute *atm88pa_attrs[] = {
 	&dev_attr_amb_light.attr,
@@ -684,6 +695,7 @@ static struct attribute *atm88pa_attrs[] = {
 	&dev_attr_ttymxc1_switch.attr,
 	&dev_attr_version.attr,
 	&dev_attr_keypad_data.attr,
+	&dev_attr_keypad_int_ctrl.attr,
 	NULL
 };
 
