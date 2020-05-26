@@ -109,16 +109,20 @@
 /* Keypad light, 0 ~ 255 */
 #define ATM88PA_REG_KEYPAD_LIGHT	0x0A /* R/W */
 
+#define ATM88PA_REG_BOARD_STATUS1           0X1A /* R/W */
+#define ATM88PA_REG_BOARD_STATUS2           0X1B /* R/W */
 /*
  * Software version, 16 bit unsigned
  * NOTE:
  *   501 = Ver 5.01, for CVR-MIL-V2 devices
  *   600 = Ver 6.00, for CVR-MIL-V2-A devices
  *   100 = Ver 1.00, for CVR-MIL-V2-B devices
+ * 0x400 = Ver 10.24, for CVR-MIL-V2-MLC devices
  */
 #define ATM88PA_REG_SW_VER	0x20 /* R */
 
-#define ATM88PA_REG_DATA_LEN	0x30 /* R */
-#define ATM88PA_REG_DATA	0x31 /* R/W */
+#define ATM88PA_REG_RECEIVE_DATA_LEN        0x30 /* R */
+#define ATM88PA_REG_SEND_DATA_LEN           0x31 /* R */
+#define ATM88PA_REG_DATA                    0x32 /* R/W */
 
 #endif /* MFD_ATM88PA_H */
