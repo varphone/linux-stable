@@ -21,17 +21,23 @@
 #include <linux/mfd/atm88pa-private.h>
 #include <linux/delay.h>
 
-static int atm88pa_keypad_rd_data[ATM88PA_MAX_DATAS] = { 0, 0, 0, 0, 0, 0, 0 };
+static struct mutex g_atm88pa_lock;
+
+#define ATM88PA_LOCK()				mutex_lock(&g_atm88pa_lock)
+#define ATM88PA_UNLOCK()			mutex_unlock(&g_atm88pa_lock)
+#define ATM88PA_CVR_MIL_V2_MLC		0X400
 
 int atm88pa_read(struct atm88pa *atm, u8 reg)
 {
 	int ret;
 	int retries = 3;
+	ATM88PA_LOCK();
 	while (retries-- > 0) {
 		ret = i2c_smbus_read_byte_data(atm->i2c, reg);
 		if (ret >= 0)
 			break;
 	}
+	ATM88PA_UNLOCK();
 	return ret;
 }
 
@@ -39,11 +45,13 @@ int atm88pa_read_word(struct atm88pa *atm, u8 reg)
 {
 	int ret;
 	int retries = 3;
+	ATM88PA_LOCK();
 	while (retries-- > 0) {
 		ret = i2c_smbus_read_word_data(atm->i2c, reg);
 		if (ret >= 0)
 			break;
 	}
+	ATM88PA_UNLOCK();
 	return ret;
 }
 
@@ -51,11 +59,13 @@ int atm88pa_write(struct atm88pa *atm, u8 reg, u8 val)
 {
 	int ret;
 	int retries = 3;
+	ATM88PA_LOCK();
 	while (retries-- > 0) {
 		ret = i2c_smbus_write_byte_data(atm->i2c, reg, val);
 		if (ret >= 0)
 			break;
 	}
+	ATM88PA_UNLOCK();
 	return ret;
 }
 
@@ -63,11 +73,13 @@ int atm88pa_write_word(struct atm88pa *atm, u8 reg, u16 val)
 {
 	int ret;
 	int retries = 3;
+	ATM88PA_LOCK();
 	while (retries-- > 0) {
 		ret = i2c_smbus_write_word_data(atm->i2c, reg, val);
 		if (ret >= 0)
 			break;
 	}
+	ATM88PA_UNLOCK();
 	return ret;
 }
 
@@ -75,11 +87,13 @@ int atm88pa_write_block_data(struct atm88pa *atm, u8 reg, u8 len, const u8 *val)
 {
 	int ret;
 	int retries = 3;
+	ATM88PA_LOCK();
 	while (retries-- > 0) {
 		ret = i2c_smbus_write_i2c_block_data(atm->i2c, reg, len, val);
 		if (ret >= 0)
 			break;
 	}
+	ATM88PA_UNLOCK();
 	return ret;
 }
 
@@ -135,26 +149,19 @@ void atm88pa_update_status(struct atm88pa *atm)
 			atm88pa_keypad_simulate_key(atm, KEY_SYSRQ, 0);
 		}
 	}
-
-	if(atm->chip_ver == 0xf5f5) {
+	if(atm->chip_ver == ATM88PA_CVR_MIL_V2_MLC) {
 		ret = atm88pa_read(atm, ATM88PA_REG_INT_CTRL);
 		if (ret < 0) {
 			dev_warn(atm->dev, "read interrupts bits failed, err: %d\n", ret);
 		} else {
 			if((ret & 0x40) == 0)
 				return;
-			ret = atm88pa_read(atm, ATM88PA_REG_DATA_LEN);
-			for(i = 0; i < ret; i++) {
-				val = atm88pa_read(atm, ATM88PA_REG_DATA);
-				if(val < 0) {
-					dev_warn(atm->dev, "read data failed, err: %d\n", val);
-					return;
-				}
-				atm88pa_keypad_rd_data[i] = val;
+			ret = atm88pa_read(atm, ATM88PA_REG_RECEIVE_DATA_LEN);
+			if(ret >= 12) {
+				/* Simulate KEY_F12 pressed and released */
+				atm88pa_keypad_simulate_key(atm, KEY_F12, 1);
+				atm88pa_keypad_simulate_key(atm, KEY_F12, 0);
 			}
-			/* Simulate KEY_F12 pressed and released */
-			atm88pa_keypad_simulate_key(atm, KEY_F12, 1);
-			atm88pa_keypad_simulate_key(atm, KEY_F12, 0);
 		}
 	}
 }
@@ -594,21 +601,20 @@ static ssize_t atm88pa_get_keypad_data_attr(struct device *dev,
 					       char *buf)
 {
 	struct atm88pa *atm = miscdev_to_atm88pa(dev);
-	int val;
-	int i;
+	int val = 0;
 
-	/* Only for v8.00 */
-	if (atm->chip_ver != 0xf5f5)
+	/* Only for ATM88PA_CVR_MIL_V2_MLC */
+	if (atm->chip_ver != ATM88PA_CVR_MIL_V2_MLC)
 		return -ENXIO;
-
-	return scnprintf(buf, PAGE_SIZE, "%d %d %d %d %d %d %d",
-			 atm88pa_keypad_rd_data[0],
-			 atm88pa_keypad_rd_data[1],
-			 atm88pa_keypad_rd_data[2],
-			 atm88pa_keypad_rd_data[3],
-			 atm88pa_keypad_rd_data[4],
-			 atm88pa_keypad_rd_data[5],
-			 atm88pa_keypad_rd_data[6]);
+	val = atm88pa_read(atm, ATM88PA_REG_RECEIVE_DATA_LEN);
+	if(val <= 0)
+		return -1;
+	val = atm88pa_read(atm, ATM88PA_REG_DATA);
+	if(val < 0) {
+		dev_warn(atm->dev, "read data failed, err: %d\n", val);
+		return val;
+	}
+	return scnprintf(buf, PAGE_SIZE, "%d\n", val);
 }
 
 static ssize_t atm88pa_set_keypad_data_attr(struct device *dev,
@@ -616,24 +622,33 @@ static ssize_t atm88pa_set_keypad_data_attr(struct device *dev,
 					       const char *buf, size_t count)
 {
 	struct atm88pa *atm = miscdev_to_atm88pa(dev);
-	int i, ret;
-	u8 wd_data[7];
-	int retries = 3;
+	u8 wd_data[12];
+	int val = 0;
 
-	/* Only for v8.00 */
-	if (atm->chip_ver != 0xf5f5)
+	/* Only for ATM88PA_CVR_MIL_V2_MLC */
+	if (atm->chip_ver != ATM88PA_CVR_MIL_V2_MLC)
 		return -ENXIO;
-	if (sscanf(buf, "%d %d %d %d %d %d %d",
+	val = atm88pa_read(atm, ATM88PA_REG_SEND_DATA_LEN);
+	if(val <= 0)
+		return val;
+	if(val < 12)
+		return -1;
+	if (sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d",
 		   &wd_data[0],
 		   &wd_data[1],
 		   &wd_data[2],
 		   &wd_data[3],
 		   &wd_data[4],
 		   &wd_data[5],
-		   &wd_data[6]) != 7) {
+		   &wd_data[6],
+		   &wd_data[7],
+		   &wd_data[8],
+		   &wd_data[9],
+		   &wd_data[10],
+		   &wd_data[11]) != 12) {
 		return -EINVAL;
 	}
-	atm88pa_write_block_data(atm, ATM88PA_REG_DATA, 7, wd_data);
+	atm88pa_write_block_data(atm, ATM88PA_REG_DATA, 12, wd_data);
 	return count;
 }
 
@@ -642,21 +657,79 @@ static ssize_t atm88pa_get_keypad_int_ctrl_attr(struct device *dev,
 					       char *buf)
 {
 	struct atm88pa *atm = miscdev_to_atm88pa(dev);
-	int val, ret;
-	/* Only for v8.00 */
-	if (atm->chip_ver != 0xf5f5)
-		return -ENXIO;
+	int ret = 0;
 	ret = atm88pa_read(atm, ATM88PA_REG_INT_CTRL);
 	if(ret < 0) {
 		return ret;
 	}
-	if(ret & 0x80)
-		val = 1;
-	else
-		val = 0;
+	return scnprintf(buf, PAGE_SIZE, "%d\n", ret);
+}
+
+static ssize_t atm88pa_get_keypad_status1_attr(struct device *dev,
+					       struct device_attribute *attr,
+					       char *buf)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int val = 0;
+
+	/* Only for ATM88PA_CVR_MIL_V2_MLC */
+	if (atm->chip_ver != ATM88PA_CVR_MIL_V2_MLC)
+		return -ENXIO;
+	val = atm88pa_read(atm, ATM88PA_REG_BOARD_STATUS1);
+	if(val < 0)
+		return val;
 	return scnprintf(buf, PAGE_SIZE, "%d\n", val);
 }
 
+static ssize_t atm88pa_set_keypad_status1_attr(struct device *dev,
+					       struct device_attribute *attr,
+					       const char *buf, size_t count)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	u8 data = 0;
+
+	/* Only for ATM88PA_CVR_MIL_V2_MLC */
+	if (atm->chip_ver != ATM88PA_CVR_MIL_V2_MLC)
+		return -ENXIO;
+	if (sscanf(buf, "%d", &data) != 1) {
+		return -EINVAL;
+	}
+	atm88pa_write(atm, ATM88PA_REG_BOARD_STATUS1, data);
+	return count;
+}
+
+static ssize_t atm88pa_get_keypad_status2_attr(struct device *dev,
+					       struct device_attribute *attr,
+					       char *buf)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	int val = 0;
+
+	/* Only for ATM88PA_CVR_MIL_V2_MLC */
+	if (atm->chip_ver != ATM88PA_CVR_MIL_V2_MLC)
+		return -ENXIO;
+	val = atm88pa_read(atm, ATM88PA_REG_BOARD_STATUS2);
+	if(val < 0)
+		return val;
+	return scnprintf(buf, PAGE_SIZE, "%d\n", val);
+}
+
+static ssize_t atm88pa_set_keypad_status2_attr(struct device *dev,
+					       struct device_attribute *attr,
+					       const char *buf, size_t count)
+{
+	struct atm88pa *atm = miscdev_to_atm88pa(dev);
+	u8 data = 0;
+
+	/* Only for ATM88PA_CVR_MIL_V2_MLC */
+	if (atm->chip_ver != ATM88PA_CVR_MIL_V2_MLC)
+		return -ENXIO;
+	if (sscanf(buf, "%d", &data) != 1) {
+		return -EINVAL;
+	}
+	atm88pa_write(atm, ATM88PA_REG_BOARD_STATUS2, data);
+	return count;
+}
 
 DEVICE_ATTR(amb_light, S_IRUGO, atm88pa_get_amb_light_attr, NULL);
 DEVICE_ATTR(cam_switch, S_IRUGO | S_IWUSR, atm88pa_get_cam_switch_attr, atm88pa_set_cam_switch_attr);
@@ -676,6 +749,8 @@ DEVICE_ATTR(ttymxc1_switch, S_IRUGO | S_IWUSR, atm88pa_get_ttymxc1_switch_attr, 
 DEVICE_ATTR(version, S_IRUGO, atm88pa_get_version_attr, NULL);
 DEVICE_ATTR(keypad_data, S_IRUGO | S_IWUSR, atm88pa_get_keypad_data_attr, atm88pa_set_keypad_data_attr);
 DEVICE_ATTR(keypad_int_ctrl, S_IRUGO, atm88pa_get_keypad_int_ctrl_attr, NULL);
+DEVICE_ATTR(keypad_status1, S_IRUGO | S_IWUSR, atm88pa_get_keypad_status1_attr, atm88pa_set_keypad_status1_attr);
+DEVICE_ATTR(keypad_status2, S_IRUGO | S_IWUSR, atm88pa_get_keypad_status2_attr, atm88pa_set_keypad_status2_attr);
 
 static struct attribute *atm88pa_attrs[] = {
 	&dev_attr_amb_light.attr,
@@ -696,6 +771,8 @@ static struct attribute *atm88pa_attrs[] = {
 	&dev_attr_version.attr,
 	&dev_attr_keypad_data.attr,
 	&dev_attr_keypad_int_ctrl.attr,
+	&dev_attr_keypad_status1.attr,
+	&dev_attr_keypad_status2.attr,
 	NULL
 };
 
@@ -784,7 +861,7 @@ static int atm88pa_probe(struct i2c_client* client,
 {
 	int err;
 	struct atm88pa *atm;
-
+	mutex_init(&g_atm88pa_lock);
 	/* Allocate resource */
 	atm = devm_kzalloc(&client->dev, sizeof(*atm), GFP_KERNEL);
 	if (!atm)
@@ -804,12 +881,13 @@ static int atm88pa_probe(struct i2c_client* client,
 	 *   6.00 for CVR-MIL-V2-A
 	 *   7.00 for CVR-MIL-V2-Y30
 	 *   8.00 for CVR-MIL-V2-206-A
+	 *  0x400 for CVR-MIL-V2-MLC
 	 */
 	if (atm->chip_ver != 100 &&
 	    atm->chip_ver != 501 &&
 	    atm->chip_ver != 600 &&
 	    atm->chip_ver != 700 &&
-		atm->chip_ver != 0xf5f5 ) {
+		atm->chip_ver != 0x400) {
 		dev_err(atm->dev, "ATMEGA88PA not found.\n");
 		return -ENODEV;
 	}

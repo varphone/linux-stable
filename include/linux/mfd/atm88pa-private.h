@@ -18,7 +18,6 @@
 
 #define ATM88PA_MAX_KEYS	8
 #define ATM88PA_MAX_LEDS	4
-#define ATM88PA_MAX_DATAS	7
 
 /* Keypad of ATM88PA */
 struct atm88pa_keypad {
