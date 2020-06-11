@@ -273,11 +273,12 @@ static void regmap_sequence_dump(struct reg_sequence* regs, int num_regs)
 {
     int i = 0;
 
-    printk(KERN_DEBUG "Register sequence @ %p, %d:\n", regs, num_regs);
-    for (; i < num_regs; i++)
-        printk(KERN_DEBUG "{%04X, %04X, %d}\n", regs[i].reg, regs[i].def,
-               regs[i].delay_us);
-    printk(KERN_DEBUG "\n");
+    pr_debug("Register sequence @ %p, %d:\n", regs, num_regs);
+    for (; i < num_regs; i++) {
+        pr_debug("{%04X, %04X, %d}\n", regs[i].reg, regs[i].def,
+                 regs[i].delay_us);
+    }
+    pr_debug("\n");
 }
 
 static inline int lt8918_read_reg(struct camera_common_data* s_data, u16 addr,
@@ -447,7 +448,7 @@ static int lt8918_power_on(struct camera_common_data* s_data)
     struct lt8918* priv = (struct lt8918*)s_data->priv;
     struct camera_common_power_rail* pw = &priv->power;
 
-    dev_info(&priv->i2c_main->dev, "Power On\n");
+    dev_dbg(&priv->i2c_main->dev, "Power On\n");
 
     if (priv->pdata && priv->pdata->power_on) {
         err = priv->pdata->power_on(pw);
@@ -473,7 +474,7 @@ static int lt8918_power_off(struct camera_common_data* s_data)
     struct lt8918* priv = (struct lt8918*)s_data->priv;
     struct camera_common_power_rail* pw = &priv->power;
 
-    dev_info(&priv->i2c_main->dev, "Power Off\n");
+    dev_dbg(&priv->i2c_main->dev, "Power Off\n");
 
     if (priv->pdata && priv->pdata->power_off) {
         err = priv->pdata->power_off(pw);
@@ -539,12 +540,12 @@ static int lt8918_s_stream(struct v4l2_subdev* sd, int enable)
         if (err)
             return err;
 
-        dev_info(sd->dev, "Stream Stopped!\n");
+        dev_dbg(sd->dev, "Stream Stopped!\n");
 
         return 0;
     }
 
-    dev_info(sd->dev, "Start Stream: mode=%u\n", s_data->mode);
+    dev_dbg(sd->dev, "Start Stream: mode=%u\n", s_data->mode);
 
     err = lt8918_write_table(priv, &lt8918_mode_tables[s_data->mode]);
     if (err)
