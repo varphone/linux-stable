@@ -600,7 +600,22 @@ static struct v4l2_subdev_video_ops lt8918_subdev_video_ops = {
     .g_input_status = lt8918_g_input_status,
 };
 
+static int lt8918_reset(struct v4l2_subdev *sd, u32 val) {
+    struct i2c_client* client = v4l2_get_subdevdata(sd);
+    struct camera_common_data* s_data = to_camera_common_data(&client->dev);
+    struct lt8918* priv = (struct lt8918*)s_data->priv;
+
+    if (val == 1) {
+        lt8918_hardware_reset(priv);
+        lt8918_hardware_init(priv->regmap);
+        return lt8918_s_stream(sd, 1);
+    }
+
+    return 0;
+}
+
 static struct v4l2_subdev_core_ops lt8918_subdev_core_ops = {
+    .reset = lt8918_reset,
     .s_power = camera_common_s_power,
 };
 
