@@ -555,12 +555,22 @@ static int csi4_error_recover(struct tegra_csi_channel *chan,
 	enum tegra_csi_port_num port_num)
 {
 	int csi_port = chan->ports[port_num].num;
+	int err = 0;
 
 	dev_dbg(chan->csi->dev, "%s: resetting nvcsi stream %d\n",
 		__func__, csi_port);
 
 	csi4_stop_streaming(chan, port_num);
 	csi4_start_streaming(chan, port_num);
+
+	if (chan->sensor_sd) {
+		err = v4l2_subdev_call(chan->sensor_sd, core, reset, 1);
+		if (err != 0) {
+			dev_err(chan->csi->dev,
+				"%s: failed to reset the sensor\n", __func__);
+			return err;
+		}
+	}
 
 	return 0;
 }
