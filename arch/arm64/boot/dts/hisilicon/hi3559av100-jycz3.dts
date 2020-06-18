@@ -295,10 +295,36 @@
 
 &i2c_bus2 {
 	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	adv7280m@20 {
+		compatible = "tdc,adv7280a-m";
+		reg = <0x20>;
+		insel = <0>; /* CVBS input on AIN1 */
+		mode = <1>; /* AUTO_SINGLE_ENDED_P */
+		brightness = <0>;
+		contrast = <100>;
+		hue = <0>;
+		saturation = <100>;
+	};
 };
 
 &i2c_bus3 {
 	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	adv7280m@20 {
+		compatible = "tdc,adv7280a-m";
+		reg = <0x20>;
+		insel = <0>; /* CVBS input on AIN1 */
+		mode = <1>; /* AUTO_SINGLE_ENDED_P */
+		brightness = <0>;
+		contrast = <100>;
+		hue = <0>;
+		saturation = <100>;
+	};
 };
 
 &i2c_bus4 {
@@ -352,10 +378,36 @@
 
 &i2c_bus6 {
 	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	adv7280m@20 {
+		compatible = "tdc,adv7280a-m";
+		reg = <0x20>;
+		insel = <0>; /* CVBS input on AIN1 */
+		mode = <1>; /* AUTO_SINGLE_ENDED_P */
+		brightness = <0>;
+		contrast = <100>;
+		hue = <0>;
+		saturation = <100>;
+	};
 };
 
 &i2c_bus7 {
 	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	adv7280m@20 {
+		compatible = "tdc,adv7280a-m";
+		reg = <0x20>;
+		insel = <0>; /* CVBS input on AIN1 */
+		mode = <1>; /* AUTO_SINGLE_ENDED_P */
+		brightness = <0>;
+		contrast = <100>;
+		hue = <0>;
+		saturation = <100>;
+	};
 };
 
 &i2c_bus8 {
