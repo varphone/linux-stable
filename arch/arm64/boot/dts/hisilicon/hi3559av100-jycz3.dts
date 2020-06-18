@@ -264,25 +264,25 @@
 		#size-cells = <0>;
 		channel@0 {
 			reg = <0>;
-			format = <23>;   // 19:AHD20_1080P_25P, 23:AHD20_720P_25P
+			format = <27>;   // 19:AHD20_1080P_25P, 23:AHD20_720P_25P, 27:AHD20_720P_25P_EX_Btype
 			input = <0>;     // 0:Single-Ended, 1:Differential
 			interface = <1>; // 0:Disabled, 1:Yuv422, 2:Yuv420, 3:Yuv420 Legacy
 		};
 		channel@1 {
 			reg = <1>;
-			format = <23>;
+			format = <27>;
 			input = <0>;
 			interface = <1>;
 		};
 		channel@2 {
 			reg = <2>;
-			format = <23>;
+			format = <27>;
 			input = <0>;
 			interface = <1>;
 		};
 		channel@3 {
 			reg = <3>;
-			format = <23>;
+			format = <27>;
 			input = <0>;
 			interface = <1>;
 		};
@@ -347,25 +347,25 @@
 		#size-cells = <0>;
 		channel@0 {
 			reg = <0>;
-			format = <23>;   // 19:AHD20_1080P_25P, 23:AHD20_720P_25P
+			format = <27>;   // 19:AHD20_1080P_25P, 23:AHD20_720P_25P, 27:AHD20_720P_25P_EX_Btype
 			input = <0>;     // 0:Single-Ended, 1:Differential
 			interface = <1>; // 0:Disabled, 1:Yuv422, 2:Yuv420, 3:Yuv420 Legacy
 		};
 		channel@1 {
 			reg = <1>;
-			format = <23>;
+			format = <27>;
 			input = <0>;
 			interface = <1>;
 		};
 		channel@2 {
 			reg = <2>;
-			format = <23>;
+			format = <27>;
 			input = <0>;
 			interface = <1>;
 		};
 		channel@3 {
 			reg = <3>;
-			format = <23>;
+			format = <27>;
 			input = <0>;
 			interface = <1>;
 		};
