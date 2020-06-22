@@ -158,7 +158,7 @@ s32 ixgbe_init_ops_82598(struct ixgbe_hw *hw)
 	mac->ops.setup_link = ixgbe_setup_mac_link_82598;
 	mac->ops.flap_tx_laser = NULL;
 	mac->ops.get_link_capabilities = ixgbe_get_link_capabilities_82598;
-	mac->ops.setup_rxpba = ixgbe_set_rxpba_82598;
+	mac->ops.set_rxpba = ixgbe_set_rxpba_82598;
 
 	/* Manageability interface */
 	mac->ops.set_fw_drv_ver = NULL;

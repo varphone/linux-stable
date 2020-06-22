@@ -357,7 +357,7 @@ s32 ixgbe_init_ops_82599(struct ixgbe_hw *hw)
 	/* Link */
 	mac->ops.get_link_capabilities = ixgbe_get_link_capabilities_82599;
 	mac->ops.check_link = ixgbe_check_mac_link_generic;
-	mac->ops.setup_rxpba = ixgbe_set_rxpba_generic;
+	mac->ops.set_rxpba = ixgbe_set_rxpba_generic;
 	ixgbe_init_mac_link_ops_82599(hw);
 
 	mac->mcft_size		= IXGBE_82599_MC_TBL_SIZE;

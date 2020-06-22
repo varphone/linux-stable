@@ -336,9 +336,9 @@ static struct rt6_info *__ip6_dst_alloc(struct net *net,
 	return rt;
 }
 
-static struct rt6_info *ip6_dst_alloc(struct net *net,
-				      struct net_device *dev,
-				      int flags)
+struct rt6_info *ip6_dst_alloc(struct net *net,
+			       struct net_device *dev,
+			       int flags)
 {
 	struct rt6_info *rt = __ip6_dst_alloc(net, dev, flags);
 
@@ -362,6 +362,7 @@ static struct rt6_info *ip6_dst_alloc(struct net *net,
 
 	return rt;
 }
+EXPORT_SYMBOL(ip6_dst_alloc);
 
 static void ip6_dst_destroy(struct dst_entry *dst)
 {
@@ -2379,7 +2380,6 @@ struct rt6_info *rt6_add_dflt_router(const struct in6_addr *gwaddr,
 	return rt6_get_dflt_router(gwaddr, dev);
 }
 
-
 int rt6_addrconf_purge(struct rt6_info *rt, void *arg) {
 	if (rt->rt6i_flags & (RTF_DEFAULT | RTF_ADDRCONF) &&
 	    (!rt->rt6i_idev || rt->rt6i_idev->cnf.accept_ra != 2))
@@ -2945,6 +2945,7 @@ static int ip6_route_multipath_add(struct fib6_config *cfg)
 		 */
 		cfg->fc_nlinfo.nlh->nlmsg_flags &= ~(NLM_F_EXCL |
 						     NLM_F_REPLACE);
+		cfg->fc_nlinfo.nlh->nlmsg_flags |= NLM_F_CREATE;
 		nhn++;
 	}
 

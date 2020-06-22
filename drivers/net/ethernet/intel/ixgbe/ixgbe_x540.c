@@ -109,7 +109,7 @@ s32 ixgbe_init_ops_X540(struct ixgbe_hw *hw)
 	mac->ops.get_link_capabilities =
 				ixgbe_get_copper_link_capabilities_generic;
 	mac->ops.setup_link = ixgbe_setup_mac_link_X540;
-	mac->ops.setup_rxpba = ixgbe_set_rxpba_generic;
+	mac->ops.set_rxpba = ixgbe_set_rxpba_generic;
 	mac->ops.check_link = ixgbe_check_mac_link_generic;
 
 	mac->mcft_size		= IXGBE_X540_MC_TBL_SIZE;

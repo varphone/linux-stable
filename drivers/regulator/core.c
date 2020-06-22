@@ -1310,7 +1310,7 @@ static int set_machine_constraints(struct regulator_dev *rdev,
 		ret = ops->set_active_discharge(rdev, ad_state);
 		if (ret < 0) {
 			rdev_err(rdev, "failed to set active discharge\n");
-			return ret;
+			goto out;
 		}
 	}
 
@@ -1318,7 +1318,7 @@ static int set_machine_constraints(struct regulator_dev *rdev,
 	return 0;
 out:
 	kfree(rdev->constraints);
-	rdev->constraints = NULL;
+    rdev->constraints = NULL;
 	return ret;
 }
 

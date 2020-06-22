@@ -541,7 +541,7 @@ static void hci_uart_tty_close(struct tty_struct *tty)
 	if (hdev)
 		hci_uart_close(hdev);
 
-	if (test_bit(HCI_UART_PROTO_READY, &hu->flags)) {
+	if (test_and_clear_bit(HCI_UART_PROTO_READY, &hu->flags)) {
 		percpu_down_write(&hu->proto_lock);
 		clear_bit(HCI_UART_PROTO_READY, &hu->flags);
 		percpu_up_write(&hu->proto_lock);
@@ -557,6 +557,7 @@ static void hci_uart_tty_close(struct tty_struct *tty)
 	}
 	clear_bit(HCI_UART_PROTO_SET, &hu->flags);
 	percpu_free_rwsem(&hu->proto_lock);
+
 	kfree(hu);
 }
 
@@ -709,6 +710,7 @@ static int hci_uart_set_proto(struct hci_uart *hu, int id)
 		return err;
 	}
 
+	set_bit(HCI_UART_PROTO_READY, &hu->flags);
 	return 0;
 }
 

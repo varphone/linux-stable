@@ -9905,6 +9905,7 @@ int btrfs_read_block_groups(struct btrfs_root *root)
 			btrfs_err(info,
 "bg %llu is a mixed block group but filesystem hasn't enabled mixed block groups",
 				  cache->key.objectid);
+			btrfs_put_block_group(cache);
 			ret = -EINVAL;
 			goto error;
 		}
@@ -10687,7 +10688,7 @@ int btrfs_init_space_info(struct btrfs_fs_info *fs_info)
 
 	disk_super = fs_info->super_copy;
 	if (!btrfs_super_root(disk_super))
-		return 1;
+		return -EINVAL;
 
 	features = btrfs_super_incompat_flags(disk_super);
 	if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS)

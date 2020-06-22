@@ -3747,7 +3747,7 @@ struct ixgbe_mac_operations {
 	void (*set_rate_select_speed)(struct ixgbe_hw *, ixgbe_link_speed);
 
 	/* Packet Buffer manipulation */
-	void (*setup_rxpba)(struct ixgbe_hw *, int, u32, int);
+	void (*set_rxpba)(struct ixgbe_hw *, int, u32, int);
 
 	/* LED */
 	s32 (*led_on)(struct ixgbe_hw *, u32);

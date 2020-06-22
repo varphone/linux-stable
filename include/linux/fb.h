@@ -720,7 +720,7 @@ extern const unsigned char *fb_firmware_edid(struct device *device);
 extern void fb_edid_to_monspecs(unsigned char *edid,
 				struct fb_monspecs *specs);
 extern void fb_edid_add_monspecs(unsigned char *edid,
-				 struct fb_monspecs *specs);
+				struct fb_monspecs *specs);
 extern void fb_destroy_modedb(struct fb_videomode *modedb);
 extern int fb_find_mode_cvt(struct fb_videomode *mode, int margins, int rb);
 extern unsigned char *fb_ddc_read(struct i2c_adapter *adapter);
