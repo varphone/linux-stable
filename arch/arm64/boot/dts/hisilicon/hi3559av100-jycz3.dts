@@ -290,7 +290,7 @@
 };
 
 &i2c_bus1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c_bus2 {
@@ -373,7 +373,7 @@
 };
 
 &i2c_bus5 {
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c_bus6 {
@@ -479,7 +479,7 @@
 };
 
 &spi_bus1 {
-	status = "disabled";
+	status = "okay";
 
 	spidev@0 {
 		compatible = "rohm,dh2228fv";
