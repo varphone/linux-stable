@@ -337,10 +337,14 @@ static int hibvt_i2c_wait_idle(struct hibvt_i2c_dev *i2c)
 {
 	unsigned int time_cnt = 0;
 	unsigned int val;
+	unsigned int flags = i2c->msg ? i2c->msg->flags : 0;
 
 	do {
 		val = readl(i2c->base + HIBVT_I2C_INTR_RAW);
 		if (val & (INTR_ABORT_MASK)) {
+			if (flags & I2C_M_IGNORE_NAK)
+				return 0;
+
 			dev_err(i2c->dev, "wait idle abort!, RIS: 0x%x\n",
 					val);
 			return -EIO;
