@@ -302,7 +302,7 @@
 		compatible = "tdc,adv7280a-m";
 		reg = <0x20>;
 		insel = <0>; /* CVBS input on AIN1 */
-		mode = <1>; /* AUTO_SINGLE_ENDED_P */
+		mode = <7>; /* FAST_SWITCH_SINGLE_ENDED_P */
 		brightness = <0>;
 		contrast = <100>;
 		hue = <0>;
@@ -319,7 +319,7 @@
 		compatible = "tdc,adv7280a-m";
 		reg = <0x20>;
 		insel = <0>; /* CVBS input on AIN1 */
-		mode = <1>; /* AUTO_SINGLE_ENDED_P */
+		mode = <7>; /* FAST_SWITCH_SINGLE_ENDED_P */
 		brightness = <0>;
 		contrast = <100>;
 		hue = <0>;
@@ -385,7 +385,7 @@
 		compatible = "tdc,adv7280a-m";
 		reg = <0x20>;
 		insel = <0>; /* CVBS input on AIN1 */
-		mode = <1>; /* AUTO_SINGLE_ENDED_P */
+		mode = <7>; /* FAST_SWITCH_SINGLE_ENDED_P */
 		brightness = <0>;
 		contrast = <100>;
 		hue = <0>;
@@ -402,7 +402,7 @@
 		compatible = "tdc,adv7280a-m";
 		reg = <0x20>;
 		insel = <0>; /* CVBS input on AIN1 */
-		mode = <1>; /* AUTO_SINGLE_ENDED_P */
+		mode = <7>; /* FAST_SWITCH_SINGLE_ENDED_P */
 		brightness = <0>;
 		contrast = <100>;
 		hue = <0>;
