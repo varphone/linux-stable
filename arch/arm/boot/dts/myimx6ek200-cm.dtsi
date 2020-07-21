@@ -260,8 +260,8 @@
 	atm88pa@7a {
 		compatible = "tdc,atm88pa";
 		reg = <0x7a>;
-		interrupt-parent = <&gpio1>;
-		interrupts = <13 0>;
+		interrupt-parent = <&gpio5>;
+		interrupts = <20 0>;
 		linux,wakeup;
 		status = "okay";
 
@@ -295,7 +295,7 @@
 
 		power {
 			/* poweroff GPIO1_IO13, ACTIVE_LOW */
-			gpios = <&gpio5 20 1>;
+			gpios = <&gpio1 13 1>;
 		};
 	};
 
