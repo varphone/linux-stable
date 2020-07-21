@@ -62,6 +62,8 @@
 &i2c1 {
 	atm88pa@7a {
 		power {
+			pinctrl-names = "default"
+			pinctrl-0 = <&pinctrl_csi_keys>
 			/* poweroff GPIO5_IO20, ACTIVE_LOW */
 			gpios = <&gpio5 20 1>;
 			};
