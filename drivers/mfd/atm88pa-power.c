@@ -18,12 +18,22 @@
 static int poweroff_gpio;
 static int poweroff_level;
 
+volatile unsigned long virt_addr, phys_addr;
+volatile unsigned long *GPIO5_DR, *GPIO5_GDIR;
+
 static void atm88pa_power_off_prepare(void)
 {
-	gpio_set_value(poweroff_gpio, poweroff_level);
+	phys_addr = 0x020AC000;
+	virt_addr =(unsigned long)ioremap(phys_addr, 0x1000);
+	GPIO5_DR = (unsigned long *)(virt_addr + 0x00);
+	GPIO5_GDIR = (unsigned long *)(virt_addr + 0x04);
+	*GPIO5_GDIR |= (0X01 << 20);
+	*GPIO5_DR &= ~(0X01 << 20);
+	iounmap((void *)virt_addr);
 	printk(KERN_INFO "Power Off by GPIO %d, level %d\n",
 	       poweroff_gpio, poweroff_level);
 }
+
 #else
 static struct atm88pa *poweroff_atm88pa;
 
