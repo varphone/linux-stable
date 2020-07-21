@@ -61,13 +61,16 @@
 
 &i2c1 {
 	atm88pa@7a {
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_csi_keys>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <13 0>;
+
 		power {
-			pinctrl-names = "default";
-			pinctrl-0 = <&pinctrl_csi_keys>;
 			/* poweroff GPIO5_IO20, ACTIVE_LOW */
 			gpios = <&gpio5 20 1>;
-			};
 		};
+	};
 };
 
 &i2c2 {
