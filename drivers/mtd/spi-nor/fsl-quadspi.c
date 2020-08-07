@@ -244,9 +244,9 @@ struct lut_desc_pair current_lut_pair;
 static const struct lut_desc_pair dynamic_lut_table[] = {
 	/* VCR RD/WR pair */
 	{ {SPINOR_OP_RD_VCR, {LUT0(CMD, PAD1, SPINOR_OP_RD_EVCR) |
-			     LUT1(READ, PAD1, 0x1)} },
+			     LUT1(FSL_READ, PAD1, 0x1)} },
 	  {SPINOR_OP_WR_VCR, {LUT0(CMD, PAD1, SPINOR_OP_WD_EVCR) |
-			     LUT1(WRITE, PAD1, 0x1)} },
+			     LUT1(FSL_WRITE, PAD1, 0x1)} },
 	},
 	{/* sentinel */},
 };
@@ -412,7 +412,7 @@ static void fsl_qspi_init_lut(struct fsl_qspi *q)
 			writel(LUT0(CMD, PAD1, op) | LUT1(ADDR, PAD1, addrlen),
 				base + QUADSPI_LUT(lut_base));
 
-			writel(LUT0(DUMMY, PAD1, dm) | LUT1(READ, PAD4, rxfifo),
+			writel(LUT0(DUMMY, PAD1, dm) | LUT1(FSL_READ, PAD4, rxfifo),
 				base + QUADSPI_LUT(lut_base + 1));
 		} else {
 			dev_err(nor->dev, "Unsupported opcode : 0x%.2x\n", op);
@@ -429,7 +429,7 @@ static void fsl_qspi_init_lut(struct fsl_qspi *q)
 				| LUT1(DUMMY, PAD1, dm),
 				base + QUADSPI_LUT(lut_base + 1));
 
-			writel(LUT0(READ_DDR, PAD4, rxfifo)
+			writel(LUT0(FSL_READ_DDR, PAD4, rxfifo)
 				| LUT1(JMP_ON_CS, PAD1, 0),
 				base + QUADSPI_LUT(lut_base + 2));
 		} else if (op == SPINOR_OP_READ_1_1_4_D) {
@@ -439,7 +439,7 @@ static void fsl_qspi_init_lut(struct fsl_qspi *q)
 				base + QUADSPI_LUT(lut_base));
 
 			writel(LUT0(DUMMY, PAD1, dm)
-				| LUT1(READ_DDR, PAD4, rxfifo),
+				| LUT1(FSL_READ_DDR, PAD4, rxfifo),
 				base + QUADSPI_LUT(lut_base + 1));
 
 			writel(LUT0(JMP_ON_CS, PAD1, 0),
