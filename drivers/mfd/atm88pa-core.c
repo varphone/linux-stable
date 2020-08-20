@@ -21,23 +21,18 @@
 #include <linux/mfd/atm88pa-private.h>
 #include <linux/delay.h>
 
-static struct mutex g_atm88pa_lock;
 
-#define ATM88PA_LOCK()				mutex_lock(&g_atm88pa_lock)
-#define ATM88PA_UNLOCK()			mutex_unlock(&g_atm88pa_lock)
 #define ATM88PA_CVR_MIL_V2_MLC		0X400
 
 int atm88pa_read(struct atm88pa *atm, u8 reg)
 {
 	int ret;
 	int retries = 3;
-	ATM88PA_LOCK();
 	while (retries-- > 0) {
 		ret = i2c_smbus_read_byte_data(atm->i2c, reg);
 		if (ret >= 0)
 			break;
 	}
-	ATM88PA_UNLOCK();
 	return ret;
 }
 
@@ -45,13 +40,11 @@ int atm88pa_read_word(struct atm88pa *atm, u8 reg)
 {
 	int ret;
 	int retries = 3;
-	ATM88PA_LOCK();
 	while (retries-- > 0) {
 		ret = i2c_smbus_read_word_data(atm->i2c, reg);
 		if (ret >= 0)
 			break;
 	}
-	ATM88PA_UNLOCK();
 	return ret;
 }
 
@@ -59,13 +52,11 @@ int atm88pa_write(struct atm88pa *atm, u8 reg, u8 val)
 {
 	int ret;
 	int retries = 3;
-	ATM88PA_LOCK();
 	while (retries-- > 0) {
 		ret = i2c_smbus_write_byte_data(atm->i2c, reg, val);
 		if (ret >= 0)
 			break;
 	}
-	ATM88PA_UNLOCK();
 	return ret;
 }
 
@@ -73,13 +64,11 @@ int atm88pa_write_word(struct atm88pa *atm, u8 reg, u16 val)
 {
 	int ret;
 	int retries = 3;
-	ATM88PA_LOCK();
 	while (retries-- > 0) {
 		ret = i2c_smbus_write_word_data(atm->i2c, reg, val);
 		if (ret >= 0)
 			break;
 	}
-	ATM88PA_UNLOCK();
 	return ret;
 }
 
@@ -87,13 +76,11 @@ int atm88pa_write_block_data(struct atm88pa *atm, u8 reg, u8 len, const u8 *val)
 {
 	int ret;
 	int retries = 3;
-	ATM88PA_LOCK();
 	while (retries-- > 0) {
 		ret = i2c_smbus_write_i2c_block_data(atm->i2c, reg, len, val);
 		if (ret >= 0)
 			break;
 	}
-	ATM88PA_UNLOCK();
 	return ret;
 }
 
@@ -790,6 +777,67 @@ static int atm88pa_misc_open(struct inode *inode, struct file *file)
 	return 0;
 }
 
+static ssize_t atm88pa_misc_read(struct file * filp, char __user *buf,
+			       size_t count, loff_t *off)
+{
+	u8 val = 0;
+	int size = 0;
+	struct atm88pa *atm = container_of(filp->private_data, struct atm88pa, misc);
+	// Only for ATM88PA_CVR_MIL_V2_MLC //
+	if (atm->chip_ver != ATM88PA_CVR_MIL_V2_MLC){
+		return -ENXIO;
+	}
+	while(count) {
+		val = atm88pa_read(atm, ATM88PA_REG_RECEIVE_DATA_LEN);
+		if(val <= 0){
+			if(size > 0)
+				break;
+			return -EFAULT;
+		}
+		val = atm88pa_read(atm, ATM88PA_REG_DATA);
+		if(val < 0) {
+			break;
+		}
+		*(buf+size) = val;
+		*off += 1;
+		size = size + 1;
+		count--;
+	}
+	return size;
+}
+
+static ssize_t atm88pa_misc_write(struct file * filp, const char __user *buf,
+				size_t count, loff_t *off)
+{
+	unsigned int size = count;
+	loff_t init_off = *off;
+	int err = 0;
+	u8 data[64];
+	int val;
+	struct atm88pa *atm = container_of(filp->private_data, struct atm88pa, misc);
+	// Only for ATM88PA_CVR_MIL_V2_MLC //
+	if (atm->chip_ver != ATM88PA_CVR_MIL_V2_MLC){
+		return -ENXIO;
+	}
+	val = atm88pa_read(atm, ATM88PA_REG_SEND_DATA_LEN);
+	if(val < 0){
+		return val;
+	}
+	if(val < count){
+		return -EFAULT;
+	}
+	if(count > 64){
+		return -EFAULT;
+	}
+	int i = 0;
+	while(size > 0) {
+		data[i++]  = *(buf+i);
+		size--;
+	}
+	atm88pa_write_block_data(atm, ATM88PA_REG_DATA, count, data);
+	return count;
+}
+
 static int atm88pa_misc_release(struct inode *inode, struct file *file)
 {
 	return 0;
@@ -804,6 +852,8 @@ static long atm88pa_misc_ioctl(struct file *file, unsigned int cmd,
 static struct file_operations atm88pa_misc_fops = {
 	.owner		= THIS_MODULE,
 	.open		= atm88pa_misc_open,
+	.read		= atm88pa_misc_read,
+	.write		= atm88pa_misc_write,
 	.release	= atm88pa_misc_release,
 	.unlocked_ioctl	= atm88pa_misc_ioctl,
 };
@@ -861,7 +911,6 @@ static int atm88pa_probe(struct i2c_client* client,
 {
 	int err;
 	struct atm88pa *atm;
-	mutex_init(&g_atm88pa_lock);
 	/* Allocate resource */
 	atm = devm_kzalloc(&client->dev, sizeof(*atm), GFP_KERNEL);
 	if (!atm)
