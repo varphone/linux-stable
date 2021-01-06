@@ -783,10 +783,10 @@
 	status = "disabled";
 };
 
-&hiedmacv310_0 {
-	status = "okay";
+&hiedmacv310_1 {
+	status = "disabled";
 };
 
-&hiedmacv310_1 {
-	status = "okay";
+&hiedmacv310_2 {
+	status = "disabled";
 };
