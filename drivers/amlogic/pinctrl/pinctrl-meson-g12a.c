@@ -378,7 +378,7 @@ static const unsigned int pdm_din0_a_pins[] = {GPIOA_8};
 static const unsigned int pdm_din1_a_pins[] = {GPIOA_9};
 static const unsigned int pdm_din2_a_pins[] = {GPIOA_6};
 static const unsigned int pdm_din3_a_pins[] = {GPIOA_5};
-static const unsigned int pdm_dclk_a_pins[] = {GPIOA_7};
+static const unsigned int pdm_dclk_a_pins[] = {GPIOZ_13};
 
 /* spdif_in */
 static const unsigned int spdif_in_h_pins[] = {GPIOH_5};
