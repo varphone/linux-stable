@@ -248,13 +248,14 @@ static int aml_audio_set_spdif_mute(struct snd_kcontrol *kcontrol,
 {
 	struct snd_soc_dai *dai = snd_kcontrol_chip(kcontrol);
 	struct aml_spdif *p_spdif = snd_soc_dai_get_drvdata(dai);
-	struct pinctrl_state *state = NULL;
+	//struct pinctrl_state *state = NULL;
 	bool mute = !!ucontrol->value.integer.value[0];
-
+/*
 	if (IS_ERR_OR_NULL(p_spdif->pin_ctl)) {
 		pr_err("%s(), no pinctrl", __func__);
 		return 0;
 	}
+
 	if (mute) {
 		state = pinctrl_lookup_state
 			(p_spdif->pin_ctl, "spdif_pins_mute");
@@ -268,7 +269,7 @@ static int aml_audio_set_spdif_mute(struct snd_kcontrol *kcontrol,
 		if (!IS_ERR_OR_NULL(state))
 			pinctrl_select_state(p_spdif->pin_ctl, state);
 	}
-
+*/
 	p_spdif->mute = mute;
 
 	return 0;
@@ -1461,12 +1462,13 @@ static int aml_spdif_parse_of(struct platform_device *pdev)
 		 * only for spdif_a
 		 * spdif_b has no pin to output yet
 		 */
+/*
 		p_spdif->pin_ctl = devm_pinctrl_get_select(dev, "spdif_pins");
 		if (IS_ERR(p_spdif->pin_ctl)) {
 			dev_info(dev, "aml_spdif_get_pins error!\n");
-			return PTR_ERR(p_spdif->pin_ctl);
+			//return PTR_ERR(p_spdif->pin_ctl);
 		}
-
+*/
 		/* spdifin sample rate change event */
 		p_spdif->edev = devm_extcon_dev_allocate(dev, spdifin_extcon);
 		if (IS_ERR(p_spdif->edev)) {
