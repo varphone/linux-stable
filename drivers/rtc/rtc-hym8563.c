@@ -99,15 +99,15 @@ struct hym8563 {
 static int hym8563_rtc_read_time(struct device *dev, struct rtc_time *tm)
 {
 	struct i2c_client *client = to_i2c_client(dev);
-	struct hym8563 *hym8563 = i2c_get_clientdata(client);
+	//struct hym8563 *hym8563 = i2c_get_clientdata(client);
 	u8 buf[7];
 	int ret;
-
+/*
 	if (!hym8563->valid) {
 		dev_warn(&client->dev, "no valid clock/calendar values available\n");
 		return -EPERM;
 	}
-
+*/
 	ret = i2c_smbus_read_i2c_block_data(client, HYM8563_SEC, 7, buf);
 
 	tm->tm_sec = bcd2bin(buf[0] & HYM8563_SEC_MASK);
