@@ -47,9 +47,9 @@
 		 * power value:(0=output low, 1=output high, 2=input)
 		 * power delay:(unit in ms)
 		 */
-		lcd_cpu-gpios = <&gpio GPIOZ_9 GPIO_ACTIVE_HIGH
-				&gpio GPIOZ_8 GPIO_ACTIVE_HIGH>;
-		lcd_cpu_gpio_names = "GPIOZ_9","GPIOZ_8";
+		lcd_cpu-gpios = <&gpio GPIOH_4 GPIO_ACTIVE_HIGH
+				&gpio GPIOA_2 GPIO_ACTIVE_HIGH>;
+		lcd_cpu_gpio_names = "GPIOH_4","GPIOA_2";
 
 		lcd_0{
 			model_name = "B080XAN01";
@@ -107,6 +107,7 @@
 		lcd_1{
 			model_name = "TL070WSH27";
 			interface = "mipi";
+			lcd_size = "7";
 			basic_setting = <1024 600 /*h_active, v_active*/
 				1250 630 /*h_period, v_period*/
 				8 /*lcd_bits*/
@@ -751,9 +752,9 @@
 		pinctrl-1 = <&bl_pwm_off_pins>;
 		pinctrl_version = <2>; /* for uboot */
 		bl_pwm_config = <&bl_pwm_conf>;
-		bl-gpios = <&gpio GPIOH_4 GPIO_ACTIVE_HIGH
-			&gpio GPIOH_5 GPIO_ACTIVE_HIGH>;
-		bl_gpio_names = "GPIOH_4","GPIOH_5";
+		//bl-gpios = <&gpio GPIOH_4 GPIO_ACTIVE_HIGH
+		//	&gpio GPIOH_5 GPIO_ACTIVE_HIGH>;
+		//bl_gpio_names = "GPIOH_4","GPIOH_5";
 
 		/* pwm port: PWM_A, PWM_B, PWM_C, PWM_D, PWM_E, PWM_F, PWM_VS*/
 		/* power index:(point gpios_index, 0xff=invalid)
