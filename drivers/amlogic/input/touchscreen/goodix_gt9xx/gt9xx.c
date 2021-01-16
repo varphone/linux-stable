@@ -25,12 +25,33 @@
     #include <linux/input/mt.h>
 #endif
 
+struct gtp_config_custom {
+	int gtp_resolution_x;
+	int gtp_resolution_y;
+	int gtp_change_x2y;
+	int gtp_overturn_x;
+	int gtp_overturn_y;
+	int gtp_send_cfgs;
+	int gtp_int_tarigger;
+	int gtp_touch_wakeup;
+};
+struct gtp_config_custom *gtp_config;
+
 static const char *goodix_ts_name = "goodix-ts";
 static const char *goodix_input_phys = "input/ts";
 static struct workqueue_struct *goodix_wq;
 struct i2c_client * i2c_connect_client = NULL;
 int gtp_rst_gpio;
 int gtp_int_gpio;
+
+//add by rpdzkj
+//static int click;
+static int click_array[3];
+static int click_index = 0;
+//add end
+
+
+
 u8 config[GTP_CONFIG_MAX_LENGTH + GTP_ADDR_LENGTH]
                 = {GTP_REG_CONFIG_DATA >> 8, GTP_REG_CONFIG_DATA & 0xff};
 
@@ -293,26 +314,28 @@ s32 gtp_send_cfg(struct i2c_client *client)
 {
     s32 ret = 2;
 
-#if GTP_DRIVER_SEND_CFG
-    s32 retry = 0;
-    struct goodix_ts_data *ts = i2c_get_clientdata(client);
+	if (gtp_config->gtp_send_cfgs == 1)
+	{
+		s32 retry = 0;
+		struct goodix_ts_data *ts = i2c_get_clientdata(client);
 
-    if (ts->pnl_init_error)
-    {
-        GTP_INFO("Error occured in init_panel, no config sent");
-        return 0;
-    }
+		if (ts->pnl_init_error)
+		{
+			GTP_INFO("Error occured in init_panel, no config sent");
+			return 0;
+		}
 
-    GTP_INFO("Driver send config.");
-    for (retry = 0; retry < 5; retry++)
-    {
-        ret = gtp_i2c_write(client, config , GTP_CONFIG_MAX_LENGTH + GTP_ADDR_LENGTH);
-        if (ret > 0)
-        {
-            break;
-        }
-    }
-#endif
+		GTP_INFO("Driver send config.");
+		for (retry = 0; retry < 5; retry++)
+		{
+			ret = gtp_i2c_write(client, config , GTP_CONFIG_MAX_LENGTH + GTP_ADDR_LENGTH);
+			if (ret > 0)
+			{
+				break;
+			}
+		}
+	}
+
     return ret;
 }
 /*******************************************************
@@ -362,6 +385,35 @@ void gtp_irq_enable(struct goodix_ts_data *ts)
 }
 
 
+long int touch_wakeup_timeVal = 0;
+long int touch_wakeup_time_gt9xx(void)
+{
+	struct timespec tm;
+	tm = current_kernel_time();
+
+	return tm.tv_sec;
+}
+
+/*******************************************************
+Function:
+    kernel time difference absolut function
+Input:
+    ts:Value
+Output:
+    ts:kernel time difference absolut
+*********************************************************/
+long int time_difference_absolute_gt9xx(long int time_val)
+{
+	long time_temp = 0;
+
+	time_temp = touch_wakeup_time_gt9xx() - time_val;
+
+	if(time_temp < 0)
+		time_temp = time_temp*(-1);
+
+	return time_temp;
+}
+
 /*******************************************************
 Function:
     Report touch point event
@@ -376,10 +428,69 @@ Output:
 *********************************************************/
 static void gtp_touch_down(struct goodix_ts_data* ts,s32 id,s32 x,s32 y,s32 w)
 {
-#if GTP_CHANGE_X2Y
-    GTP_SWAP(x, y);
-#endif
+	if ( gtp_config->gtp_change_x2y == 1 )
+	{
+		GTP_SWAP(x, y);
+		//add else branch to deal change x/y and onverturn the same time
+		 if ( gtp_config->gtp_overturn_x == 1 ) {
+	        x = gtp_config->gtp_resolution_y -x;
+	    }
 
+	    if ( gtp_config->gtp_overturn_y == 1 ) {
+	        y = gtp_config->gtp_resolution_x -y;
+	    }
+	}
+	else
+	{
+
+		if ( gtp_config->gtp_overturn_x == 1 ) {
+			x = gtp_config->gtp_resolution_x -x;
+
+		}
+
+		if ( gtp_config->gtp_overturn_y == 1 ) {
+			y = gtp_config->gtp_resolution_y -y;
+		}
+	}//add end
+	//add by rpdzkj
+	if(/*click == 1*/true)
+		{
+			if (x < 30)
+				{
+					click_array[0] = x;
+					click_array[1] = 0;
+					click_index = 1;
+				}
+			else
+				{
+					click_array[1] = x;
+				}
+
+			if (click_index == 1)
+				{
+					if ((click_array[1] - click_array[0]) > (ts->abs_x_max /2))
+						{
+							input_report_key(ts->input_dev, KEY_BACK , 1);
+							input_sync(ts->input_dev);
+							input_report_key(ts->input_dev, KEY_BACK , 0);
+							input_sync(ts->input_dev);
+
+							click_array[0] = 0;
+							click_array[1] = 0;
+							click_index = 0;
+
+			//				printk("click back \n");
+
+							return;
+						}
+				}
+		}
+	if(gtp_config->gtp_touch_wakeup == 1){
+		if( ts->gtp_is_suspend != 0){
+		touch_wakeup_timeVal = touch_wakeup_time_gt9xx();//touch lcd wakeup start time;
+		}
+
+		if( (0 == ts->gtp_is_suspend) && ( time_difference_absolute_gt9xx(touch_wakeup_timeVal) > 1 )){
 #if GTP_ICS_SLOT_REPORT
 
 
@@ -396,14 +507,26 @@ static void gtp_touch_down(struct goodix_ts_data* ts,s32 id,s32 x,s32 y,s32 w)
     input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, w);
     input_report_abs(ts->input_dev, ABS_MT_WIDTH_MAJOR, w);
 #else
-
-	if((id & 0x80)) {//pen
-		id = 9;
-		input_report_abs(ts->input_dev, ABS_MT_TOOL_TYPE, 1);
+			input_report_key(ts->input_dev, BTN_TOUCH, 1);
+			input_report_abs(ts->input_dev, ABS_MT_POSITION_X, x);
+			input_report_abs(ts->input_dev, ABS_MT_POSITION_Y, y);
+			input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, w);
+			input_report_abs(ts->input_dev, ABS_MT_WIDTH_MAJOR, w);
+			input_report_abs(ts->input_dev, ABS_MT_TRACKING_ID, id);
+			input_mt_sync(ts->input_dev);
+		#endif
+			touch_wakeup_timeVal = 0;
+		}else if(1 == ts->gtp_is_suspend){
+			input_event(ts->input_dev, EV_KEY, KEY_POWER, 1);
+			input_event(ts->input_dev, EV_KEY, KEY_POWER, 0);
+				input_sync(ts->input_dev);
+			ts->gtp_is_suspend = 2;
 	} else {//finger
 		id = id & 0x0F;
 		input_report_abs(ts->input_dev, ABS_MT_TOOL_TYPE, 0 );
 	}
+	}else{
+#if GTP_ICS_SLOT_REPORT
 	input_report_key(ts->input_dev, BTN_TOUCH, 1);
 	input_report_abs(ts->input_dev, ABS_MT_TRACKING_ID, id);
 	input_report_abs(ts->input_dev, ABS_MT_PRESSURE, w);
@@ -414,7 +537,7 @@ static void gtp_touch_down(struct goodix_ts_data* ts,s32 id,s32 x,s32 y,s32 w)
 
     input_mt_sync(ts->input_dev);
 #endif
-
+	}
     GTP_DEBUG("ID:%d, X:%d, Y:%d, W:%d", id, x, y, w);
 }
 
@@ -437,6 +560,13 @@ static void gtp_touch_up(struct goodix_ts_data* ts, s32 id)
 input_mt_sync(ts->input_dev);
 
 #endif
+					click_array[0] = 0;
+					if (id == 0)
+						{
+							click_array[1] = 0;
+							click_index = 0;
+//							printk("up\n");
+						}
 }
 
 #if GTP_WITH_HOVER
@@ -479,9 +609,10 @@ static void gtp_pen_down(s32 x, s32 y, s32 w, s32 id)
 {
     struct goodix_ts_data *ts = i2c_get_clientdata(i2c_connect_client);
 
-#if GTP_CHANGE_X2Y
-    GTP_SWAP(x, y);
-#endif
+
+	if ( gtp_config->gtp_change_x2y == 1 ) {
+		GTP_SWAP(x, y);
+	}
 
     input_report_key(ts->pen_dev, BTN_TOOL_PEN, 1);
 #if GTP_ICS_SLOT_REPORT
@@ -1339,14 +1470,17 @@ static s32 gtp_init_panel(struct goodix_ts_data *ts)
 {
     s32 ret = -1;
 
-#if GTP_DRIVER_SEND_CFG
+
     s32 i = 0;
     u8 check_sum = 0;
     u8 opr_buf[16] = {0};
     u8 sensor_id = 0;
-	u8 drv_cfg_version;
-	u8 flash_cfg_version;
+	u8 drv_cfg_version = 0;
+	u8 flash_cfg_version = 0;
 
+
+if (gtp_config->gtp_send_cfgs == 1)
+{
 /* if defined CONFIG_OF, parse config data from dtsi
  *  else parse config data form header file.
  */
@@ -1416,7 +1550,7 @@ static s32 gtp_init_panel(struct goodix_ts_data *ts)
 
 	/* parse config data*/
 #ifdef GTP_CONFIG_OF
-	GTP_DEBUG("Get config data from device tree.");
+	GTP_DEBUG("Get config data from device tree...");
 	ret = gtp_parse_dt_cfg(&ts->client->dev, &config[GTP_ADDR_LENGTH], &ts->gtp_cfg_len, sensor_id);
 	if (ret < 0) {
 		GTP_ERROR("Failed to parse config data form device tree.");
@@ -1457,6 +1591,9 @@ static s32 gtp_init_panel(struct goodix_ts_data *ts)
 			flash_cfg_version = opr_buf[0];
 			drv_cfg_version = config[GTP_ADDR_LENGTH];
 
+#if GTP_FORCE_SEND_CFG
+			config[GTP_ADDR_LENGTH] = 0x00;
+#endif
 			if (flash_cfg_version < 90 && flash_cfg_version > drv_cfg_version) {
 				config[GTP_ADDR_LENGTH] = 0x00;
 			}
@@ -1467,16 +1604,16 @@ static s32 gtp_init_panel(struct goodix_ts_data *ts)
 	}
 
 #if GTP_CUSTOM_CFG
-    config[RESOLUTION_LOC]     = (u8)GTP_MAX_WIDTH;
-    config[RESOLUTION_LOC + 1] = (u8)(GTP_MAX_WIDTH>>8);
-    config[RESOLUTION_LOC + 2] = (u8)GTP_MAX_HEIGHT;
-    config[RESOLUTION_LOC + 3] = (u8)(GTP_MAX_HEIGHT>>8);
+    config[RESOLUTION_LOC]     = (u8)gtp_config->gtp_resolution_x;
+    config[RESOLUTION_LOC + 1] = (u8)(gtp_config->gtp_resolution_x>>8);
+    config[RESOLUTION_LOC + 2] = (u8)gtp_config->gtp_resolution_y;
+    config[RESOLUTION_LOC + 3] = (u8)(gtp_config->gtp_resolution_y>>8);
 
-    if (GTP_INT_TRIGGER == 0)  //RISING
+    if (gtp_config->gtp_int_tarigger == 0)  //RISING
     {
         config[TRIGGER_LOC] &= 0xfe;
     }
-    else if (GTP_INT_TRIGGER == 1)  //FALLING
+    else if (gtp_config->gtp_int_tarigger == 1)  //FALLING
     {
         config[TRIGGER_LOC] |= 0x01;
     }
@@ -1489,19 +1626,19 @@ static s32 gtp_init_panel(struct goodix_ts_data *ts)
     }
     config[ts->gtp_cfg_len] = (~check_sum) + 1;
 
-#else // driver not send config
+}else{
 
     ts->gtp_cfg_len = GTP_CONFIG_MAX_LENGTH;
     ret = gtp_i2c_read(ts->client, config, ts->gtp_cfg_len + GTP_ADDR_LENGTH);
     if (ret < 0)
     {
         GTP_ERROR("Read Config Failed, Using Default Resolution & INT Trigger!");
-        ts->abs_x_max = GTP_MAX_WIDTH;
-        ts->abs_y_max = GTP_MAX_HEIGHT;
-        ts->int_trigger_type = GTP_INT_TRIGGER;
+        ts->abs_x_max = gtp_config->gtp_resolution_x;
+        ts->abs_y_max = gtp_config->gtp_resolution_y;
+        ts->int_trigger_type = gtp_config->gtp_int_tarigger;
     }
 
-#endif // GTP_DRIVER_SEND_CFG
+}
 
     if ((ts->abs_x_max == 0) && (ts->abs_y_max == 0))
     {
@@ -1547,27 +1684,27 @@ static s32 gtp_init_panel(struct goodix_ts_data *ts)
     else
 #endif
     {
-#if GTP_DRIVER_SEND_CFG
-        ret = gtp_send_cfg(ts->client);
-        if (ret < 0)
-    	{
-            GTP_ERROR("Send config error.");
-        }
-#if GTP_COMPATIBLE_MODE
-	if (ts->chip_type != CHIP_TYPE_GT9F)
-#endif
-	{
-		if (flash_cfg_version < 90 && flash_cfg_version > drv_cfg_version) {
-			check_sum = 0;
-	        config[GTP_ADDR_LENGTH] = drv_cfg_version;
-			for (i = GTP_ADDR_LENGTH; i < ts->gtp_cfg_len; i++) {
-				check_sum += config[i];
+		if (gtp_config->gtp_send_cfgs == 1)
+		{
+			ret = gtp_send_cfg(ts->client);
+			if (ret < 0)
+			{
+				GTP_ERROR("Send config error.");
 			}
-			config[ts->gtp_cfg_len] = (~check_sum) + 1;
+		#if GTP_COMPATIBLE_MODE
+			if (ts->chip_type != CHIP_TYPE_GT9F)
+		#endif
+			{
+				if (flash_cfg_version < 90 && flash_cfg_version > drv_cfg_version) {
+					check_sum = 0;
+					config[GTP_ADDR_LENGTH] = drv_cfg_version;
+					for (i = GTP_ADDR_LENGTH; i < ts->gtp_cfg_len; i++) {
+						check_sum += config[i];
+					}
+					config[ts->gtp_cfg_len] = (~check_sum) + 1;
+				}
+			}
 		}
-	}
-
-#endif
         GTP_INFO("X_MAX: %d, Y_MAX: %d, TRIGGER: 0x%02x", ts->abs_x_max,ts->abs_y_max,ts->int_trigger_type);
     }
 
@@ -1830,9 +1967,10 @@ static s8 gtp_request_input_dev(struct goodix_ts_data *ts)
     input_set_capability(ts->input_dev, EV_KEY, KEY_POWER);
 #endif
 
-#if GTP_CHANGE_X2Y
-    GTP_SWAP(ts->abs_x_max, ts->abs_y_max);
-#endif
+
+	if ( gtp_config->gtp_change_x2y == 1 ) {
+		GTP_SWAP(ts->abs_x_max, ts->abs_y_max);
+	}
 
     input_set_abs_params(ts->input_dev, ABS_MT_POSITION_X, 0, ts->abs_x_max, 0, 0);
     input_set_abs_params(ts->input_dev, ABS_MT_POSITION_Y, 0, ts->abs_y_max, 0, 0);
@@ -2315,6 +2453,14 @@ static void gtp_parse_dt(struct device *dev)
 	gtp_int_gpio = of_get_named_gpio(np, "irq-gpio", 0);
 	gtp_rst_gpio = of_get_named_gpio(np, "reset-gpio", 0);
 
+	of_property_read_u32(np, "gtp_resolution_x", &(gtp_config->gtp_resolution_x));
+	of_property_read_u32(np, "gtp_resolution_y", &(gtp_config->gtp_resolution_y));
+	of_property_read_u32(np, "gtp_change_x2y", &(gtp_config->gtp_change_x2y));
+	of_property_read_u32(np, "gtp_overturn_x", &(gtp_config->gtp_overturn_x));
+	of_property_read_u32(np, "gtp_overturn_y", &(gtp_config->gtp_overturn_y));
+	of_property_read_u32(np, "gtp_send_cfg", &(gtp_config->gtp_send_cfgs));
+	of_property_read_u32(np, "gtp_int_tarigger", &(gtp_config->gtp_int_tarigger));
+	of_property_read_u32(np, "gtp_touch_wakeup", &(gtp_config->gtp_touch_wakeup));
 }
 
 /**
@@ -2336,6 +2482,7 @@ int gtp_parse_dt_cfg(struct device *dev, u8 *cfg, int *cfg_len, u8 sid)
 	if (!prop || !prop->value || *cfg_len == 0 || *cfg_len > GTP_CONFIG_MAX_LENGTH) {
 		return -1;/* failed */
 	} else {
+		GTP_INFO("got %s", cfg_name);
 		memcpy(cfg, prop->value, *cfg_len);
 		return 0;
 	}
@@ -2444,6 +2591,12 @@ static int goodix_ts_probe(struct i2c_client *client, const struct i2c_device_id
         GTP_ERROR("Alloc GFP_KERNEL memory failed.");
         ret = -ENOMEM;
         goto err_mem_alloc;
+	}
+    gtp_config = kzalloc(sizeof(*gtp_config), GFP_KERNEL);
+    if (gtp_config == NULL)
+    {
+        GTP_ERROR("Alloc GFP_KERNEL memory failed.");
+        return -ENOMEM;
     }
 
 #ifdef GTP_CONFIG_OF	/* device tree support */
@@ -2510,10 +2663,9 @@ static int goodix_ts_probe(struct i2c_client *client, const struct i2c_device_id
     if (ret < 0)
     {
         GTP_ERROR("GTP init panel failed.");
-        ts->abs_x_max = GTP_MAX_WIDTH;
-        ts->abs_y_max = GTP_MAX_HEIGHT;
-        ts->int_trigger_type = GTP_INT_TRIGGER;
-        goto err_chip_init;
+        ts->abs_x_max = gtp_config->gtp_resolution_x;
+        ts->abs_y_max = gtp_config->gtp_resolution_y;
+        ts->int_trigger_type = gtp_config->gtp_int_tarigger;
     }
 
     // Create proc file system
@@ -2664,6 +2816,9 @@ static void goodix_ts_suspend(struct goodix_ts_data *ts)
     s8 ret = -1;
 
     GTP_DEBUG_FUNC();
+if(gtp_config->gtp_touch_wakeup == 1){
+	ts->gtp_is_suspend = 1;
+}else{
     if (ts->enter_update) {
     	return;
     }
@@ -2694,6 +2849,7 @@ static void goodix_ts_suspend(struct goodix_ts_data *ts)
     // to avoid waking up while not sleeping
     //  delay 48 + 10ms to ensure reliability
     msleep(58);
+}
 }
 
 /*******************************************************

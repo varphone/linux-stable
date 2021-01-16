@@ -51,10 +51,11 @@
 #define GTP_CONFIG_OF
 
 //***************************PART1:ON/OFF define*******************************
-#define GTP_CUSTOM_CFG        0
+#define GTP_FORCE_SEND_CFG    0
+#define GTP_CUSTOM_CFG        1
 #define GTP_CHANGE_X2Y        0	   //swap x y
 #define GTP_DRIVER_SEND_CFG   1	   //driver send config
-#define GTP_HAVE_TOUCH_KEY    0
+#define GTP_HAVE_TOUCH_KEY    1
 #define GTP_POWER_CTRL_SLEEP  0    //power off when suspend
 #define GTP_ICS_SLOT_REPORT   1    // slot protocol
 
@@ -65,11 +66,11 @@
 #define GTP_COMPATIBLE_MODE   0    // compatible with GT9XXF
 
 #define GTP_CREATE_WR_NODE    1
-#define GTP_ESD_PROTECT       1    // esd protection with a cycle of 2 seconds
+#define GTP_ESD_PROTECT       0    // esd protection with a cycle of 2 seconds
 
-#define GTP_WITH_HOVER        1    //pen surrport hover or not 1:enable 0 disable
+#define GTP_WITH_HOVER        0    //pen surrport hover or not 1:enable 0 disable
 
-#define GTP_GESTURE_WAKEUP    1    // gesture wakeup
+#define GTP_GESTURE_WAKEUP    0    // gesture wakeup
 
 #define GTP_DEBUG_ON          0
 #define GTP_DEBUG_ARRAY_ON    0
