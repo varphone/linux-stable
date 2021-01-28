@@ -18,7 +18,6 @@
 /dts-v1/;
 
 #include "mesong12b.dtsi"
-#include "mesong12b_skt-panel.dtsi"
 
 / {
 	model = "Amlogic";
@@ -229,7 +228,7 @@
 		compatible = "amlogic, bt-dev";
 		dev_name = "bt-dev";
 		status = "okay";
-		gpio_reset = <&gpio GPIOX_17 GPIO_ACTIVE_HIGH>;
+		gpio_reset = <&gpio GPIOA_6 GPIO_ACTIVE_HIGH>;
 		gpio_hostwake = <&gpio GPIOX_19 GPIO_ACTIVE_HIGH>;
 	};
 
@@ -393,7 +392,7 @@
 		};
 		system:system{
 			pname = "system";
-			size = <0x0 0x80000000>;
+			size = <0x2 0x80000000>;
 			mask = <1>;
 		};
 		cache:cache{
@@ -413,22 +412,22 @@
 		status = "okay";
 		scan_period = <20>;
 		key_num = <1>;
-		key_name = "power";
+		key_name = "back";
 		key_code = <116>;
-		key-gpios = <&gpio_ao  GPIOAO_3  GPIO_ACTIVE_HIGH>;
-		detect_mode = <0>;/*0:polling mode, 1:irq mode*/
+		key-gpios = <&gpio_ao  GPIOAO_7  GPIO_ACTIVE_HIGH>;
+		detect_mode = <1>;//0:polling mode, 1:irq mode
 	};
 
 	adc_keypad {
 		compatible = "amlogic, adc_keypad";
 		status = "okay";
-		key_name = "vol-", "vol+", "enter";
-		key_num = <3>;
+		key_name = "vol-", "vol+", "home";
+		key_num = <1>;
 		io-channels = <&saradc SARADC_CH2>;
 		io-channel-names = "key-chan-2";
 		key_chan = <SARADC_CH2 SARADC_CH2 SARADC_CH2>;
-		key_code = <114 115 28>;
-		key_val = <143 266 389>; //val=voltage/1800mV*1023
+		key_code = <115 114 102>;
+		key_val = <0 266 389>; //val=voltage/1800mV*1023
 		key_tolerance = <40 40 40>;
 	};
 
@@ -589,10 +588,10 @@
 		//aml-audio-card,loopback = <&aml_loopback>;
 		//aml-audio-card,aux-devs = <&amlogic_codec>;
 		/*avout mute gpio*/
-		avout_mute-gpios = <&gpio_ao GPIOAO_2 GPIO_ACTIVE_HIGH>;
+		//avout_mute-gpios = <&gpio_ao GPIOAO_2 GPIO_ACTIVE_HIGH>;
 		/*for audio effect ,eqdrc */
 		aml-audio-card,effect = <&audio_effect>;
-
+/*
 		aml-audio-card,dai-link@0 {
 			format = "dsp_a";
 			mclk-fs = <512>;
@@ -601,9 +600,9 @@
 			//frame-inversion;
 			//bitclock-master = <&tdmacodec>;
 			//frame-master = <&tdmacodec>;
-			/* suffix-name, sync with android audio hal
-			 * what's the dai link used for
-			 */
+			// suffix-name, sync with android audio hal
+			// what's the dai link used for
+
 			suffix-name = "alsaPORT-pcm";
 			tdmacpu: cpu {
 				sound-dai = <&aml_tdma>;
@@ -619,7 +618,7 @@
 				sound-dai = <&dummy_codec &dummy_codec>;
 			};
 		};
-
+*/
 		aml-audio-card,dai-link@1 {
 			format = "i2s";
 			mclk-fs = <256>;
@@ -647,7 +646,7 @@
 				&amlogic_codec &ad82584f_62>;
 			};
 		};
-
+/*
 		aml-audio-card,dai-link@2 {
 			format = "i2s";
 			mclk-fs = <256>;
@@ -656,9 +655,9 @@
 			//frame-inversion;
 			bitclock-master = <&aml_tdmc>;
 			frame-master = <&aml_tdmc>;
-			/* suffix-name, sync with android audio hal
-			 * what's the dai link used for
-			 */
+			// suffix-name, sync with android audio hal
+			// what's the dai link used for
+
 			//suffix-name = "alsaPORT-tdm";
 			cpu {
 				sound-dai = <&aml_tdmc>;
@@ -672,7 +671,7 @@
 				sound-dai = <&dummy_codec &dummy_codec>;
 			};
 		};
-
+*/
 		aml-audio-card,dai-link@3 {
 			mclk-fs = <64>;
 			/* suffix-name, sync with android audio hal
@@ -760,6 +759,7 @@
 			opp-hz = /bits/ 64 <1608000000>;
 			opp-microvolt = <901000>;
 		};
+/*
 		opp09 {
 			opp-hz = /bits/ 64 <1704000000>;
 			opp-microvolt = <951000>;
@@ -768,6 +768,7 @@
 			opp-hz = /bits/ 64 <1800000000>;
 			opp-microvolt = <1001000>;
 		};
+*/
 	};
 
 	cpu_opp_table1: cpu_opp_table1 {
@@ -810,6 +811,7 @@
 			opp-hz = /bits/ 64 <1608000000>;
 			opp-microvolt = <781000>;
 		};
+/*
 		opp09 {
 			opp-hz = /bits/ 64 <1704000000>;
 			opp-microvolt = <791000>;
@@ -834,6 +836,7 @@
 			opp-hz = /bits/ 64 <2208000000>;
 			opp-microvolt = <1011000>;
 		};
+*/
 	};
 
 	cpufreq-meson {
@@ -844,12 +847,12 @@
 	sensor: sensor {
 		compatible = "soc, sensor";
 		status = "okay";
-		sensor-name = "imx290"; /*imx290;os08a10;imx227;imx307*/
-		pinctrl-names="default";
-		pinctrl-0=<&clk12_24_z_pins>;
+		sensor-name = "imx307"; /*imx290;os08a10;imx227;imx307*/
+		//pinctrl-names="default";
+		//pinctrl-0=<&clk12_24_z_pins>;
 		clocks = <&clkc CLKID_24M>;
 		clock-names = "g12a_24m";
-		reset = <&gpio GPIOZ_12 GPIO_ACTIVE_HIGH>;
+		reset = <&gpio GPIOA_12 GPIO_ACTIVE_HIGH>;
 		ir_cut_gpio = <&gpio GPIOZ_11 GPIO_ACTIVE_HIGH
 				&gpio GPIOZ_7 GPIO_ACTIVE_HIGH>;
 	};
@@ -857,20 +860,20 @@
 	iq: iq {
 		compatible = "soc, iq";
 		status = "okay";
-		sensor-name = "imx290"; /*imx290;os08a10;imx227;imx307*/
+		sensor-name = "imx307"; /*imx290;os08a10;imx227;imx307*/
 	};
 }; /* end of / */
 
 &i2c2 {
 	status = "okay";
 	pinctrl-names="default";
-	pinctrl-0=<&i2c2_master_pins2>;
+	pinctrl-0=<&i2c2_master_pins1>;
 	clock-frequency = <100000>; /* default 100k */
-	sensor-i2c@6c {
+	sensor-i2c@34 {
 		compatible = "arm, i2c-sensor";
-		reg = <0x6c>;
+		reg = <0x34>;
 		reg-names = "i2c-sensor";
-		slave-addr = <0x6c>;
+		slave-addr = <0x34>;
 		reg-type = <2>;
 		reg-data-type = <1>;
 		link-device = <&phycsi>;
@@ -1175,11 +1178,11 @@
 	};
 
 	tdmb_mclk: tdmb_mclk {
-		mux {
-			groups = "mclk0_a";
-			function = "mclk0";
-			drive-strength = <2>;
-		};
+	//	mux {
+	//		groups = "mclk0_a";
+	//		function = "mclk0";
+	//		drive-strength = <2>;
+	//	};
 	};
 	tdmout_b: tdmout_b {
 		mux { /* GPIOA_1, GPIOA_2, GPIOA_3 */
@@ -1201,10 +1204,10 @@
 	};
 
 	tdmc_mclk: tdmc_mclk {
-		mux { /* GPIOA_11 */
-			groups = "mclk1_a";
-			function = "mclk1";
-		};
+	//	mux { /* GPIOA_11 */
+	//		groups = "mclk1_a";
+	//		function = "mclk1";
+	//	};
 	};
 
 	clk12_24_z_pins:clk12_24_z_pins {
@@ -1253,9 +1256,9 @@
 
 	pdmin: pdmin {
 		mux { /* gpioa_5, gpioa_6, gpioa_7, gpioa_8, gpioa_9*/
-			groups = "pdm_din0_a",
+			groups = /*"pdm_din0_a",*/
 			/*"pdm_din1_a",*/
-			"pdm_din2_a",
+			/*"pdm_din2_a",*/
 			/*"pdm_din3_a",*/
 			"pdm_dclk_a";
 			function = "pdm";
@@ -1447,8 +1450,8 @@
 	status = "okay";
 	portnum = <1>;
 	otg = <1>;
-	gpio-vbus-power = "GPIOH_6";
-	gpios = <&gpio GPIOH_6 GPIO_ACTIVE_HIGH>;
+	//gpio-vbus-power = "GPIOH_6";
+	//gpios = <&gpio GPIOH_6 GPIO_ACTIVE_HIGH>;
 };
 
 &dwc2_a {

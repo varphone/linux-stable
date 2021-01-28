@@ -1,0 +1,152 @@
+#include "g12b_a311d_w400_buildroot.dts"
+#include "rp-memory-config.dtsi"
+
+//#include "rp-lcd-mipi-4-480-800.dtsi"
+//#include "rp-lcd-mipi-5.5-1080-1920.dtsi"
+//#include "rp-lcd-mipi-7-1024-600.dtsi"
+//#include "rp-lcd-mipi-8-800-1280.dtsi"
+//#include "rp-lcd-mipi-10-800-1280.dtsi"
+#include "rp-lcd-mipi-10-1920-1200.dtsi"
+
+
+/ {
+        model = "Amlogic";
+        amlogic-dt-id = "g12b_w400_b";
+        compatible = "rp-a311d";
+
+       pw_en {
+               compatible = "pw-en-gpio";
+               gpio0 = <&gpio GPIOA_1 GPIO_ACTIVE_HIGH>;//usb 5v
+               gpio1 = <&gpio GPIOA_5 GPIO_ACTIVE_HIGH>; //BT POWER
+               gpio2 = <&gpio GPIOA_3 GPIO_ACTIVE_HIGH>;// hub reset
+               gpio3 = <&gpio GPIOA_4 GPIO_ACTIVE_HIGH>;//spk on
+               gpio4 = <&gpio GPIOZ_11 GPIO_ACTIVE_HIGH>; //fan
+//	       gpio5 = <&gpio_ao GPIOAO_10 GPIO_ACTIVE_HIGH>;//system led
+//             gpio6 = <&gpio GPIOZ_8 GPIO_ACTIVE_LOW>;// otg mode
+//             gpio7 = <&gpio GPIOZ_9 GPIO_ACTIVE_LOW>;//USB otg PWR en
+               gpio8 = <&gpio GPIOZ_8 GPIO_ACTIVE_LOW>; // otg mode
+               gpio9 = <&gpio GPIOZ_9 GPIO_ACTIVE_LOW>;// USB otg PWR en
+               rp_not_deep_leep = <1>;
+               status = "okay";
+       };
+
+
+       rp_gpio{
+                status = "okay";
+                compatible = "rp_gpio";
+                gpioa11 {
+                        gpio_num = <&gpio GPIOA_11 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <0>;            //0:output 1:input
+                };
+                gpioa10 {
+                        gpio_num = <&gpio GPIOA_10 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <0>;            //0:output 1:input
+                };
+                gpioa13 {
+                        gpio_num = <&gpio GPIOA_13 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <0>;            //0:output 1:input
+                };
+                gpioa12 {
+                        gpio_num = <&gpio GPIOA_12 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <0>;            //0:output 1:input
+                };
+                gpioao11 {
+                        gpio_num = <&gpio_ao GPIOAO_11 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <0>;            //0:output 1:input
+                };
+/*
+                gpioz1 {
+                        gpio_num = <&gpio GPIOZ_1 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <0>;            //0:output 1:input
+                };
+                gpioz0 {
+                        gpio_num = <&gpio GPIOZ_0 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <0>;            //0:output 1:input
+                };
+                gpioz13 {
+                        gpio_num = <&gpio GPIOZ_13 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <0>;            //0:output 1:input
+                };
+*/
+                gpioz12 {
+                        gpio_num = <&gpio GPIOZ_12 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <0>;            //0:output 1:input
+                };
+                gpioz10 {
+                        gpio_num = <&gpio GPIOZ_10 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <0>;            //0:output 1:input
+                };
+/*
+                gpioz9 {
+                        gpio_num = <&gpio GPIOZ_9 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <0>;            //0:output 1:input
+                };
+                gpioz8 {
+                        gpio_num = <&gpio GPIOZ_8 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <0>;            //0:output 1:input
+                };
+*/
+                gpioz7 {
+                        gpio_num = <&gpio GPIOZ_7 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <0>;            //0:output 1:input
+                };
+                gpioz6 {
+                        gpio_num = <&gpio GPIOZ_6 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <0>;            //0:output 1:input
+                };
+                gpioz5 {
+                        gpio_num = <&gpio GPIOZ_5 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <0>;            //0:output 1:input
+                };
+                gpioz4 {
+                        gpio_num = <&gpio GPIOZ_4 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <0>;            //0:output 1:input
+                };
+                gpioa0 {
+                        gpio_num = <&gpio GPIOA_0 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <0>;            //0:output 1:input
+                };
+		gpioao5 {
+                        gpio_num = <&gpio_ao GPIOAO_5 GPIO_ACTIVE_HIGH>;
+                        gpio_function = <1>;            //0:output 1:input
+                };
+        };
+
+        stm706 {
+                status = "okay";
+                compatible = "stm706";
+                reset_gpio = <&gpio GPIOZ_3 GPIO_ACTIVE_HIGH>;
+                wdt_gpio = <&gpio GPIOZ_2 GPIO_ACTIVE_HIGH>;
+        };
+
+};
+
+&i2c_AO {
+        status = "okay";
+        pinctrl-names="default";
+        pinctrl-0=<&ao_i2c_master_pins1>;
+        clock-frequency = <100000>; // default 100k
+
+        hym8563: hym8563@51 {
+                compatible = "haoyu,hym8563";
+                reg = <0x51>;
+                #clock-cells = <0>;
+        };
+
+};
+
+
+//ttyS1 bt
+&uart_A {
+        status = "okay";
+};
+
+//ttyS3 485
+&uart_C {
+        status = "okay";
+};
+
+//ttyS4 uart1
+&uart_AO_B {
+        status = "okay";
+};
