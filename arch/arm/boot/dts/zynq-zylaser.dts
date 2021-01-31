@@ -56,8 +56,8 @@
 		};
 	};
 
-	amba_pl {
-		video_ctrl_0 {
+	amba_pl: amba_pl {
+		video_ctrl_0: video_ctrl@43c20000 {
 			interrupt-parent = <&intc>;
 			interrupts = <0 29 4>;
 		};
