@@ -714,6 +714,11 @@ static int spi_nor_write_ear(struct spi_nor *nor, u32 ear)
 		write_enable(nor);
 		code = SPINOR_OP_WREAR;
 	}
+	/* This is actually Winbond (w25q256) */
+	if (nor->jedec_id == 0xEF) {
+		write_enable(nor);
+		code = SPINOR_OP_WREAR;
+	}
 	nor->bouncebuf[0] = addr;
 
 	if (nor->spimem) {
@@ -788,6 +793,9 @@ static int read_ear(struct spi_nor *nor, struct flash_info *info)
 	else if (JEDEC_MFR(info) == CFI_MFR_ST ||
 		 JEDEC_MFR(info) == CFI_MFR_MACRONIX ||
 		 JEDEC_MFR(info) == SNOR_MFR_ISSI)
+		code = SPINOR_OP_RDEAR;
+	/* This is actually Winbond (w25q256) */
+	else if (JEDEC_MFR(info) == 0xEF)
 		code = SPINOR_OP_RDEAR;
 	else
 		return -EINVAL;
