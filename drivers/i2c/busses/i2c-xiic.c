@@ -733,6 +733,11 @@ static int xiic_busy(struct xiic_i2c *i2c)
 		err = xiic_bus_busy(i2c);
 	}
 
+#ifdef I2C_XILINX_FCBB
+	if (err)
+		err = xiic_reinit(i2c);
+#endif
+
 	return err;
 }
 

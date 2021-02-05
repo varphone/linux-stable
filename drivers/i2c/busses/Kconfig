@@ -1138,6 +1138,10 @@ config I2C_XILINX
 	  This driver can also be built as a module.  If so, the module
 	  will be called xilinx_i2c.
 
+config I2C_XILINX_FCBB
+	tristate "Force recover busy bus"
+	depends on I2C_XILINX
+
 config I2C_XLR
 	tristate "Netlogic XLR and Sigma Designs I2C support"
 	depends on CPU_XLR || ARCH_TANGO
