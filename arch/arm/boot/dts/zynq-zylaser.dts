@@ -70,7 +70,7 @@
 };
 
 &axi_iic_sensor {
-	clock-frequency = <400000>;
+	clock-frequency = <100000>;
 	status = "okay";
 
 	sensor@30 {
