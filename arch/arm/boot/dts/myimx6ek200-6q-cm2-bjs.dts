@@ -1,0 +1,124 @@
+/*
+ * Technology Development Co.,Ltd
+ * http://www.nedi.com.cn
+ * Varphone Wong <varphone@qq.com>
+ */
+
+/dts-v1/;
+#include "imx6q.dtsi"
+#include "myimx6ek200-cm.dtsi"
+
+/ {
+	model = "TDC Car Video Recorder for Military (V2-BJS)";
+	compatible = "tdc,jycz2-bjs", "tdc,cvr-mil-v2", "myzr,myimx6", "myzr,myimx6q", "myzr,myimx6cb200", "myzr,myimx6ek200", "fsl,imx6q", "fsl,imx6q-ldb";
+};
+
+&ldb {
+	lvds-channel@0 {
+		crtc = "ipu2-di0";
+
+		display-timings {
+			native-mode = <&timing0>;
+			/* 800x600p60 for NLB084SV01L */
+			timing0: hsd100pxn1 {
+				clock-frequency = <35596800>;
+				hactive = <800>;
+				vactive = <600>;
+				hback-porch = <80>;
+				hfront-porch = <48>;
+				vback-porch = <11>;
+				vfront-porch = <3>;
+				hsync-len = <32>;
+				vsync-len = <4>;
+			};
+		};
+	};
+	lvds-channel@1 {
+		crtc = "ipu2-di1";
+
+		display-timings {
+			native-mode = <&timing1>;
+			/* 800x600p60 for NLB084SV01L */
+			timing1: hsd100pxn1 {
+				clock-frequency = <35596800>;
+				hactive = <800>;
+				vactive = <600>;
+				hback-porch = <80>;
+				hfront-porch = <48>;
+				vback-porch = <11>;
+				vfront-porch = <3>;
+				hsync-len = <32>;
+				vsync-len = <4>;
+			};
+		};
+
+	};
+};
+
+&can1 {
+	status = "disabled";
+};
+
+&can2 {
+	status = "disabled";
+};
+
+&fec {
+	status = "disabled";
+};
+
+&hdmi_audio {
+	status = "disabled";
+};
+
+&hdmi_cec {
+	status = "disabled";
+};
+
+&hdmi_core {
+	status = "disabled";
+};
+
+&hdmi_video {
+	status = "disabled";
+};
+
+&i2c2 {
+	status = "disabled";
+};
+
+&i2c3 {
+	status = "disabled";
+};
+
+&mxcfb1 {
+	status = "okay";
+};
+
+&mxcfb2 {
+	status = "disabled";
+};
+
+&mxcfb3 {
+	status = "disabled";
+};
+
+&mxcfb4 {
+	status = "disabled";
+};
+
+&pcie {
+	status = "disabled";
+};
+
+&pwm1 {
+	status = "disabled";
+};
+
+&sata {
+	status = "disabled";
+};
+
+&snvs {
+	status = "disabled";
+};
