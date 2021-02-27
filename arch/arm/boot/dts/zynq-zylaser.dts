@@ -15,7 +15,7 @@
 	compatible = "fullv,zynq-zylaser", "xlnx,zynq-7000";
 
 	chosen {
-		bootargs = "console=ttyPS0,115200 earlycon root=/dev/ram0 rw";
+		bootargs = "console=ttyPS0,115200 earlycon root=/dev/ram0 rw isolcpus=1";
 		stdout-path = "serial0:115200n8";
 	};
 
@@ -117,18 +117,30 @@
 			compatible = "fixed-partitions";
 
 			partition@0 {
-				label = "qspi-boot";
-				reg = <0x00000000 0x00A00000>;
+				label = "qspi-fsbl";
+				reg = <0x00000000 0x00040000>;
 			};
 			partition@1 {
-				label = "qspi-bootenv";
-				reg = <0x00A00000 0x00020000>;
+				label = "qspi-fpga";
+				reg = <0x00040000 0x00500000>;
 			};
 			partition@2 {
-				label = "qspi-bootscr";
-				reg = <0x00A40000 0x00040000>;
+				label = "qspi-uboot";
+				reg = <0x00540000 0x000C0000>;
 			};
 			partition@3 {
+				label = "qspi-bootenv";
+				reg = <0x00600000 0x00020000>;
+			};
+			partition@4 {
+				label = "qspi-bootscr";
+				reg = <0x00640000 0x00040000>;
+			};
+			partition@5 {
+				label = "qspi-misc";
+				reg = <0x00680000 0x00400000>;
+			};
+			partition@6 {
 				label = "qspi-spare";
 				reg = <0x00A80000 0x00000000>;
 			};
