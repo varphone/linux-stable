@@ -61,6 +61,11 @@
 			interrupt-parent = <&intc>;
 			interrupts = <0 29 4>;
 		};
+
+		laser_ctrl_0: laser_ctrl@43c10000 {
+			interrupt-parent = <&intc>;
+			interrupts = <0 30 4>;
+		};
 	};
 
 	zylaser {
