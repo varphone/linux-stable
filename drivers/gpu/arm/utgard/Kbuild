@@ -197,6 +197,9 @@ ccflags-$(CONFIG_MALI400_DEBUG) += -DDEBUG
 # Use our defines when compiling
 ccflags-y += -I$(src) -I$(src)/include -I$(src)/common -I$(src)/linux -I$(src)/platform
 
+# Fix -Werror=sizeof-pointer-memaccess for GCC10
+ccflags-y += -Wno-error=sizeof-pointer-memaccess
+
 # Get subversion revision number, fall back to only ${MALI_RELEASE_NAME} if no svn info is available
 MALI_RELEASE_NAME=$(shell cat $(src)/.version 2> /dev/null)
 

@@ -5,3 +5,6 @@ decoder_common-objs	+=	config_parser.o secprot.o vdec_profile.o
 decoder_common-objs	+=	amstream_profile.o 
 decoder_common-objs	+=	frame_check.o amlogic_fbc_hook.o
 
+# Fix -Werror=stack-usage= in GCC10
+CFLAGS_frame_check.o	:= -Wno-error=stack-usage=
+
