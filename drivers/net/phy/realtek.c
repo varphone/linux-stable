@@ -54,7 +54,9 @@ unsigned int external_rx_delay;
 unsigned int external_tx_delay;
 #endif
 
+#ifdef CONFIG_KHADAS_MCU
 extern int mcu_get_wol_status(void);
+#endif
 
 static int __init init_wol_state(char *str)
 {
@@ -237,8 +239,10 @@ static int rtl8211f_config_init(struct phy_device *phydev)
 
 	g_phydev = phydev;
 
+#ifdef CONFIG_KHADAS_MCU
 	if (3 == mcu_get_wol_status())
 		enable_wol(3, false);
+#endif
 
 	/* restore to default page 0 */
 	phy_write(phydev, RTL8211F_PAGE_SELECT, 0x0);
