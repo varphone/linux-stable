@@ -62,6 +62,14 @@
 			interrupts = <0 31 4>;
 			reg = <0x41600000 0x10000>;
 		};
+		gauss_filter_0: gauss_filter@43c30000 {
+			clock-names = "s00_axi_aclk";
+			clocks = <&clkc 15>;
+			compatible = "xlnx,gauss-filter-1.0";
+			reg = <0x43c30000 0x10000>;
+			xlnx,s00-axi-addr-width = <0x8>;
+			xlnx,s00-axi-data-width = <0x20>;
+		};
 		laser_ctrl_0: laser_ctrl@43c10000 {
 			clock-names = "s00_axi_aclk";
 			clocks = <&clkc 15>;
