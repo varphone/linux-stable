@@ -1,5 +1,4 @@
 #include "g12b_a311d_w400_buildroot.dts"
-#include "rp-memory-config.dtsi"
 
 //#include "rp-lcd-mipi-4-480-800.dtsi"
 //#include "rp-lcd-mipi-5.5-1080-1920.dtsi"
