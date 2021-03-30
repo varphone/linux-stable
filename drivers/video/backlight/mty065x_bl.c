@@ -802,7 +802,6 @@ static int mty065x_configure(struct mty065x *mty)
 		mty065x_set_input_format(mty);
 		/* Input Source Select must be the last to apply the settings */
 		mty065x_set_input_select_value(mty, 1);
-		mty065x_set_test_pattern(mty);
 	} else {
 		/* Fix image crop if changed by test pattern */
 		if (mty->props.image_crop[2] != mty->props.input_size[0] ||
@@ -817,7 +816,6 @@ static int mty065x_configure(struct mty065x *mty)
 		mty065x_set_input_format(mty);
 		/* Input Source Select must be the last to apply the settings */
 		mty065x_set_input_select(mty);
-		mty065x_set_test_pattern_value(mty, 0);
 	}
 
 	/* Unfreeze the image after set */
