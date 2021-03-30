@@ -71,6 +71,12 @@
 		compatible = "nxp,lm75adp";
 		reg = <0x48>;
 	};
+
+	pca9557@18 {
+		compatible = "nxp,pca9557";
+		reg = <0x18>;
+		gpio-controller;
+	};
 };
 
 &i2c2 {
