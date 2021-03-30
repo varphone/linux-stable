@@ -458,6 +458,22 @@ config BACKLIGHT_MTY065X
 	  If you have a RJRMTY0650-A Military Projector say Y to enable the
 	  backlight driver.
 
+if BACKLIGHT_MTY065X
+
+choice
+	prompt "Hardware version"
+	default BACKLIGHT_MTY065X_V1
+
+config BACKLIGHT_MTY065X_V1
+	bool "V1"
+
+config BACKLIGHT_MTY065X_V2
+	bool "V2"
+
+endchoice
+
+endif # BACKLIGHT_MTY065X
+
 endif # BACKLIGHT_CLASS_DEVICE
 
 endif # BACKLIGHT_LCD_SUPPORT
