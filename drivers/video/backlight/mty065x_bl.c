@@ -802,9 +802,7 @@ static int mty065x_configure(struct mty065x *mty)
 		mty065x_set_input_format(mty);
 		/* Input Source Select must be the last to apply the settings */
 		mty065x_set_input_select_value(mty, 1);
-#ifdef CONFIG_BACKLIGHT_MTY065X_V2
-
-#else
+#if !defined(CONFIG_BACKLIGHT_MTY065X_V2)
 		mty065x_set_test_pattern(mty);
 #endif
 
@@ -822,9 +820,7 @@ static int mty065x_configure(struct mty065x *mty)
 		mty065x_set_input_format(mty);
 		/* Input Source Select must be the last to apply the settings */
 		mty065x_set_input_select(mty);
-#ifdef CONFIG_BACKLIGHT_MTY065X_V2
-
-#else
+#if !defined(CONFIG_BACKLIGHT_MTY065X_V2)
 		mty065x_set_test_pattern_value(mty, 0);
 #endif
 	}
