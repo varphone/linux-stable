@@ -9,7 +9,7 @@
 #include "myimx6ek200-cm.dtsi"
 
 / {
-	model = "TDC Car Video Recorder for Military (V2-NMTY)";
+	model = "TDC Car Video Recorder for Military (V2-TY2)";
 	compatible = "tdc,cvr-mil-v2", "myzr,myimx6", "myzr,myimx6q", "myzr,myimx6cb200", "myzr,myimx6ek200", "fsl,imx6q", "fsl,imx6q-ldb";
 
 	reserved-memory {
@@ -27,8 +27,34 @@
 	};
 };
 
+&i2c1 {
+
+	atm88pa@7a {
+		power {
+			/* poweroff GPIO5_IO20, ACTIVE_LOW */
+			gpios = <&gpio5 20 1>;
+		};
+	};
+
+	lm75adp@48 {
+		compatible = "nxp,lm75adp";
+		reg = <0x48>;
+	};
+
+	pca9557@18 {
+		compatible = "nxp,pca9557";
+		reg = <0x18>;
+		gpio-controller;
+	};
+};
+
 &ldb {
-	status = "okay";
+	lvds-channel@0 {
+		crtc = "ipu2-di0";
+	};
+	lvds-channel@1 {
+		crtc = "ipu2-di1";
+	};
 };
 
 &can1 {
@@ -59,32 +85,12 @@
 	status = "disabled";
 };
 
-&i2c1 {
-	atm88pa@7a {
-		power {
-			/* poweroff GPIO5_IO20, ACTIVE_LOW */
-			gpios = <&gpio5 20 1>;
-		};
-	};
-
-	lm75adp@48 {
-		compatible = "nxp,lm75adp";
-		reg = <0x48>;
-	};
-
-	pca9557@18 {
-		compatible = "nxp,pca9557";
-		reg = <0x18>;
-		gpio-controller;
-	};
-};
-
 &i2c2 {
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c3 {
-	status = "okay";
+	status = "disabled";
 };
 
 &mxcfb1 {
@@ -112,7 +118,7 @@
 };
 
 &sata {
-	status = "okay";
+	status = "disabled";
 };
 
 &snvs {
