@@ -30,7 +30,11 @@ static struct mutex		mty065x_lock;
 
 /* The default mappings for led pwm level */
 static u16 mty065x_led_pwm_level_default_map[] = {
+#if defined(CONFIG_BACKLIGHT_MTY065X_V2)
+	32, 41, 60, 80, 110, 140, 180, 220, 260, 350,
+#else
 	41, 60, 80, 110, 140, 180, 220, 260, 350, 600,
+#endif
 };
 
 /* Max test pattern number */
