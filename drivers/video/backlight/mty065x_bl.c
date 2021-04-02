@@ -19,6 +19,11 @@
 #include <linux/backlight.h>
 #include <linux/slab.h>
 #include <linux/delay.h>
+#include <linux/mutex.h>
+
+static struct mutex		mty065x_lock;
+#define MTY065X_LOCK()		mutex_lock(&mty065x_lock)
+#define MTY065X_UNLOCK()	mutex_unlock(&mty065x_lock)
 
 /* Max led pwm level number */
 #define MTY065X_LED_PWM_LEVEL_MAX	10
@@ -158,6 +163,7 @@ static int mty065x_read_byte_data(struct mty065x *mty, u8 command)
 {
 	int retries = 3;
 	int val;
+	MTY065X_LOCK();
 	while (retries-- > 0) {
 		val = i2c_smbus_read_byte_data(mty->i2c, command);
 		if (val >= 0)
@@ -166,6 +172,7 @@ static int mty065x_read_byte_data(struct mty065x *mty, u8 command)
 	if (val < 0) {
 		dev_warn(mty->dev, "i2c_smbus_read_byte_data() error: %d", val);
 	}
+	MTY065X_UNLOCK();
 	return val;
 }
 
@@ -174,6 +181,7 @@ static int mty065x_read_i2c_block_data(struct mty065x *mty, u8 command,
 {
 	int retries = 3;
 	int val;
+	MTY065X_LOCK();
 	while (retries-- > 0) {
 		val = i2c_smbus_read_i2c_block_data(mty->i2c, command, length, values);
 		if (val >= length)
@@ -182,6 +190,7 @@ static int mty065x_read_i2c_block_data(struct mty065x *mty, u8 command,
 	if (val < length) {
 		dev_warn(mty->dev, "i2c_smbus_read_i2c_block_data() error: %d", val);
 	}
+	MTY065X_UNLOCK();
 	return val;
 }
 
@@ -189,6 +198,7 @@ static int mty065x_write_byte_data(struct mty065x *mty, u8 command, u8 value)
 {
 	int retries = 3;
 	int val;
+	MTY065X_LOCK();
 	while (retries-- > 0) {
 		val = i2c_smbus_write_byte_data(mty->i2c, command, value);
 		if (val >= 0)
@@ -197,6 +207,7 @@ static int mty065x_write_byte_data(struct mty065x *mty, u8 command, u8 value)
 	if (val < 0) {
 		dev_warn(mty->dev, "i2c_smbus_write_byte_data() error: %d", val);
 	}
+	MTY065X_UNLOCK();
 	return val;
 }
 
@@ -205,6 +216,7 @@ static int mty065x_write_i2c_block_data(struct mty065x *mty, u8 command,
 {
 	int retries = 3;
 	int val;
+	MTY065X_LOCK();
 	while (retries-- > 0) {
 		val = i2c_smbus_write_i2c_block_data(mty->i2c, command, length, values);
 		if (val >= 0)
@@ -213,6 +225,7 @@ static int mty065x_write_i2c_block_data(struct mty065x *mty, u8 command,
 	if (val < 0) {
 		dev_warn(mty->dev, "i2c_smbus_write_i2c_block_data() error: %d", val);
 	}
+	MTY065X_UNLOCK();
 	return val;
 }
 
@@ -1475,6 +1488,7 @@ static int mty065x_bl_probe(struct i2c_client *client,
 	mty->dev = &client->dev;
 	mty->i2c = client;
 
+	mutex_init(&mty065x_lock);
 	ret = mty065x_read_byte_data(mty, MTY065X_CHIP_ID_R);
 	if (ret < 0) {
 		dev_err(mty->dev, "MTY065X not found.\n");
