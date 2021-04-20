@@ -31,7 +31,7 @@ static struct mutex		mty065x_lock;
 /* The default mappings for led pwm level */
 static u16 mty065x_led_pwm_level_default_map[] = {
 #if defined(CONFIG_BACKLIGHT_MTY065X_V2)
-	32, 41, 60, 80, 110, 140, 180, 220, 260, 350,
+	41, 60, 80, 110, 140, 180, 220, 260, 350, 420,
 #else
 	41, 60, 80, 110, 140, 180, 220, 260, 350, 600,
 #endif
@@ -615,6 +615,7 @@ static void mty065x_get_led_pwm_level(struct mty065x *mty, int *level)
 static void mty065x_set_led_pwm_level(struct mty065x *mty, int level)
 {
 	int pwm;
+	u32 rpwm, gpwm;
 	level = level > MTY065X_LED_PWM_LEVEL_MAX ? MTY065X_LED_PWM_LEVEL_MAX : level;
 
 	/* Skip level 0 */
@@ -622,8 +623,12 @@ static void mty065x_set_led_pwm_level(struct mty065x *mty, int level)
 		return;
 
 	pwm = mty->props.led_pwm_level_map[level -1];
-	mty->props.rgb_led_pwm.red = pwm;
-	mty->props.rgb_led_pwm.green = pwm;
+	rpwm = pwm;
+	gpwm = pwm;
+	rpwm = rpwm * 857 / 1000;
+	gpwm = gpwm * 1286 / 1000;
+	mty->props.rgb_led_pwm.red = rpwm;
+	mty->props.rgb_led_pwm.green = gpwm;
 	mty->props.rgb_led_pwm.blue = pwm;
 	mty065x_set_rgb_led_pwm(mty);
 }
