@@ -533,9 +533,9 @@ static struct reg_sequence lt8918_1920x1080_25fps[] = {
  */
 __maybe_unused
 static struct reg_sequence lt8918_1920x1080_30fps[] = {
-    LT8918_DEFINE_PTN_PIXCLK(0xCA, 0x97, 0xC2, 0x8F, 0x5C),
+    LT8918_DEFINE_MLRX_INIT(),
+    LT8918_DEFINE_BT1120_INPUT(1920, 1080, 88, 44, 148, 32, 5, 8),
     LT8918_DEFINE_TX_PLL(0x2C, 0x31, 0x02, 0x44),
-    LT8918_DEFINE_PTN_TIMING(1920, 1080, 88, 44, 148, 32, 5, 8),
     LT8918_DEFINE_TX_DPHY(50),
     LT8918_DEFINE_TX_PROTOCOL(1920, 1080, 88, 44, 148, 32, 5, 8, 800),
 };
