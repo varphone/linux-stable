@@ -2686,6 +2686,28 @@ static int rtl8211e_phy_fix(struct phy_device *phy_dev)
     return 0;
 }
 
+static int rtl8211f_phy_fix(struct phy_device *phy_dev)
+{
+    u32 v;
+    int ret;
+
+    /* select Extension page */
+    phy_write(phy_dev, 0x1f, 0xd08);
+
+    /* enable TXDLY */
+    ret = phy_read(phy_dev, 0x11);
+    if (ret < 0) {
+        return ret;
+    }
+    v = ret;
+    phy_write(phy_dev, 0x11, v | (1 << 8));
+
+    /* select to page 0 */
+    phy_write(phy_dev, 0x1f, 0);
+
+    return 0;
+}
+
 static void phy_register_fixups(void)
 {
     phy_register_fixup_for_uid(PHY_ID_KSZ8051MNL, DEFAULT_PHY_MASK,
@@ -2694,6 +2716,8 @@ static void phy_register_fixups(void)
                                KSZ8081RNB_phy_fix);
     phy_register_fixup_for_uid(REALTEK_PHY_ID_8211E, REALTEK_PHY_MASK,
                                rtl8211e_phy_fix);
+    phy_register_fixup_for_uid(REALTEK_PHY_ID_8211F, REALTEK_PHY_MASK,
+                               rtl8211f_phy_fix);
 }
 
 static void phy_unregister_fixups(void)

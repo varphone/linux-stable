@@ -299,6 +299,7 @@ enum higmac_tx_err {
 #define PHY_ID_KSZ8081RNB          (0x00221560)
 #define DEFAULT_PHY_MASK           (0xfffffff0)
 #define REALTEK_PHY_ID_8211E       (0x001cc915)
+#define REALTEK_PHY_ID_8211F       (0x001cc916)
 #define REALTEK_PHY_MASK           (0x001fffff)
 
 enum {
