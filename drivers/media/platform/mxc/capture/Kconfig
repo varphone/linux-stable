@@ -45,6 +45,23 @@ config MXC_RGBIN_CH7026_TV
         ---help---
           If you plan to use the CH7025/CH7026 TV/VGA Encoder with your MXC system, say Y here.
 
+if MXC_RGBIN_CH7026_TV
+
+choice
+        prompt "Hardware version"
+        default MXC_RGBIN_CH7026_TV_V2
+
+config MXC_RGBIN_CH7026_TV_V1
+        bool "V1"
+
+config MXC_RGBIN_CH7026_TV_V2
+        bool "V2"
+
+endchoice
+
+endif # MXC_RGBIN_CH7026_TV
+
+
 choice
 	prompt "Select Overlay Rounting"
 	default MXC_IPU_DEVICE_QUEUE_SDC

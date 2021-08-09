@@ -6,9 +6,13 @@
     the Free Software Foundation; version 2 of the License.
 */
 
+
+#include <linux/delay.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/module.h>
+#include <linux/of_gpio.h>
+#include <linux/gpio.h>
 #include <linux/slab.h>
 #include <linux/i2c.h>
 #include <linux/proc_fs.h>
@@ -38,6 +42,7 @@ struct i2c_client *ch7026_client = NULL;
 static struct input_stream_info gInputInfo;
 static int gEnable;
 
+#if defined(CONFIG_MXC_RGBIN_CH7026_TV_V1)
 unsigned char REG_MAP_720_576[ ][2] =
 {
 	{ 0x02, 0x01 },{ 0x02, 0x03 },{ 0x03, 0x00 },{ 0x04, 0x39 },{ 0x07, 0x18 },{ 0x0A, 0x10 },{ 0x0D, 0x83 }, { 0x0C, 0x50 },
@@ -49,8 +54,44 @@ unsigned char REG_MAP_720_576[ ][2] =
 	{ 0x03, 0x00 },{ 0x03, 0x00 },{ 0x03, 0x00 },{ 0x03, 0x00 },{ 0x03, 0x00 },
 	{ 0x06, 0x70 },{ 0x02, 0x02 },{ 0x02, 0x03 },{ 0x04, 0x00 },
 };
+#endif
+#if defined(CONFIG_MXC_RGBIN_CH7026_TV_V2)
+unsigned char REG_MAP_720_576[ ][2] =
+{
+	{ 0x02, 0x01 },{ 0x02, 0x03 },{ 0x03, 0x00 },{ 0x04, 0x39 },{ 0x07, 0x18 },
+	{ 0x0A, 0x10 },{ 0x0C, 0x00 },{ 0x0D, 0x83 },{ 0x0F, 0x1A },{ 0x10, 0xD0 },
+	{ 0x11, 0x60 },{ 0x12, 0x40 },{ 0x13, 0x0C },{ 0x14, 0x40 },{ 0x15, 0x12 },
+	{ 0x16, 0x40 },{ 0x17, 0x71 },{ 0x19, 0x05 },{ 0x1A, 0x05 },{ 0x1C, 0x70 },
+	{ 0x1D, 0xC0 },{ 0x21, 0x12 },{ 0x22, 0x40 },{ 0x23, 0x71 },{ 0x41, 0xE2 },
+	{ 0x4D, 0x04 },{ 0x51, 0x54 },{ 0x52, 0x1B },{ 0x53, 0x1A },{ 0x55, 0xE5 },
+	{ 0x5E, 0x80 },{ 0x7D, 0x62 },{ 0x04, 0x38 },{ 0x06, 0x71 },{ 0x03, 0x00 },
+	{ 0x03, 0x00 },{ 0x03, 0x00 },{ 0x03, 0x00 },{ 0x03, 0x00 },{ 0x06, 0x70 },
+	{ 0x02, 0x02 },{ 0x02, 0x03 },{ 0x04, 0x30 },
+};
+#endif
 
 #define REG_MAP_720_576_LENGTH ( sizeof(REG_MAP_720_576) / (2*sizeof(unsigned char)) )
+
+#if defined(CONFIG_MXC_RGBIN_CH7026_TV_V2)
+static int g_ch7026_reset_gpio = -1;
+static enum of_gpio_flags g_ch7026_reset_gpio_flags = 0;
+
+/* Reset the chip
+@param reset		0 = Leave reset, 1 = Enter reset
+*/
+static void ch7026_chip_reset(int reset)
+{
+	/* Skip if gpio not set */
+	if (g_ch7026_reset_gpio < 0)
+		return;
+	/* Reset ? */
+	if (g_ch7026_reset_gpio_flags & OF_GPIO_ACTIVE_LOW)
+		gpio_direction_output(g_ch7026_reset_gpio, reset ? 0 : 1);
+	else
+		gpio_direction_output(g_ch7026_reset_gpio, reset ? 1 : 0);
+
+}
+#endif
 
 void ch7026_write_data(u8 cmd, u8 val)
 {
@@ -379,7 +420,6 @@ static int ch7026_probe(struct i2c_client *client,
 	struct i2c_adapter *adapter = client->adapter;
 	if (!i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE_DATA))
 		return -ENODEV;
-	
 	struct ch7026_data *data;
 	data = devm_kzalloc(&client->dev, sizeof(struct ch7026_data), GFP_KERNEL);
 	if (!data)
@@ -399,7 +439,12 @@ static int ch7026_probe(struct i2c_client *client,
 	//initialize variable
 	gInputInfo.xres = 720;
 	gInputInfo.yres = 576;
+#if defined(CONFIG_MXC_RGBIN_CH7026_TV_V1)
 	gInputInfo.iformat = CH7026_RGB666;
+#endif
+#if defined(CONFIG_MXC_RGBIN_CH7026_TV_V2)
+	gInputInfo.iformat = CH7026_RGB888;
+#endif
 	gInputInfo.oformat = CH7026_PAL_B;
 	gInputInfo.swap = CH7026_RGB_ORDER;
 	gEnable = 0;
@@ -408,7 +453,6 @@ static int ch7026_probe(struct i2c_client *client,
 	printk("Chrontel CH7025/CH7026 TV/VGA Encoder driver loaded successfully\n");
 	
 	ch7026_misc_register(client);
-	//ch7026_enable(true);
 	return 0;
 }
 static int ch7026_remove(struct i2c_client *client)
