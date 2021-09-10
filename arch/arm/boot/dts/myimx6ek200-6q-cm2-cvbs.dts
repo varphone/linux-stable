@@ -40,6 +40,16 @@
 			gpios = <&gpio5 20 1>;
 		};
 	};
+
+	i2c_mega320p@15 {
+		compatible = "tdc,i2c_mega320p";
+		reg = <0x15>;
+	};
+
+	fms6502@03 {
+		compatible = "tdc,fms6502";
+		reg = <0x03>;
+	};
 };
 
 &ldb {
