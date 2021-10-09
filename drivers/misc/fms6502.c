@@ -29,6 +29,8 @@
 #define FMS6502_REG_CLAMP		    0x03
 #define FMS6502_REG_GAIN    		0x04
 
+static int fms6502_reg_output_val[3];
+
 static const struct i2c_device_id fms6502_id[] = {
 	{ "fms6502", 0 },
 	{ }
@@ -60,7 +62,7 @@ int limit_inputval(int val, int min, int max)
 static ssize_t show_out1(struct device *dev, struct device_attribute *attr,
 			  char *buf)
 {
-	int ret_val = fms6502_read_data(FMS6502_REG_OUTPUT_1_2) & 0x0F;
+	int ret_val = fms6502_reg_output_val[0] & 0x0F;
 	
 	return sprintf(buf, "%d\n", ret_val);
 }
@@ -73,11 +75,7 @@ static ssize_t store_out1(struct device *dev, struct device_attribute *attr,
 
 	sscanf(buf, "%d", &val);
     val = limit_inputval(val,0,8);
-	ret = fms6502_read_data(FMS6502_REG_OUTPUT_1_2);
-    if (ret < 0)
-        return ret;
-    ret &= 0xF0;
-    val |= ret;
+    val |= (fms6502_reg_output_val[0] & 0xF0);
 	fms6502_write_data(FMS6502_REG_OUTPUT_1_2, val);
 	return count;
 }
@@ -85,7 +83,7 @@ static ssize_t store_out1(struct device *dev, struct device_attribute *attr,
 static ssize_t show_out2(struct device *dev, struct device_attribute *attr,
 			  char *buf)
 {
-	int ret_val = fms6502_read_data(FMS6502_REG_OUTPUT_1_2) & 0xF0;
+	int ret_val = fms6502_reg_output_val[0] & 0xF0;
 	ret_val = ret_val >> 4;
 
 	return sprintf(buf, "%d\n", ret_val);
@@ -99,11 +97,7 @@ static ssize_t store_out2(struct device *dev, struct device_attribute *attr,
 
 	sscanf(buf, "%d", &val);
     val = limit_inputval(val,0,8);
-	ret = fms6502_read_data(FMS6502_REG_OUTPUT_1_2);
-    if (ret < 0)
-        return ret;
-    ret &= 0x0F;
-    val = (val << 4) | ret;
+    val = (val << 4) | (fms6502_reg_output_val[0] & 0x0F));
 	fms6502_write_data(FMS6502_REG_OUTPUT_1_2, val);
 	return count;
 }
@@ -111,7 +105,7 @@ static ssize_t store_out2(struct device *dev, struct device_attribute *attr,
 static ssize_t show_out3(struct device *dev, struct device_attribute *attr,
 			  char *buf)
 {
-	int ret_val = fms6502_read_data(FMS6502_REG_OUTPUT_3_4) & 0x0F;
+	int ret_val = fms6502_reg_output_val[1] & 0x0F;
 	
 	return sprintf(buf, "%d\n", ret_val);
 }
@@ -124,11 +118,7 @@ static ssize_t store_out3(struct device *dev, struct device_attribute *attr,
 
 	sscanf(buf, "%d", &val);
     val = limit_inputval(val,0,8);
-	ret = fms6502_read_data(FMS6502_REG_OUTPUT_3_4);
-    if (ret < 0)
-        return ret;
-    ret &= 0xF0;
-    val |= ret;
+    val |= (fms6502_reg_output_val[1] & 0xF0);
 	fms6502_write_data(FMS6502_REG_OUTPUT_3_4, val);
 	return count;
 }
@@ -136,7 +126,7 @@ static ssize_t store_out3(struct device *dev, struct device_attribute *attr,
 static ssize_t show_out4(struct device *dev, struct device_attribute *attr,
 			  char *buf)
 {
-	int ret_val = fms6502_read_data(FMS6502_REG_OUTPUT_3_4) & 0xF0;
+	int ret_val = fms6502_reg_output_val[1] & 0xF0;
 	ret_val = ret_val >> 4;
 
 	return sprintf(buf, "%d\n", ret_val);
@@ -150,11 +140,7 @@ static ssize_t store_out4(struct device *dev, struct device_attribute *attr,
 
 	sscanf(buf, "%d", &val);
     val = limit_inputval(val,0,8);
-	ret = fms6502_read_data(FMS6502_REG_OUTPUT_3_4);
-    if (ret < 0)
-        return ret;
-    ret &= 0x0F;
-    val = (val << 4) | ret;
+    val = (val << 4) | (fms6502_reg_output_val[1] & 0x0F);
 	fms6502_write_data(FMS6502_REG_OUTPUT_3_4, val);
 	return count;
 }
@@ -162,7 +148,7 @@ static ssize_t store_out4(struct device *dev, struct device_attribute *attr,
 static ssize_t show_out5(struct device *dev, struct device_attribute *attr,
 			  char *buf)
 {
-	int ret_val = fms6502_read_data(FMS6502_REG_OUTPUT_5_6) & 0x0F;
+	int ret_val = fms6502_reg_output_val[2] & 0x0F;
 	
 	return sprintf(buf, "%d\n", ret_val);
 }
@@ -175,11 +161,7 @@ static ssize_t store_out5(struct device *dev, struct device_attribute *attr,
 
 	sscanf(buf, "%d", &val);
     val = limit_inputval(val,0,8);
-	ret = fms6502_read_data(FMS6502_REG_OUTPUT_5_6);
-    if (ret < 0)
-        return ret;
-    ret &= 0xF0;
-    val |= ret;
+    val |= (fms6502_reg_output_val[2] & 0xF0);
 	fms6502_write_data(FMS6502_REG_OUTPUT_5_6, val);
 	return count;
 }
@@ -187,7 +169,7 @@ static ssize_t store_out5(struct device *dev, struct device_attribute *attr,
 static ssize_t show_out6(struct device *dev, struct device_attribute *attr,
 			  char *buf)
 {
-	int ret_val = fms6502_read_data(FMS6502_REG_OUTPUT_5_6) & 0xF0;
+	int ret_val = fms6502_reg_output_val[2] & 0xF0;
 	ret_val = ret_val >> 4;
 
 	return sprintf(buf, "%d\n", ret_val);
@@ -197,15 +179,10 @@ static ssize_t store_out6(struct device *dev, struct device_attribute *attr,
 			 const char *buf, size_t count)
 {
 	int val;
-    int ret;
 
 	sscanf(buf, "%d", &val);
     val = limit_inputval(val,0,8);
-	ret = fms6502_read_data(FMS6502_REG_OUTPUT_5_6);
-    if (ret < 0)
-        return ret;
-    ret &= 0x0F;
-    val = (val << 4) | ret;
+    val = (val << 4) | (fms6502_reg_output_val[2] & 0x0F);
 	fms6502_write_data(FMS6502_REG_OUTPUT_5_6, val);
 	return count;
 }
@@ -346,6 +323,7 @@ static int fms6502_probe(struct i2c_client *client,
 			       const struct i2c_device_id *id)
 {
 	struct i2c_adapter *adapter = client->adapter;
+	int i = 0;
 	if (!i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE_DATA))
 		return -ENODEV;
 	struct fms6502_data *data;
@@ -355,11 +333,13 @@ static int fms6502_probe(struct i2c_client *client,
 	i2c_set_clientdata(client, data);
 	data->dev = &client->dev;
 	data->i2c = client;
-	
+
 	//initialize variable
-	fms6502_client = client;	
+	fms6502_client = client;
 	fms6502_misc_register(client);
-    
+	for(i = 0; i < 3; i++)}{
+		fms6502_reg_output_val[i] = 0;
+	}
     dev_info(&client->dev, "8-Input,6-Output video switch matrix of FMS6502 driver loaded successfully\n");
 	// printk("8-Input,6-Output video switch matrix of FMS6502 driver loaded successfully\n");
 	return 0;
