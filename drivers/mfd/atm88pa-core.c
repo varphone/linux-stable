@@ -117,9 +117,9 @@ void atm88pa_update_status(struct atm88pa *atm)
 		}
 
 		/* Check hall flags */
-		if (atm->chip_ver == 501 && (diff_status & 0x18)) {
+		if (atm->chip_ver == 501 && (diff_status & 0x18) != 0) {
 			/* If cover closed, send KEY_SLEEP event */
-			if ((new_status & 0x18) == 0x18) {
+			if ((new_status & 0x18) != 0) {
 				/* Simulate KEY_SLEEP pressed and released */
 				atm88pa_keypad_simulate_key(atm, KEY_SLEEP, 1);
 				atm88pa_keypad_simulate_key(atm, KEY_SLEEP, 0);
