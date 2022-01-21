@@ -89,6 +89,16 @@
 	leds: leds {
 		compatible = "gpio-leds";
 
+		alert_led: alert {
+			gpios = <&gpio0 RK_PC7 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		fault_led: fault {
+			gpios = <&gpio0 RK_PB7 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
 		laser_led: laser {
 			gpios = <&gpio0 RK_PC2 GPIO_ACTIVE_HIGH>;
 			default-state = "off";
@@ -99,24 +109,14 @@
 			default-state = "off";
 		};
 
-		st1_led: st1 {
-			gpios = <&gpio0 RK_PC7 GPIO_ACTIVE_HIGH>;
-			default-state = "off";
-		};
-
-		st2_led: st2 {
-			gpios = <&gpio0 RK_PC5 GPIO_ACTIVE_HIGH>;
-			default-state = "off";
-		};
-
 		weld_led: weld {
 			gpios = <&gpio0 RK_PC4 GPIO_ACTIVE_HIGH>;
 			default-state = "off";
 		};
 
 		work_led: work {
-			gpios = <&gpio0 RK_PB7 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "heartbeat";
+			gpios = <&gpio0 RK_PC5 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
 		};
 	};
 };
