@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2020 Rockchip Electronics Co., Ltd.
+ *
+ */
+
+#include "rk3568-rklaser1.dtsi"
+#include "rk3568-rklaser1-linux.dtsi"
+#include <dt-bindings/display/rockchip_vop.h>
+
+&rk809_codec {
+        status = "disabled";
+};
+
+&vp0 {
+	cursor-win-id = <ROCKCHIP_VOP2_CLUSTER0>;
+};
+
+&vp1 {
+	cursor-win-id = <ROCKCHIP_VOP2_CLUSTER1>;
+};
