@@ -182,6 +182,11 @@
 				remote-endpoint = <&sc2210_out>;
 				data-lanes = <1 2 3 4>;
 			};
+			mipi_in_ucam4: endpoint@5 {
+				reg = <5>;
+				remote-endpoint = <&imx385_out>;
+				data-lanes = <1 2 3 4>;
+			};
 		};
 		port@1 {
 			reg = <1>;
@@ -359,6 +364,29 @@
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c2m1_xfer>;
+
+	imx385: imx385@1a {
+		status = "okay";
+		compatible = "sony,imx385";
+		reg = <0x1a>;
+		clocks = <&cru CLK_CIF_OUT>;
+		clock-names = "xvclk";
+		power-domains = <&power RK3568_PD_VI>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&cif_clk>;
+		reset-gpios = <&gpio3 RK_PD4 GPIO_ACTIVE_LOW>;
+		/*pwdn-gpios = <&gpio4 RK_PB4 GPIO_ACTIVE_HIGH>;*/
+		rockchip,camera-module-index = <0>;
+		rockchip,camera-module-facing = "back";
+		rockchip,camera-module-name = "FV-IMX385";
+		rockchip,camera-module-lens-name = "FIXED";
+		port {
+			imx385_out: endpoint {
+				remote-endpoint = <&mipi_in_ucam4>;
+				data-lanes = <1 2 3 4>;
+			};
+		};
+	};
 
 	sc2210: sc2210@30 {
 		status = "okay";
