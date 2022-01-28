@@ -41,14 +41,15 @@
 #endif
 
 #define MIPI_FREQ_186M			186000000 // 371.25Mbps/lane
-#define MIPI_FREQ_432M			432000000 // 864Mbps/lane
+#define MIPI_FREQ_297M			297000000 // 594.00Mbps/lane
+#define MIPI_FREQ_432M			432000000 // 864.00Mbps/lane
 
 #define BITS_PER_SAMPLE			10
 #define SC2210_LANES			4
 #define SC2210_MAX_PIXEL_RATE		(MIPI_FREQ_432M * 2 / BITS_PER_SAMPLE * SC2210_LANES)
 #define OF_CAMERA_HDR_MODE		"rockchip,camera-hdr-mode"
 
-#define SC2210_XVCLK_FREQ		24000000
+#define SC2210_XVCLK_FREQ		27000000
 
 #define CHIP_ID				0x2210
 #define SC2210_REG_CHIP_ID		0x3107
@@ -115,6 +116,8 @@
 #define OF_CAMERA_PINCTRL_STATE_SLEEP	"rockchip,camera_sleep"
 
 #define SC2210_NAME			"sc2210"
+
+#define SC2210_DEF_MODE_ID		2
 
 static const char * const sc2210_supply_names[] = {
 	"avdd",		/* Analog power */
@@ -1144,7 +1147,7 @@ static const struct regval sc2210_linear_12_1920x1080_60fps_regs[] = {
 };
 
 /*
- * Xclk 24Mhz linear 10bit 1920*1080 90fps 594Mbps/lane
+ * Xclk 27Mhz linear 10bit 1920*1080 90fps 594Mbps/lane
  */
 static const struct regval sc2210_linear_10_1920x1080_90fps_regs[] = {
 	{0x0103, 0x01},
@@ -1470,7 +1473,7 @@ static const struct regval sc2210_linear_10_1920x1080_90fps_regs[] = {
 };
 
 /*
- * Xclk 24Mhz hdr 2to1 STAGGER 12bit 1920*1080 30fps 432Mbps/lane
+ * Xclk 27Mhz hdr 2to1 12bit 1920*1080 30fps 432Mbps/lane
  */
 static __maybe_unused const struct regval sc2210_hdr2_12_1920x1080_30fps_regs[] = {
 	{0x0103, 0x01},
@@ -1747,7 +1750,7 @@ static const struct regval sc2210_hdr2_10_1920x1080_45fps_regs[] = {
 	{0x3019, 0x00},
 	{0x301a, 0xf0},
 	{0x301c, 0x78},
-	{0x301f, 0x4d},
+	{0x301f, 0x5e},
 	{0x3031, 0x0a},
 	{0x3032, 0x20},
 	{0x3038, 0x22},
@@ -1762,8 +1765,8 @@ static const struct regval sc2210_hdr2_10_1920x1080_45fps_regs[] = {
 	{0x320b, 0x38},
 	{0x320c, 0x04},
 	{0x320d, 0x4c},
-	{0x320e, 0x04},
-	{0x320f, 0xb0},
+	{0x320e, 0x09},
+	{0x320f, 0x60},
 	{0x3211, 0x04},
 	{0x3213, 0x04},
 	{0x3215, 0x11},
@@ -1773,12 +1776,12 @@ static const struct regval sc2210_hdr2_10_1920x1080_45fps_regs[] = {
 	{0x3225, 0x04},
 	{0x322e, 0x00},
 	{0x322f, 0x02},
+	{0x3000, 0x00},
 	{0x3230, 0x00},
 	{0x3231, 0x01},
 	{0x3248, 0x0c},
-	{0x3000, 0x00},
 	{0x3249, 0x18},
-	{0x3250, 0x00},
+	{0x3250, 0x3f},
 	{0x3253, 0x04},
 	{0x3301, 0x14},
 	{0x3302, 0x13},
@@ -1791,7 +1794,7 @@ static const struct regval sc2210_hdr2_10_1920x1080_45fps_regs[] = {
 	{0x330b, 0x18},
 	{0x330d, 0x58},
 	{0x330e, 0x70},
-	{0x3314, 0x94},//3-exp SHDR should modify to 0x93
+	{0x3314, 0x92},
 	{0x331e, 0x39},
 	{0x331f, 0x51},
 	{0x3320, 0x09},
@@ -1898,14 +1901,14 @@ static const struct regval sc2210_hdr2_10_1920x1080_45fps_regs[] = {
 	{0x36d0, 0x20},
 	{0x36d1, 0x40},
 	{0x36d2, 0x78},
-	{0x36ea, 0xf5},
+	{0x36ea, 0x35},
 	{0x36eb, 0x04},
 	{0x36ec, 0x0a},
-	{0x36ed, 0x04},
-	{0x36fa, 0xf5},
+	{0x36ed, 0x14},
+	{0x36fa, 0x35},
 	{0x36fb, 0x04},
 	{0x36fc, 0x00},
-	{0x36fd, 0x04},
+	{0x36fd, 0x14},
 	{0x3901, 0x02},
 	{0x3902, 0x45},
 	{0x3904, 0x08},
@@ -2003,9 +2006,9 @@ static const struct regval sc2210_hdr2_10_1920x1080_45fps_regs[] = {
 	{0x39ec, 0x08},
 	{0x39ed, 0x00},
 	{0x3e00, 0x00},
-	{0x3e01, 0x4a},
-	{0x3e02, 0x80},
-	{0x3e04, 0x00},
+	{0x3e01, 0x8c},
+	{0x3e02, 0x00},
+	{0x3e04, 0x08},
 	{0x3e05, 0xc0},
 	{0x3e06, 0x00},
 	{0x3e07, 0x80},
@@ -2023,7 +2026,7 @@ static const struct regval sc2210_hdr2_10_1920x1080_45fps_regs[] = {
 	{0x3e1b, 0x3a},
 	{0x3e22, 0x00},
 	{0x3e23, 0x00},
-	{0x3e24, 0xed},
+	{0x3e24, 0x92},
 	{0x3e26, 0x40},
 	{0x3e50, 0x00},
 	{0x3e51, 0x0c},
@@ -2044,15 +2047,17 @@ static const struct regval sc2210_hdr2_10_1920x1080_45fps_regs[] = {
 	{0x4503, 0xc0},
 	{0x4505, 0x12},
 	{0x4509, 0x10},
+	{0x4814, 0x2a},
 	{0x4825, 0x36},
 	{0x4837, 0x1b},
-	{0x4853, 0xfd},
+	{0x4851, 0xab},
+	{0x4853, 0xf8},
 	{0x5000, 0x0e},
 	{0x550f, 0x20},
 	{0x5900, 0x01},
 	{0x5901, 0x00},
-	{0x36e9, 0x53},
-	{0x36f9, 0x3b},
+	{0x36e9, 0x20},
+	{0x36f9, 0x30},
 	{0x0100, 0x01},
 	{REG_NULL, 0x00},
 };
@@ -2145,6 +2150,7 @@ static const struct sc2210_mode supported_modes[] = {
 		.vc[PAD2] = V4L2_MBUS_CSI2_CHANNEL_1,
 		.vc[PAD3] = V4L2_MBUS_CSI2_CHANNEL_1,//M->csi wr2
 	},
+#if 0
 	{
 		/* 2 to 1 hdr */
 		.bus_fmt = MEDIA_BUS_FMT_Y10_1X10,
@@ -2154,9 +2160,9 @@ static const struct sc2210_mode supported_modes[] = {
 			.numerator = 10000,
 			.denominator = 450000,
 		},
-		.exp_def = 0x04ad / 2,
+		.exp_def = 0x0440 / 2,
 		.hts_def = 0x044c * 2, // REG{0x320c,0x320d}
-		.vts_def = 0x04b0 * 2, // REG{0x320e,0x320f}
+		.vts_def = 0x0960, // REG{0x320e,0x320f}
 		.reg_list = sc2210_hdr2_10_1920x1080_45fps_regs,
 		.hdr_mode = HDR_X2,
 		.mipi_freq_idx = 1,
@@ -2166,10 +2172,12 @@ static const struct sc2210_mode supported_modes[] = {
 		.vc[PAD2] = V4L2_MBUS_CSI2_CHANNEL_1,
 		.vc[PAD3] = V4L2_MBUS_CSI2_CHANNEL_1, //S->csi wr2
 	},
+#endif
 };
 
 static const s64 link_freq_items[] = {
 	MIPI_FREQ_186M,
+	MIPI_FREQ_297M,
 	MIPI_FREQ_432M,
 };
 
@@ -3376,7 +3384,6 @@ static int sc2210_probe(struct i2c_client *client,
 	struct v4l2_subdev *sd;
 	char facing[2];
 	int ret;
-	u32 i, hdr_mode = 0;
 
 	dev_info(dev, "driver version: %02x.%02x.%02x",
 		DRIVER_VERSION >> 16,
@@ -3400,21 +3407,8 @@ static int sc2210_probe(struct i2c_client *client,
 		return -EINVAL;
 	}
 
-	ret = of_property_read_u32(node, OF_CAMERA_HDR_MODE,
-			&hdr_mode);
-
-	if (ret) {
-		hdr_mode = NO_HDR;
-		dev_warn(dev, " Get hdr mode failed! no hdr default\n");
-	}
-
 	sc2210->cfg_num = ARRAY_SIZE(supported_modes);
-	for (i = 0; i < sc2210->cfg_num; i++) {
-		if (hdr_mode == supported_modes[i].hdr_mode) {
-			sc2210->cur_mode = &supported_modes[i];
-			break;
-		}
-	}
+	sc2210->cur_mode = &supported_modes[SC2210_DEF_MODE_ID];
 	sc2210->client = client;
 
 	sc2210->xvclk = devm_clk_get(dev, "xvclk");
