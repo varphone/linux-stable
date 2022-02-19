@@ -415,7 +415,7 @@
 };
 
 &i2c4 {
-	status = "okay";
+	status = "disabled";
 	gc8034: gc8034@37 {
 		compatible = "galaxycore,gc8034";
 		status = "okay";
@@ -601,6 +601,10 @@
 	status = "disabled";
 };
 
+&sdmmc0 {
+	status = "disabled";
+};
+
 &sdmmc2 {
 	max-frequency = <150000000>;
 	supports-sdio;
@@ -641,8 +645,16 @@
 	pinctrl-0 = <&uart8m0_xfer &uart8m0_ctsn>;
 };
 
-&usb2phy0 {
+&u2phy0_host {
 	status = "disabled";
+};
+
+&u2phy0_otg {
+	status = "okay";
+};
+
+&usb2phy0 {
+	status = "okay";
 };
 
 &usb2phy1 {
@@ -650,11 +662,11 @@
 };
 
 &usb_host0_ehci {
-	status = "disabled";
+	status = "okay";
 };
 
 &usb_host0_ohci {
-	status = "disabled";
+	status = "okay";
 };
 
 &usb_host1_ehci {
@@ -666,13 +678,21 @@
 };
 
 &usbdrd_dwc3 {
-	dr_mode = "otg";
+	phys = <&u2phy0_otg>;
+	phy-names = "usb2-phy";
 	extcon = <&usb2phy0>;
-	status = "disabled";
+	maximum-speed = "high-speed";
+	snps,dis_u2_susphy_quirk;
+	status = "okay";
+};
+
+&combphy0_us {
+	rockchip,dis-u3otg0-port;
+	status = "okay";
 };
 
 &usbdrd30 {
-	status = "disabled";
+	status = "okay";
 };
 
 &usbhost_dwc3 {
