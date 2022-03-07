@@ -118,7 +118,12 @@
 
 #define SC2210_NAME			"sc2210"
 
-#define SC2210_DEF_MODE_ID		3
+#define SC2210_DEF_MODE_GROUP		0
+#define SC2210_DEF_MODE_ID		0
+
+static int default_group = SC2210_DEF_MODE_GROUP;
+module_param_named(group, default_group, int, 0644);
+MODULE_PARM_DESC(group, "Default Mode Group (0-5)");
 
 static int default_mode = SC2210_DEF_MODE_ID;
 module_param_named(mode, default_mode, int, 0644);
@@ -158,6 +163,11 @@ struct sc2210_mode {
 	u32 mipi_freq_idx;
 	u32 bpp;
 	u32 vc[PAD_MAX];
+};
+
+struct sc2210_mode_group {
+	int num;
+	const struct sc2210_mode *modes;
 };
 
 struct sc2210 {
@@ -2887,6 +2897,162 @@ static const struct sc2210_mode supported_modes[] = {
 #endif
 };
 
+static const struct sc2210_mode modes_1920_1080_90_10bit[] = {
+	{
+		/* linear modes */
+		.bus_fmt = MEDIA_BUS_FMT_SBGGR10_1X10,
+		.width = 1920,
+		.height = 1080,
+		.max_fps = {
+			.numerator = 10000,
+			.denominator = 900000,
+		},
+		.exp_def = 0x04ad / 2,
+		.hts_def = 0x044c * 2, // REG{0x320c,0x320d}
+		.vts_def = 0x04b0, // REG{0x320e,0x320f}
+		.reg_list = sc2210_linear_10_1920x1080_90fps_regs,
+		.hdr_mode = NO_HDR,
+		.mipi_freq_idx = 2, // 594.00 Mbps
+		.bpp = 10,
+		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+	},
+};
+
+static const struct sc2210_mode modes_1920_768_120_10bit[] = {
+	{
+		/* linear modes */
+		.bus_fmt = MEDIA_BUS_FMT_SBGGR10_1X10,
+		.width = 1920,
+		.height = 768,
+		.max_fps = {
+			.numerator = 10000,
+			.denominator = 1200000,
+		},
+		.exp_def = 0x0381 / 2,
+		.hts_def = 0x044c * 2, // REG{0x320c,0x320d}
+		.vts_def = 0x0384, // REG{0x320e,0x320f}
+		.reg_list = sc2210_linear_10_1920x768_120fps_regs,
+		.hdr_mode = NO_HDR,
+		.mipi_freq_idx = 2, // 594.00 Mbps
+		.bpp = 10,
+		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+	},
+};
+
+static const struct sc2210_mode modes_1920_544_180_10bit[] = {
+	{
+		/* linear modes */
+		.bus_fmt = MEDIA_BUS_FMT_SBGGR10_1X10,
+		.width = 1920,
+		.height = 544,
+		.max_fps = {
+			.numerator = 10000,
+			.denominator = 1800000,
+		},
+		.exp_def = 0x0255 / 2,
+		.hts_def = 0x044c * 2, // REG{0x320c,0x320d}
+		.vts_def = 0x0258, // REG{0x320e,0x320f}
+		.reg_list = sc2210_linear_10_1920x544_180fps_regs,
+		.hdr_mode = NO_HDR,
+		.mipi_freq_idx = 2, // 594.00 Mbps
+		.bpp = 10,
+		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+	},
+};
+
+static const struct sc2210_mode modes_1920_1080_60_12bit[] = {
+	{
+		/* linear modes */
+		.bus_fmt = MEDIA_BUS_FMT_SBGGR12_1X12,
+		.width = 1920,
+		.height = 1080,
+		.max_fps = {
+			.numerator = 10000,
+			.denominator = 600000,
+		},
+		.exp_def = 0x0455 / 2,
+		.hts_def = 0x0437 * 2, // REG{0x320c,0x320d}
+		.vts_def = 0x0458, // REG{0x320e,0x320f}
+		.reg_list = sc2210_linear_12_1920x1080_60fps_regs,
+		.hdr_mode = NO_HDR,
+		.mipi_freq_idx = 1,
+		.bpp = 12,
+		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+	},
+	{
+		/* 2 to 1 hdr */
+		.bus_fmt = MEDIA_BUS_FMT_SBGGR12_1X12,
+		.width = 1920,
+		.height = 1080,
+		.max_fps = {
+			.numerator = 10000,
+			.denominator = 300000,
+		},
+		.exp_def = 0x08ad / 2,
+		.hts_def = 0x0437 * 2, // REG{0x320c,0x320d}
+		.vts_def = 0x08b0, // REG{0x320e,0x320f}
+		.reg_list = sc2210_hdr2_12_1920x1080_30fps_regs,
+		.hdr_mode = HDR_X2,
+		.mipi_freq_idx = 1,
+		.bpp = 12,
+		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_1,
+		.vc[PAD1] = V4L2_MBUS_CSI2_CHANNEL_0,//L->csi wr0
+		.vc[PAD2] = V4L2_MBUS_CSI2_CHANNEL_1,
+		.vc[PAD3] = V4L2_MBUS_CSI2_CHANNEL_1,//M->csi wr2
+	},
+};
+
+static const struct sc2210_mode modes_1920_768_83_6_12bit[] = {
+	{
+		/* linear modes */
+		.bus_fmt = MEDIA_BUS_FMT_SBGGR12_1X12,
+		.width = 1920,
+		.height = 768,
+		.max_fps = {
+			.numerator = 10000,
+			.denominator = 836000,
+		},
+		.exp_def = 0x031b / 2,
+		.hts_def = 0x0437 * 2, // REG{0x320c,0x320d}
+		.vts_def = 0x031e, // REG{0x320e,0x320f}
+		.reg_list = sc2210_linear_12_1920x768_83_6fps_regs,
+		.hdr_mode = NO_HDR,
+		.mipi_freq_idx = 1, // 432.00 Mbps
+		.bpp = 12,
+		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+	},
+};
+
+static const struct sc2210_mode modes_1920_544_116_12bit[] = {
+	{
+		/* linear modes */
+		.bus_fmt = MEDIA_BUS_FMT_SBGGR12_1X12,
+		.width = 1920,
+		.height = 544,
+		.max_fps = {
+			.numerator = 10000,
+			.denominator = 1160000,
+		},
+		.exp_def = 0x023b / 2,
+		.hts_def = 0x0437 * 2, // REG{0x320c,0x320d}
+		.vts_def = 0x023e, // REG{0x320e,0x320f}
+		.reg_list = sc2210_linear_12_1920x544_116fps_regs,
+		.hdr_mode = NO_HDR,
+		.mipi_freq_idx = 1, // 432.00 Mbps
+		.bpp = 12,
+		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+	},
+};
+
+static const struct sc2210_mode_group supported_mode_groups[] = {
+	{ ARRAY_SIZE(modes_1920_1080_90_10bit), modes_1920_1080_90_10bit },
+	{ ARRAY_SIZE(modes_1920_768_120_10bit), modes_1920_768_120_10bit },
+	{ ARRAY_SIZE(modes_1920_544_180_10bit), modes_1920_544_180_10bit },
+	{ ARRAY_SIZE(modes_1920_1080_60_12bit), modes_1920_1080_60_12bit },
+	{ ARRAY_SIZE(modes_1920_768_83_6_12bit), modes_1920_768_83_6_12bit },
+	{ ARRAY_SIZE(modes_1920_544_116_12bit), modes_1920_544_116_12bit },
+};
+
 static const s64 link_freq_items[] = {
 	MIPI_FREQ_186M,
 	MIPI_FREQ_216M,
@@ -2989,21 +3155,22 @@ static const struct sc2210_mode *
 sc2210_find_best_fit(struct sc2210 *sc2210, struct v4l2_subdev_format *fmt)
 {
 	struct v4l2_mbus_framefmt *framefmt = &fmt->format;
+	const struct sc2210_mode_group *mg = &supported_mode_groups[default_group];
 	int dist;
 	int cur_best_fit = 0;
 	int cur_best_fit_dist = -1;
 	unsigned int i;
 
 	for (i = 0; i < sc2210->cfg_num; i++) {
-		dist = sc2210_get_reso_dist(&supported_modes[i], framefmt);
+		dist = sc2210_get_reso_dist(mg->modes, framefmt);
 		if ((cur_best_fit_dist == -1 || dist <= cur_best_fit_dist) &&
-			(supported_modes[i].bus_fmt == framefmt->code)) {
+			(mg->modes[i].bus_fmt == framefmt->code)) {
 			cur_best_fit_dist = dist;
 			cur_best_fit = i;
 		}
 	}
 
-	return &supported_modes[cur_best_fit];
+	return &mg->modes[cur_best_fit];
 }
 
 static void sc2210_change_mode(struct sc2210 *sc2210, const struct sc2210_mode *mode)
@@ -3106,17 +3273,18 @@ static int sc2210_enum_frame_sizes(struct v4l2_subdev *sd,
 				   struct v4l2_subdev_frame_size_enum *fse)
 {
 	struct sc2210 *sc2210 = to_sc2210(sd);
+	const struct sc2210_mode_group *mg = &supported_mode_groups[default_group];
 
 	if (fse->index >= sc2210->cfg_num)
 		return -EINVAL;
 
-	if (fse->code != supported_modes[fse->index].bus_fmt)
+	if (fse->code != mg->modes[fse->index].bus_fmt)
 		return -EINVAL;
 
-	fse->min_width  = supported_modes[fse->index].width;
-	fse->max_width  = supported_modes[fse->index].width;
-	fse->max_height = supported_modes[fse->index].height;
-	fse->min_height = supported_modes[fse->index].height;
+	fse->min_width  = mg->modes[fse->index].width;
+	fse->max_width  = mg->modes[fse->index].width;
+	fse->max_height = mg->modes[fse->index].height;
+	fse->min_height = mg->modes[fse->index].height;
 
 	return 0;
 }
@@ -3358,6 +3526,7 @@ static long sc2210_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 	struct sc2210 *sc2210 = to_sc2210(sd);
 	struct rkmodule_hdr_cfg *hdr_cfg;
 	const struct sc2210_mode *mode;
+	const struct sc2210_mode_group *mg = &supported_mode_groups[default_group];
 	long ret = 0;
 	u64 pixel_rate = 0;
 	u32 i, h, w, stream;
@@ -3380,10 +3549,10 @@ static long sc2210_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 		w = sc2210->cur_mode->width;
 		h = sc2210->cur_mode->height;
 		for (i = 0; i < sc2210->cfg_num; i++) {
-			if (w == supported_modes[i].width &&
-			h == supported_modes[i].height &&
-			supported_modes[i].hdr_mode == hdr_cfg->hdr_mode) {
-				sc2210_change_mode(sc2210, &supported_modes[i]);
+			if (w == mg->modes[i].width &&
+			h == mg->modes[i].height &&
+			mg->modes[i].hdr_mode == hdr_cfg->hdr_mode) {
+				sc2210_change_mode(sc2210, &mg->modes[i]);
 				break;
 			}
 		}
@@ -3743,7 +3912,8 @@ static int sc2210_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 	struct sc2210 *sc2210 = to_sc2210(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
 				v4l2_subdev_get_try_format(sd, fh->pad, 0);
-	const struct sc2210_mode *def_mode = &supported_modes[default_mode];
+	const struct sc2210_mode_group *mg = &supported_mode_groups[default_group];
+	const struct sc2210_mode *def_mode = &mg->modes[default_mode];
 
 	mutex_lock(&sc2210->mutex);
 	/* Initialize try_fmt */
@@ -4129,8 +4299,8 @@ static int sc2210_probe(struct i2c_client *client,
 		return -EINVAL;
 	}
 
-	sc2210->cfg_num = ARRAY_SIZE(supported_modes);
-	sc2210->cur_mode = &supported_modes[default_mode];
+	sc2210->cfg_num = supported_mode_groups[default_group].num;
+	sc2210->cur_mode = &supported_mode_groups[default_group].modes[default_mode];
 	sc2210->client = client;
 
 	sc2210->xvclk = devm_clk_get(dev, "xvclk");
