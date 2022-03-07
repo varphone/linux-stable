@@ -3743,7 +3743,7 @@ static int sc2210_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 	struct sc2210 *sc2210 = to_sc2210(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
 				v4l2_subdev_get_try_format(sd, fh->pad, 0);
-	const struct sc2210_mode *def_mode = &supported_modes[0];
+	const struct sc2210_mode *def_mode = &supported_modes[default_mode];
 
 	mutex_lock(&sc2210->mutex);
 	/* Initialize try_fmt */
