@@ -2733,7 +2733,7 @@ static __maybe_unused const struct regval sc2210_hdr2_12_1920x1080_30fps_regs[] 
 static const struct sc2210_mode supported_modes[] = {
 	{
 		/* linear modes */
-		.bus_fmt = MEDIA_BUS_FMT_Y10_1X10,
+		.bus_fmt = MEDIA_BUS_FMT_SBGGR10_1X10,
 		.width = 1920,
 		.height = 1080,
 		.max_fps = {
@@ -2751,7 +2751,7 @@ static const struct sc2210_mode supported_modes[] = {
 	},
 	{
 		/* linear modes */
-		.bus_fmt = MEDIA_BUS_FMT_Y10_1X10,
+		.bus_fmt = MEDIA_BUS_FMT_SBGGR10_1X10,
 		.width = 1920,
 		.height = 768,
 		.max_fps = {
@@ -2769,7 +2769,7 @@ static const struct sc2210_mode supported_modes[] = {
 	},
 	{
 		/* linear modes */
-		.bus_fmt = MEDIA_BUS_FMT_Y10_1X10,
+		.bus_fmt = MEDIA_BUS_FMT_SBGGR10_1X10,
 		.width = 1920,
 		.height = 544,
 		.max_fps = {
@@ -2787,7 +2787,7 @@ static const struct sc2210_mode supported_modes[] = {
 	},
 	{
 		/* linear modes */
-		.bus_fmt = MEDIA_BUS_FMT_Y12_1X12,
+		.bus_fmt = MEDIA_BUS_FMT_SBGGR12_1X12,
 		.width = 1920,
 		.height = 1080,
 		.max_fps = {
@@ -2805,7 +2805,7 @@ static const struct sc2210_mode supported_modes[] = {
 	},
 	{
 		/* linear modes */
-		.bus_fmt = MEDIA_BUS_FMT_Y12_1X12,
+		.bus_fmt = MEDIA_BUS_FMT_SBGGR12_1X12,
 		.width = 1920,
 		.height = 768,
 		.max_fps = {
@@ -2823,7 +2823,7 @@ static const struct sc2210_mode supported_modes[] = {
 	},
 	{
 		/* linear modes */
-		.bus_fmt = MEDIA_BUS_FMT_Y12_1X12,
+		.bus_fmt = MEDIA_BUS_FMT_SBGGR12_1X12,
 		.width = 1920,
 		.height = 544,
 		.max_fps = {
@@ -2842,7 +2842,7 @@ static const struct sc2210_mode supported_modes[] = {
 #if 0
 	{
 		/* 2 to 1 hdr */
-		.bus_fmt = MEDIA_BUS_FMT_Y10_1X10,
+		.bus_fmt = MEDIA_BUS_FMT_SBGGR10_1X10,
 		.width = 1920,
 		.height = 1080,
 		.max_fps = {
@@ -2865,7 +2865,7 @@ static const struct sc2210_mode supported_modes[] = {
 #if 1
 	{
 		/* 2 to 1 hdr */
-		.bus_fmt = MEDIA_BUS_FMT_Y12_1X12,
+		.bus_fmt = MEDIA_BUS_FMT_SBGGR12_1X12,
 		.width = 1920,
 		.height = 1080,
 		.max_fps = {
