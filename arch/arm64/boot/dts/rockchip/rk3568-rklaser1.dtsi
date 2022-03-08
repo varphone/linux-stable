@@ -94,6 +94,11 @@
 			default-state = "off";
 		};
 
+		eeprom_wr_led: eeprom_wr {
+			gpios = <&gpio0 RK_PB5 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
 		fault_led: fault {
 			gpios = <&gpio0 RK_PB7 GPIO_ACTIVE_HIGH>;
 			default-state = "off";
@@ -318,14 +323,6 @@
 	status = "okay";
 };
 
-/*
- * power-supply should switche to vcc3v3_lcd1_n
- * when mipi panel is connected to dsi1.
- */
-&gt1x {
-	status = "disabled";
-};
-
 &i2c0 {
 	status = "okay";
 
@@ -353,10 +350,18 @@
 &i2c1 {
 	status = "okay";
 
+	/delete-node/ gt1x@14;
+
 	eeprom@50 {
-		compatible = "atmel,24c02";
+		compatible = "atmel,24c08";
 		reg = <0x50>;
-		pagesize = <8>;
+		pagesize = <16>;
+	};
+
+	dac@60 {
+		compatible = "microchip,mcp4725";
+		reg = <0x60>;
+		vdd-supply = <&vcc3v3_sys>;
 	};
 };
 
@@ -525,6 +530,8 @@
 };
 
 &pinctrl {
+	/delete-node/ touch;
+
 	cam {
 		camera_pwr: camera-pwr {
 			rockchip,pins =
