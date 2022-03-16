@@ -91,6 +91,14 @@
 #define SC2210_GAIN_STEP		1
 #define SC2210_GAIN_DEFAULT		0x4
 
+//output window
+#define SC2210_WINDOW_MAX_H		1936
+#define SC2210_WINDOW_MAX_V		1092
+#define SC2210_WINDOW_WIDTH_L		0x3208
+#define SC2210_WINDOW_HEIGHT_L		0x320a
+#define SC2210_WINDOW_START_COL_L	0x3210
+#define SC2210_WINDOW_START_ROW_L	0x3212
+
 //group hold
 #define SC2210_GROUP_UPDATE_ADDRESS	0x3812
 #define SC2210_GROUP_UPDATE_START_DATA	0x00
@@ -203,6 +211,12 @@ struct sc2210 {
 	const char		*len_name;
 	bool			has_init_exp;
 	u32			cur_vts;
+	u32			cur_wox;
+	u32			cur_woy;
+	// u32			def_wox;
+	// u32			def_woy;
+	u32			max_wox;
+	u32			max_woy;
 	struct preisp_hdrae_exp_s init_hdrae_exp;
 };
 
@@ -3183,6 +3197,65 @@ static int sc2210_set_mirror_flip(struct i2c_client *client, int mode)
 	return ret;
 }
 
+static void sc2210_get_offset_of_mode(const struct sc2210_mode *mode, u32 *x,
+				      u32 *y)
+{
+	u32 i;
+	u32 vx[2] = { 0, 0 };
+	u32 vy[2] = { 0, 0 };
+	const struct regval *regs = mode->reg_list;
+
+	for (i = 0; regs[i].addr != REG_NULL; i++) {
+		if (regs[i].addr == SC2210_WINDOW_START_COL_L)
+			vx[0] = regs[i].val;
+		else if (regs[i].addr == (SC2210_WINDOW_START_COL_L + 1))
+			vx[1] = regs[i].val;
+		else if (regs[i].addr == SC2210_WINDOW_START_ROW_L)
+			vy[0] = regs[i].val;
+		else if (regs[i].addr == (SC2210_WINDOW_START_ROW_L + 1))
+			vy[1] = regs[i].val;
+	}
+	*x = vx[0] << 8 | vx[1];
+	*y = vy[0] << 8 | vy[1];
+}
+
+static void sc2210_get_max_offset_of_mode(const struct sc2210_mode *mode,
+					  u32 *x, u32 *y)
+{
+	*x = SC2210_WINDOW_MAX_H - mode->width - 1;
+	*y = SC2210_WINDOW_MAX_V - mode->height;
+}
+
+static u32 sc2210_get_window_offset_x(struct i2c_client *client)
+{
+	u32 val;
+	(void)sc2210_read_reg(client, SC2210_WINDOW_START_COL_L,
+			      SC2210_REG_VALUE_16BIT, &val);
+	return val;
+}
+
+static void sc2210_set_window_offset_x(struct i2c_client *client, u32 val)
+{
+	dev_info(&client->dev, "offset_x=%d\n", val);
+	sc2210_write_reg(client, SC2210_WINDOW_START_COL_L,
+			 SC2210_REG_VALUE_16BIT, val);
+}
+
+static u32 sc2210_get_window_offset_y(struct i2c_client *client)
+{
+	u32 val = 0;
+	(void)sc2210_read_reg(client, SC2210_WINDOW_START_ROW_L,
+			      SC2210_REG_VALUE_16BIT, &val);
+	return val;
+}
+
+static void sc2210_set_window_offset_y(struct i2c_client *client, u32 val)
+{
+	dev_info(&client->dev, "offset_y=%d\n", val);
+	sc2210_write_reg(client, SC2210_WINDOW_START_ROW_L,
+			 SC2210_REG_VALUE_16BIT, val);
+}
+
 static int sc2210_get_reso_dist(const struct sc2210_mode *mode,
 				struct v4l2_mbus_framefmt *framefmt)
 {
@@ -3216,9 +3289,14 @@ static void sc2210_change_mode(struct sc2210 *sc2210, const struct sc2210_mode *
 {
 	sc2210->cur_mode = mode;
 	sc2210->cur_vts = sc2210->cur_mode->vts_def;
+	sc2210_get_offset_of_mode(mode, &sc2210->cur_wox, &sc2210->cur_woy);
+	sc2210_get_max_offset_of_mode(mode, &sc2210->max_wox, &sc2210->max_woy);
 	dev_info(&sc2210->client->dev, "set fmt: cur_mode: %dx%d@%d/%d, hdr: %d\n",
 		mode->width, mode->height, mode->max_fps.numerator,
 		mode->max_fps.denominator, mode->hdr_mode);
+	dev_info(&sc2210->client->dev, "offset cur: %d,%d max: %d,%d\n",
+		 sc2210->cur_wox, sc2210->cur_woy, sc2210->max_wox,
+		 sc2210->max_woy);
 }
 
 static int sc2210_set_fmt(struct v4l2_subdev *sd,
@@ -3607,6 +3685,8 @@ static long sc2210_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 				if (ret)
 					return ret;
 				sc2210_set_mirror_flip(sc2210->client, mirror_flip_mode);
+				sc2210_set_window_offset_x(sc2210->client, sc2210->cur_wox);
+				sc2210_set_window_offset_y(sc2210->client, sc2210->cur_woy);
 			}
 			w = mode->hts_def - mode->width;
 			h = mode->vts_def - mode->height;
@@ -3758,6 +3838,8 @@ static int __sc2210_start_stream(struct sc2210 *sc2210)
 		return ret;
 
 	sc2210_set_mirror_flip(sc2210->client, mirror_flip_mode);
+	sc2210_set_window_offset_x(sc2210->client, sc2210->cur_wox);
+	sc2210_set_window_offset_y(sc2210->client, sc2210->cur_woy);
 
 	ret = __v4l2_ctrl_handler_setup(&sc2210->ctrl_handler);
 	if (ret)
@@ -4312,9 +4394,80 @@ static ssize_t sysfs_sensor_temp_raw_show(struct device *dev,
 	return sprintf(buf, "%d\n", sc2210_get_temperature(sc2210, client));
 }
 
+static ssize_t sysfs_window_offset_x_show(struct device *dev,
+					  struct device_attribute *attr,
+					  char *buf)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct sc2210 *sc2210 = to_sc2210(sd);
+	u32 val = 0;
+	mutex_lock(&sc2210->mutex);
+	val = sc2210_get_window_offset_x(client);
+	mutex_unlock(&sc2210->mutex);
+	return sprintf(buf, "%u\n", val);
+}
+
+static ssize_t sysfs_window_offset_x_store(struct device *dev,
+					   struct device_attribute *attr,
+					   const char *buf, size_t count)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct sc2210 *sc2210 = to_sc2210(sd);
+	u32 val = 0;
+	if (1 == sscanf(buf, "%u", &val)) {
+		mutex_lock(&sc2210->mutex);
+		if (val > sc2210->max_wox)
+			val = sc2210->max_wox;
+		sc2210_set_window_offset_x(client, val);
+		sc2210->cur_wox = val;
+		mutex_unlock(&sc2210->mutex);
+	}
+	return count;
+}
+
+static ssize_t sysfs_window_offset_y_show(struct device *dev,
+					  struct device_attribute *attr,
+					  char *buf)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct sc2210 *sc2210 = to_sc2210(sd);
+	u32 val = 0;
+	mutex_lock(&sc2210->mutex);
+	val = sc2210_get_window_offset_y(client);
+	mutex_unlock(&sc2210->mutex);
+	return sprintf(buf, "%u\n", val);
+}
+
+static ssize_t sysfs_window_offset_y_store(struct device *dev,
+					   struct device_attribute *attr,
+					   const char *buf, size_t count)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct sc2210 *sc2210 = to_sc2210(sd);
+	u32 val = 0;
+	if (1 == sscanf(buf, "%u", &val)) {
+		mutex_lock(&sc2210->mutex);
+		if (val > sc2210->max_woy)
+			val = sc2210->max_woy;
+		sc2210_set_window_offset_y(client, val);
+		sc2210->cur_woy = val;
+		mutex_unlock(&sc2210->mutex);
+	}
+	return count;
+}
+
 static struct device_attribute attributes[] = {
 	__ATTR(sensor_temp_raw, S_IRUSR, sysfs_sensor_temp_raw_show, NULL),
-	__ATTR(mirror_flip, S_IRUSR | S_IWUSR, sysfs_mirror_flip_show, sysfs_mirror_flip_store),
+	__ATTR(mirror_flip, S_IRUSR | S_IWUSR, sysfs_mirror_flip_show,
+	       sysfs_mirror_flip_store),
+	__ATTR(window_offset_x, S_IRUSR | S_IWUSR, sysfs_window_offset_x_show,
+	       sysfs_window_offset_x_store),
+	__ATTR(window_offset_y, S_IRUSR | S_IWUSR, sysfs_window_offset_y_show,
+	       sysfs_window_offset_y_store),
 };
 
 static int add_sysfs_interfaces(struct device *dev)
@@ -4377,6 +4530,11 @@ static int sc2210_probe(struct i2c_client *client,
 	sc2210->cfg_num = supported_mode_groups[default_group].num;
 	sc2210->cur_mode = &supported_mode_groups[default_group].modes[default_mode];
 	sc2210->client = client;
+
+	sc2210_get_offset_of_mode(sc2210->cur_mode, &sc2210->cur_wox,
+				  &sc2210->cur_woy);
+	sc2210_get_max_offset_of_mode(sc2210->cur_mode, &sc2210->max_wox,
+				      &sc2210->max_woy);
 
 	sc2210->xvclk = devm_clk_get(dev, "xvclk");
 	if (IS_ERR(sc2210->xvclk)) {
