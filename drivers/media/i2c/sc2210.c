@@ -129,6 +129,8 @@ static int default_mode = SC2210_DEF_MODE_ID;
 module_param_named(mode, default_mode, int, 0644);
 MODULE_PARM_DESC(mode, "Default Mode Id (0-7)");
 
+static int mirror_flip_mode = 0;
+
 static const char * const sc2210_supply_names[] = {
 	"avdd",		/* Analog power */
 	"dovdd",	/* Digital I/O power */
@@ -3144,6 +3146,43 @@ static int sc2210_read_reg(struct i2c_client *client,
 	return 0;
 }
 
+static int sc2210_get_mirror_flip(struct i2c_client *client)
+{
+	int ret;
+	int val = 0;
+
+	ret = sc2210_read_reg(client, 0x3221,
+		SC2210_REG_VALUE_08BIT, &val);
+	if ((val & 0x66) == 0x06)
+		return 1;
+	if ((val & 0x66) == 0x60)
+		return 2;
+	if ((val & 0x66) == 0x66)
+		return 3;
+	return 0;
+}
+
+static int sc2210_set_mirror_flip(struct i2c_client *client, int mode)
+{
+	int ret;
+	int val = 0;
+
+	if (mode < 0 || mode > 3)
+		return -EINVAL;
+	ret = sc2210_read_reg(client, 0x3221,
+		SC2210_REG_VALUE_08BIT, &val);
+	val &= ~0x66;
+	if (mode == 1)
+		val |= 0x06;
+	else if (mode == 2)
+		val |= 0x60;
+	else if (mode == 3)
+		val |= 0x66;
+	ret = sc2210_write_reg(client, 0x3221,
+		SC2210_REG_VALUE_08BIT, val);
+	return ret;
+}
+
 static int sc2210_get_reso_dist(const struct sc2210_mode *mode,
 				struct v4l2_mbus_framefmt *framefmt)
 {
@@ -3567,6 +3606,7 @@ static long sc2210_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 				ret = sc2210_write_array(sc2210->client, mode->reg_list);
 				if (ret)
 					return ret;
+				sc2210_set_mirror_flip(sc2210->client, mirror_flip_mode);
 			}
 			w = mode->hts_def - mode->width;
 			h = mode->vts_def - mode->height;
@@ -3716,6 +3756,8 @@ static int __sc2210_start_stream(struct sc2210 *sc2210)
 	ret = sc2210_write_array(sc2210->client, sc2210->cur_mode->reg_list);
 	if (ret)
 		return ret;
+
+	sc2210_set_mirror_flip(sc2210->client, mirror_flip_mode);
 
 	ret = __v4l2_ctrl_handler_setup(&sc2210->ctrl_handler);
 	if (ret)
@@ -4213,6 +4255,38 @@ static int sc2210_configure_regulators(struct sc2210 *sc2210)
 }
 
 #ifdef HAS_RKLASER_SYSFS
+static ssize_t sysfs_mirror_flip_show(struct device *dev,
+				      struct device_attribute *attr,
+				      char *buf)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct sc2210 *sc2210 = to_sc2210(sd);
+	int mode = 0;
+	mutex_lock(&sc2210->mutex);
+	mode = sc2210_get_mirror_flip(client);
+	mutex_unlock(&sc2210->mutex);
+	return sprintf(buf, "%d\n", mode);
+}
+
+static ssize_t sysfs_mirror_flip_store(struct device *dev,
+				       struct device_attribute *attr,
+				       const char *buf, size_t count)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct sc2210 *sc2210 = to_sc2210(sd);
+	int mode = 0;
+	int ret = -EINVAL;
+	if (sscanf(buf, "%d", &mode) == 1) {
+		mutex_lock(&sc2210->mutex);
+		mirror_flip_mode = mode;
+		ret = sc2210_set_mirror_flip(client, mode);
+		mutex_unlock(&sc2210->mutex);
+	}
+	return ret == 0 ? count : ret;
+}
+
 static int sc2210_get_temperature(struct sc2210 *sc2210,
 				  struct i2c_client *client)
 {
@@ -4240,6 +4314,7 @@ static ssize_t sysfs_sensor_temp_raw_show(struct device *dev,
 
 static struct device_attribute attributes[] = {
 	__ATTR(sensor_temp_raw, S_IRUSR, sysfs_sensor_temp_raw_show, NULL),
+	__ATTR(mirror_flip, S_IRUSR | S_IWUSR, sysfs_mirror_flip_show, sysfs_mirror_flip_store),
 };
 
 static int add_sysfs_interfaces(struct device *dev)
