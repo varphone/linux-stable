@@ -130,6 +130,14 @@
 	status = "disabled";
 };
 
+&backlight {
+	status = "disabled";
+};
+
+&backlight1 {
+	status = "disabled";
+};
+
 &bus_npu {
 	bus-supply = <&vdd_logic>;
 	pvtm-supply = <&vdd_cpu_b>;
@@ -589,6 +597,15 @@
 		};
 	};
 
+	pwm4 {
+		/omit-if-no-ref/
+		pwm4_pin_pull_down: pwm4-pin-pull-down {
+			rockchip,pins =
+				/* pwm4 */
+				<0 RK_PC3 1 &pcfg_pull_down>;
+		};
+	};
+
 	wireless-wlan {
 		wifi_host_wake_irq: wifi-host-wake-irq {
 			rockchip,pins = <3 RK_PD4 RK_FUNC_GPIO &pcfg_pull_down>;
@@ -605,6 +622,20 @@
 &pmu_io_domains {
     vccio4-supply = <&vcc_1v8>;
     vccio6-supply = <&vcc_1v8>;
+};
+
+&pwm4 {
+	status = "okay";
+	pinctrl-names = "active";
+	pinctrl-0 = <&pwm4_pin_pull_down>;
+};
+
+&pwm5 {
+	status = "disabled";
+};
+
+&pwm7 {
+	status = "disabled";
 };
 
 &rkisp {
