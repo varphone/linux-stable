@@ -192,6 +192,11 @@
 				remote-endpoint = <&imx385_out>;
 				data-lanes = <1 2 3 4>;
 			};
+			mipi_in_ucam5: endpoint@6 {
+				reg = <6>;
+				remote-endpoint = <&sc130gs_out>;
+				data-lanes = <1 2 3 4>;
+			};
 		};
 		port@1 {
 			reg = <1>;
@@ -413,6 +418,31 @@
 		port {
 			sc2210_out: endpoint {
 				remote-endpoint = <&mipi_in_ucam3>;
+				data-lanes = <1 2 3 4>;
+			};
+		};
+	};
+
+	sc130gs: sc130gs@30 {
+		status = "okay";
+		compatible = "smartsens,sc130gs";
+		reg = <0x30>;
+		clocks = <&cru CLK_CIF_OUT>;
+		clock-names = "xvclk";
+		power-domains = <&power RK3568_PD_VI>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&cif_clk>;
+		/*reset-gpios = <&gpio3 RK_PD4 GPIO_ACTIVE_LOW>;*/
+		pwdn-gpios = <&gpio3 RK_PD4 GPIO_ACTIVE_HIGH>;
+		rockchip,camera-module-index = <0>;
+		rockchip,camera-module-facing = "back";
+		rockchip,camera-module-name = "FV-SC130GS";
+		rockchip,camera-module-lens-name = "FIXED";
+		// NO_HDR:0 HDR_X2:5 HDR_X3:6
+		rockchip,camera-hdr-mode = <0>;
+		port {
+			sc130gs_out: endpoint {
+				remote-endpoint = <&mipi_in_ucam5>;
 				data-lanes = <1 2 3 4>;
 			};
 		};
