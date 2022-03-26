@@ -4058,15 +4058,16 @@ static int sc2210_enum_frame_interval(struct v4l2_subdev *sd,
 				       struct v4l2_subdev_frame_interval_enum *fie)
 {
 	struct sc2210 *sc2210 = to_sc2210(sd);
+	const struct sc2210_mode_group *mg = &supported_mode_groups[default_group];
 
 	if (fie->index >= sc2210->cfg_num)
 		return -EINVAL;
 
-	fie->code = supported_modes[fie->index].bus_fmt;
-	fie->width = supported_modes[fie->index].width;
-	fie->height = supported_modes[fie->index].height;
-	fie->interval = supported_modes[fie->index].max_fps;
-	fie->reserved[0] = supported_modes[fie->index].hdr_mode;
+	fie->code = mg->modes[fie->index].bus_fmt;
+	fie->width = mg->modes[fie->index].width;
+	fie->height = mg->modes[fie->index].height;
+	fie->interval = mg->modes[fie->index].max_fps;
+	fie->reserved[0] = mg->modes[fie->index].hdr_mode;
 	return 0;
 }
 
