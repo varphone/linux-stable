@@ -75,8 +75,8 @@
 #define SC130GS_GAIN_DEFAULT		0x0
 
 #define SC130GS_SOFTWARE_RESET_REG	0x0103
-#define SC130GS_REG_TEST_PATTERN	0x4501
-#define SC130GS_TEST_PATTERN_ENABLE	0x08
+#define SC130GS_REG_TEST_PATTERN	0x5040
+#define SC130GS_TEST_PATTERN_ENABLE	0x80
 
 #define SC130GS_REG_VTS			0x320e
 #define SC130GS_FLIP_REG		0x3221
@@ -531,7 +531,7 @@ static const struct regval sc130gs_linear_10_1280x1024_210fps_slave_regs[] = {
 static const struct sc130gs_mode modes_1280_1024_120_10bit[] = {
 	{
 		/* linear modes */
-		.bus_fmt = MEDIA_BUS_FMT_SBGGR10_1X10,
+		.bus_fmt = MEDIA_BUS_FMT_Y10_1X10,
 		.width = 1280,
 		.height = 1024,
 		.max_fps = {
@@ -552,7 +552,7 @@ static const struct sc130gs_mode modes_1280_1024_120_10bit[] = {
 static const struct sc130gs_mode modes_1280_1024_210_10bit[] = {
 	{
 		/* linear modes */
-		.bus_fmt = MEDIA_BUS_FMT_SBGGR10_1X10,
+		.bus_fmt = MEDIA_BUS_FMT_Y10_1X10,
 		.width = 1280,
 		.height = 1024,
 		.max_fps = {
@@ -573,7 +573,7 @@ static const struct sc130gs_mode modes_1280_1024_210_10bit[] = {
 static const struct sc130gs_mode modes_1280_1024_210_10bit_slave[] = {
 	{
 		/* linear modes */
-		.bus_fmt = MEDIA_BUS_FMT_SBGGR10_1X10,
+		.bus_fmt = MEDIA_BUS_FMT_Y10_1X10,
 		.width = 1280,
 		.height = 1024,
 		.max_fps = {
@@ -720,7 +720,7 @@ sc130gs_find_best_fit(struct sc130gs *sc130gs, struct v4l2_subdev_format *fmt)
 	unsigned int i;
 
 	for (i = 0; i < sc130gs->cfg_num; i++) {
-		dist = sc130gs_get_reso_dist(mg->modes, framefmt);
+		dist = sc130gs_get_reso_dist(&mg->modes[i], framefmt);
 		if ((cur_best_fit_dist == -1 || dist <= cur_best_fit_dist) &&
 		    (mg->modes[i].bus_fmt == framefmt->code)) {
 			cur_best_fit_dist = dist;
