@@ -4243,9 +4243,9 @@ static long sc2210_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 				ret = sc2210_write_array(sc2210->client, mode->reg_list);
 				if (ret)
 					return ret;
-				sc2210_set_mirror_flip(sc2210->client, mirror_flip_mode);
-				sc2210_set_window_offset_x(sc2210->client, sc2210->cur_wox);
-				sc2210_set_window_offset_y(sc2210->client, sc2210->cur_woy);
+				// sc2210_set_mirror_flip(sc2210->client, mirror_flip_mode);
+				// sc2210_set_window_offset_x(sc2210->client, sc2210->cur_wox);
+				// sc2210_set_window_offset_y(sc2210->client, sc2210->cur_woy);
 			}
 			w = mode->hts_def - mode->width;
 			h = mode->vts_def - mode->height;
@@ -4396,9 +4396,9 @@ static int __sc2210_start_stream(struct sc2210 *sc2210)
 	if (ret)
 		return ret;
 
-	sc2210_set_mirror_flip(sc2210->client, mirror_flip_mode);
-	sc2210_set_window_offset_x(sc2210->client, sc2210->cur_wox);
-	sc2210_set_window_offset_y(sc2210->client, sc2210->cur_woy);
+	// sc2210_set_mirror_flip(sc2210->client, mirror_flip_mode);
+	// sc2210_set_window_offset_x(sc2210->client, sc2210->cur_wox);
+	// sc2210_set_window_offset_y(sc2210->client, sc2210->cur_woy);
 
 	ret = __v4l2_ctrl_handler_setup(&sc2210->ctrl_handler);
 	if (ret)
