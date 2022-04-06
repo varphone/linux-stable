@@ -1827,7 +1827,7 @@ static const struct ispsd_in_fmt rkisp_isp_input_formats[] = {
 		.yuv_seq	= CIF_ISP_ACQ_PROP_YCBYCR,
 		.bus_width	= 8,
 	}, {
-		.name		= "Y10_1X8",
+		.name		= "Y10_1X10",
 		.mbus_code	= MEDIA_BUS_FMT_Y10_1X10,
 		.fmt_type	= FMT_BAYER,
 		.mipi_dt	= CIF_CSI2_DT_RAW10,
