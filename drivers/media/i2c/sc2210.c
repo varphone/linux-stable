@@ -566,6 +566,9 @@ static const struct regval sc2210_linear_10_1920x544_180fps_regs[] = {
 	{0x320f, 0x58},
 	{0x3e01, 0x25},
 	{0x3e02, 0x40},
+	// 1920x544@135fps
+	{0x320e, 0x03},
+	{0x320f, 0x20},
 	//
 	{0x0100, 0x01},
 	{REG_NULL, 0x00},
@@ -3407,11 +3410,11 @@ static const struct sc2210_mode modes_1920_544_180_10bit[] = {
 		.height = 544,
 		.max_fps = {
 			.numerator = 10000,
-			.denominator = 1800000,
+			.denominator = 1350000,
 		},
-		.exp_def = 0x0255 / 2,
+		.exp_def = 0x031d / 2,
 		.hts_def = 0x044c * 2, // REG{0x320c,0x320d}
-		.vts_def = 0x0258, // REG{0x320e,0x320f}
+		.vts_def = 0x0320, // REG{0x320e,0x320f}
 		.reg_list = sc2210_linear_10_1920x544_180fps_regs,
 		.hdr_mode = NO_HDR,
 		.mipi_freq_idx = 2, // 594.00 Mbps
@@ -3605,11 +3608,11 @@ static const struct sc2210_mode modes_mixed_formats[] = {
 		.height = 544,
 		.max_fps = {
 			.numerator = 10000,
-			.denominator = 1800000,
+			.denominator = 1350000,
 		},
-		.exp_def = 0x0255 / 2,
+		.exp_def = 0x031d / 2,
 		.hts_def = 0x044c * 2, // REG{0x320c,0x320d}
-		.vts_def = 0x0258, // REG{0x320e,0x320f}
+		.vts_def = 0x0320, // REG{0x320e,0x320f}
 		.reg_list = sc2210_linear_10_1920x544_180fps_regs,
 		.hdr_mode = NO_HDR,
 		.mipi_freq_idx = 2, // 594.00 Mbps
