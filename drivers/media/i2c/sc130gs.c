@@ -36,6 +36,8 @@
 #define V4L2_CID_DIGITAL_GAIN		V4L2_CID_GAIN
 #endif
 
+#define V4L2_CID_EXT_TRIGGER		(V4L2_CID_IMAGE_SOURCE_CLASS_BASE + 0x1001)
+
 #define MIPI_FREQ_186M			186000000 // 371.25Mbps/lane
 #define MIPI_FREQ_216M			432000000 // 432.00Mbps/lane
 #define MIPI_FREQ_297M			297000000 // 594.00Mbps/lane
@@ -98,7 +100,7 @@
 
 #define SC130GS_NAME			"sc130gs"
 
-#define SC130GS_DEF_MODE_GROUP		1
+#define SC130GS_DEF_MODE_GROUP		0
 #define SC130GS_DEF_MODE_ID		0
 
 static int default_group = SC130GS_DEF_MODE_GROUP;
@@ -170,6 +172,7 @@ struct sc130gs {
 	struct v4l2_ctrl	*test_pattern;
 	struct v4l2_ctrl	*pixel_rate;
 	struct v4l2_ctrl	*link_freq;
+	struct v4l2_ctrl	*ext_trigger;
 	struct mutex		mutex;
 	bool			streaming;
 	bool			power_on;
@@ -191,7 +194,7 @@ struct sc130gs {
  */
 static const struct regval sc130gs_linear_10_1280x1024_120fps_regs[] = {
 	{0x0103, 0x01}, // soft reset
-	// {REG_DELAY, 5},
+	{REG_DELAY, 5},
 	{0x0100, 0x00},
 	{0x3000, 0x00},
 	{0x3001, 0x00},
@@ -1497,6 +1500,14 @@ static int sc130gs_set_ctrl(struct v4l2_ctrl *ctrl)
 		ret |= sc130gs_write_reg(sc130gs->client, SC130GS_FLIP_REG,
 					 SC130GS_REG_VALUE_08BIT, val);
 		break;
+	case V4L2_CID_EXT_TRIGGER:
+		if (ctrl->val)
+			val = 0xa3;
+		else
+			val = 0x00;
+		ret |= sc130gs_write_reg(sc130gs->client, 0x3234,
+					 SC130GS_REG_VALUE_08BIT, val);
+		break;
 	default:
 		dev_warn(&client->dev, "%s Unhandled id:0x%x, val:0x%x\n",
 			 __func__, ctrl->id, ctrl->val);
@@ -1511,6 +1522,18 @@ out_ctrl:
 
 static const struct v4l2_ctrl_ops sc130gs_ctrl_ops = {
 	.s_ctrl = sc130gs_set_ctrl,
+};
+
+
+static const struct v4l2_ctrl_config sc130gs_ctrl_ext_trigger = {
+	.ops = &sc130gs_ctrl_ops,
+	.id = V4L2_CID_EXT_TRIGGER,
+	.name = "Ext Trigger",
+	.type = V4L2_CTRL_TYPE_BOOLEAN,
+	.min = false,
+	.max = true,
+	.step = 1,
+	.def = false,
 };
 
 static int sc130gs_initialize_controls(struct sc130gs *sc130gs)
@@ -1575,6 +1598,8 @@ static int sc130gs_initialize_controls(struct sc130gs *sc130gs)
 			  0);
 	v4l2_ctrl_new_std(handler, &sc130gs_ctrl_ops, V4L2_CID_VFLIP, 0, 1, 1,
 			  0);
+	sc130gs->ext_trigger =
+		v4l2_ctrl_new_custom(handler, &sc130gs_ctrl_ext_trigger, NULL);
 
 	if (handler->error) {
 		ret = handler->error;
