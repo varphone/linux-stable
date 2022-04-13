@@ -40,6 +40,10 @@
 #define V4L2_CID_DIGITAL_GAIN		V4L2_CID_GAIN
 #endif
 
+#define V4L2_CID_OFFSET_X		(V4L2_CID_IMAGE_SOURCE_CLASS_BASE + 0x1002)
+#define V4L2_CID_OFFSET_Y		(V4L2_CID_IMAGE_SOURCE_CLASS_BASE + 0x1003)
+#define V4L2_CID_SLEEP			(V4L2_CID_IMAGE_SOURCE_CLASS_BASE + 0x1006)
+
 #define MIPI_FREQ_186M			186000000 // 371.25Mbps/lane
 #define MIPI_FREQ_216M			432000000 // 432.00Mbps/lane
 #define MIPI_FREQ_297M			297000000 // 594.00Mbps/lane
@@ -200,6 +204,9 @@ struct sc2210 {
 	struct v4l2_ctrl	*test_pattern;
 	struct v4l2_ctrl	*pixel_rate;
 	struct v4l2_ctrl	*link_freq;
+	struct v4l2_ctrl	*offset_x;
+	struct v4l2_ctrl	*offset_y;
+	struct v4l2_ctrl	*sleep;
 	struct mutex		mutex;
 	bool			streaming;
 	bool			power_on;
@@ -213,8 +220,8 @@ struct sc2210 {
 	u32			cur_vts;
 	u32			cur_wox;
 	u32			cur_woy;
-	// u32			def_wox;
-	// u32			def_woy;
+	u32			def_wox;
+	u32			def_woy;
 	u32			max_wox;
 	u32			max_woy;
 	struct preisp_hdrae_exp_s init_hdrae_exp;
@@ -4173,13 +4180,13 @@ static void sc2210_change_mode(struct sc2210 *sc2210, const struct sc2210_mode *
 {
 	sc2210->cur_mode = mode;
 	sc2210->cur_vts = sc2210->cur_mode->vts_def;
-	sc2210_get_offset_of_mode(mode, &sc2210->cur_wox, &sc2210->cur_woy);
+	sc2210_get_offset_of_mode(mode, &sc2210->def_wox, &sc2210->def_woy);
 	sc2210_get_max_offset_of_mode(mode, &sc2210->max_wox, &sc2210->max_woy);
 	dev_info(&sc2210->client->dev, "set fmt: cur_mode: %dx%d@%d/%d, hdr: %d\n",
 		mode->width, mode->height, mode->max_fps.numerator,
 		mode->max_fps.denominator, mode->hdr_mode);
-	dev_info(&sc2210->client->dev, "offset cur: %d,%d max: %d,%d\n",
-		 sc2210->cur_wox, sc2210->cur_woy, sc2210->max_wox,
+	dev_info(&sc2210->client->dev, "offset def: %d,%d max: %d,%d\n",
+		 sc2210->def_wox, sc2210->def_woy, sc2210->max_wox,
 		 sc2210->max_woy);
 }
 
@@ -4219,6 +4226,18 @@ static int sc2210_set_fmt(struct v4l2_subdev *sd,
 		pixel_rate = (u32)link_freq_items[mode->mipi_freq_idx] /
 			mode->bpp * 2 * SC2210_LANES;
 		__v4l2_ctrl_s_ctrl_int64(sc2210->pixel_rate, pixel_rate);
+		__v4l2_ctrl_modify_range(sc2210->offset_x,
+					 sc2210->offset_x->minimum,
+					 sc2210->max_wox,
+					 sc2210->offset_x->step,
+					 sc2210->def_wox);
+		__v4l2_ctrl_modify_range(sc2210->offset_y,
+					 sc2210->offset_y->minimum,
+					 sc2210->max_woy,
+					 sc2210->offset_y->step,
+					 sc2210->def_woy);
+		__v4l2_ctrl_s_ctrl(sc2210->offset_x, sc2210->def_wox);
+		__v4l2_ctrl_s_ctrl(sc2210->offset_y, sc2210->def_woy);
 	}
 
 	mutex_unlock(&sc2210->mutex);
@@ -4583,6 +4602,18 @@ static long sc2210_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 				mode->bpp * 2 * SC2210_LANES;
 			__v4l2_ctrl_s_ctrl_int64(sc2210->pixel_rate,
 						 pixel_rate);
+			__v4l2_ctrl_modify_range(sc2210->offset_x,
+						 sc2210->offset_x->minimum,
+						 sc2210->max_wox,
+						 sc2210->offset_x->step,
+						 sc2210->def_wox);
+			__v4l2_ctrl_modify_range(sc2210->offset_y,
+						 sc2210->offset_y->minimum,
+						 sc2210->max_woy,
+						 sc2210->offset_y->step,
+						 sc2210->def_woy);
+			__v4l2_ctrl_s_ctrl(sc2210->offset_x, sc2210->def_wox);
+			__v4l2_ctrl_s_ctrl(sc2210->offset_y, sc2210->def_woy);
 			dev_info(&sc2210->client->dev,
 				"sensor mode: %d\n", mode->hdr_mode);
 		}
@@ -5097,6 +5128,42 @@ static int sc2210_set_ctrl(struct v4l2_ctrl *ctrl)
 		ret |= sc2210_write_reg(sc2210->client, SC2210_FLIP_REG,
 					SC2210_REG_VALUE_08BIT, val);
 		break;
+	case V4L2_CID_OFFSET_X:
+		if (ctrl->val > sc2210->max_wox)
+			val = sc2210->max_wox;
+		else
+			val = ctrl->val;
+		ret |= sc2210_write_reg(sc2210->client,
+					SC2210_WINDOW_START_COL_L,
+					SC2210_REG_VALUE_16BIT, val);
+		dev_dbg(&client->dev, "set offset_x: 0x%x\n", ctrl->val);
+		break;
+	case V4L2_CID_OFFSET_Y:
+		if (ctrl->val > sc2210->max_woy)
+			val = sc2210->max_woy;
+		else
+			val = ctrl->val;
+		ret |= sc2210_write_reg(sc2210->client,
+					SC2210_WINDOW_START_ROW_L,
+					SC2210_REG_VALUE_16BIT, val);
+		dev_dbg(&client->dev, "set offset_y: 0x%x\n", ctrl->val);
+		break;
+	case V4L2_CID_SLEEP:
+		if (sc2210->streaming) {
+			ret = sc2210_read_reg(sc2210->client,
+					      SC2210_REG_CTRL_MODE,
+					      SC2210_REG_VALUE_08BIT, &val);
+			if (ret)
+				break;
+			if (ctrl->val)
+				val &= 0xfe;
+			else
+				val &= 0x01;
+			ret |= sc2210_write_reg(sc2210->client,
+						SC2210_REG_CTRL_MODE,
+						SC2210_REG_VALUE_08BIT, val);
+		}
+		break;
 	default:
 		dev_warn(&client->dev, "%s Unhandled id:0x%x, val:0x%x\n",
 			 __func__, ctrl->id, ctrl->val);
@@ -5111,6 +5178,39 @@ out_ctrl:
 
 static const struct v4l2_ctrl_ops sc2210_ctrl_ops = {
 	.s_ctrl = sc2210_set_ctrl,
+};
+
+static const struct v4l2_ctrl_config sc2210_ctrl_offset_x = {
+	.ops = &sc2210_ctrl_ops,
+	.id = V4L2_CID_OFFSET_X,
+	.name = "Offset X",
+	.type = V4L2_CTRL_TYPE_INTEGER,
+	.min = 4,
+	.max = 1920,
+	.step = 1,
+	.def = 4,
+};
+
+static const struct v4l2_ctrl_config sc2210_ctrl_offset_y = {
+	.ops = &sc2210_ctrl_ops,
+	.id = V4L2_CID_OFFSET_Y,
+	.name = "Offset Y",
+	.type = V4L2_CTRL_TYPE_INTEGER,
+	.min = 4,
+	.max = 1080,
+	.step = 1,
+	.def = 4,
+};
+
+static const struct v4l2_ctrl_config sc2210_ctrl_sleep = {
+	.ops = &sc2210_ctrl_ops,
+	.id = V4L2_CID_SLEEP,
+	.name = "Sleep",
+	.type = V4L2_CTRL_TYPE_BOOLEAN,
+	.min = false,
+	.max = true,
+	.step = 1,
+	.def = false,
 };
 
 static int sc2210_initialize_controls(struct sc2210 *sc2210)
@@ -5171,6 +5271,13 @@ static int sc2210_initialize_controls(struct sc2210 *sc2210)
 
 	v4l2_ctrl_new_std(handler, &sc2210_ctrl_ops, V4L2_CID_HFLIP, 0, 1, 1, 0);
 	v4l2_ctrl_new_std(handler, &sc2210_ctrl_ops, V4L2_CID_VFLIP, 0, 1, 1, 0);
+	sc2210->offset_x =
+		v4l2_ctrl_new_custom(handler, &sc2210_ctrl_offset_x, NULL);
+	sc2210->offset_y =
+		v4l2_ctrl_new_custom(handler, &sc2210_ctrl_offset_y, NULL);
+	__v4l2_ctrl_s_ctrl(sc2210->offset_x, sc2210->def_wox);
+	__v4l2_ctrl_s_ctrl(sc2210->offset_y, sc2210->def_woy);
+	sc2210->sleep = v4l2_ctrl_new_custom(handler, &sc2210_ctrl_sleep, NULL);
 
 	if (handler->error) {
 		ret = handler->error;
@@ -5416,8 +5523,8 @@ static int sc2210_probe(struct i2c_client *client,
 	sc2210->cur_mode = &supported_mode_groups[default_group].modes[default_mode];
 	sc2210->client = client;
 
-	sc2210_get_offset_of_mode(sc2210->cur_mode, &sc2210->cur_wox,
-				  &sc2210->cur_woy);
+	sc2210_get_offset_of_mode(sc2210->cur_mode, &sc2210->def_wox,
+				  &sc2210->def_woy);
 	sc2210_get_max_offset_of_mode(sc2210->cur_mode, &sc2210->max_wox,
 				      &sc2210->max_woy);
 
