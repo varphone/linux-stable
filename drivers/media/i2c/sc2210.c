@@ -5149,20 +5149,13 @@ static int sc2210_set_ctrl(struct v4l2_ctrl *ctrl)
 		dev_dbg(&client->dev, "set offset_y: 0x%x\n", ctrl->val);
 		break;
 	case V4L2_CID_SLEEP:
-		if (sc2210->streaming) {
-			ret = sc2210_read_reg(sc2210->client,
-					      SC2210_REG_CTRL_MODE,
-					      SC2210_REG_VALUE_08BIT, &val);
-			if (ret)
-				break;
-			if (ctrl->val)
-				val &= 0xfe;
-			else
-				val &= 0x01;
-			ret |= sc2210_write_reg(sc2210->client,
-						SC2210_REG_CTRL_MODE,
-						SC2210_REG_VALUE_08BIT, val);
-		}
+		if (ctrl->val)
+			val = 0x00;
+		else
+			val = 0x01;
+		ret |= sc2210_write_reg(sc2210->client, SC2210_REG_CTRL_MODE,
+					SC2210_REG_VALUE_08BIT, val);
+		dev_dbg(&client->dev, "set sleep: 0x%x, ret: %d\n", val, ret);
 		break;
 	default:
 		dev_warn(&client->dev, "%s Unhandled id:0x%x, val:0x%x\n",
