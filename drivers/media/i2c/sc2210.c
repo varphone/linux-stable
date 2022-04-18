@@ -3837,27 +3837,27 @@ static const struct sc2210_mode modes_mixed_formats[] = {
 		.bpp = 12,
 		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
 	},
-	{
-		/* 2 to 1 hdr */
-		.bus_fmt = MEDIA_BUS_FMT_SBGGR12_1X12,
-		.width = 1920,
-		.height = 1080,
-		.max_fps = {
-			.numerator = 10000,
-			.denominator = 300000,
-		},
-		.exp_def = 0x08ad / 2,
-		.hts_def = 0x0437 * 2, // REG{0x320c,0x320d}
-		.vts_def = 0x08b0, // REG{0x320e,0x320f}
-		.reg_list = sc2210_hdr2_12_1920x1080_30fps_regs,
-		.hdr_mode = HDR_X2,
-		.mipi_freq_idx = 1,
-		.bpp = 12,
-		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_1,
-		.vc[PAD1] = V4L2_MBUS_CSI2_CHANNEL_0,//L->csi wr0
-		.vc[PAD2] = V4L2_MBUS_CSI2_CHANNEL_1,
-		.vc[PAD3] = V4L2_MBUS_CSI2_CHANNEL_1,//M->csi wr2
-	},
+	// {
+	// 	/* 2 to 1 hdr */
+	// 	.bus_fmt = MEDIA_BUS_FMT_SBGGR12_1X12,
+	// 	.width = 1920,
+	// 	.height = 1080,
+	// 	.max_fps = {
+	// 		.numerator = 10000,
+	// 		.denominator = 300000,
+	// 	},
+	// 	.exp_def = 0x08ad / 2,
+	// 	.hts_def = 0x0437 * 2, // REG{0x320c,0x320d}
+	// 	.vts_def = 0x08b0, // REG{0x320e,0x320f}
+	// 	.reg_list = sc2210_hdr2_12_1920x1080_30fps_regs,
+	// 	.hdr_mode = HDR_X2,
+	// 	.mipi_freq_idx = 1,
+	// 	.bpp = 12,
+	// 	.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_1,
+	// 	.vc[PAD1] = V4L2_MBUS_CSI2_CHANNEL_0,//L->csi wr0
+	// 	.vc[PAD2] = V4L2_MBUS_CSI2_CHANNEL_1,
+	// 	.vc[PAD3] = V4L2_MBUS_CSI2_CHANNEL_1,//M->csi wr2
+	// },
 	{
 		/* linear modes */
 		.bus_fmt = MEDIA_BUS_FMT_SBGGR12_1X12,
@@ -3950,8 +3950,142 @@ static const struct sc2210_mode modes_mixed_formats[] = {
 	},
 };
 
+
+static const struct sc2210_mode modes_mixed_formats_bl[] = {
+	{
+		/* linear modes */
+		.bus_fmt = MEDIA_BUS_FMT_Y12_1X12,
+		.width = 1920,
+		.height = 1080,
+		.max_fps = {
+			.numerator = 10000,
+			.denominator = 600000,
+		},
+		.exp_def = 0x0455 / 2,
+		.hts_def = 0x0437 * 2, // REG{0x320c,0x320d}
+		.vts_def = 0x0458, // REG{0x320e,0x320f}
+		.reg_list = sc2210_linear_12_1920x1080_60fps_regs,
+		.hdr_mode = NO_HDR,
+		.mipi_freq_idx = 1,
+		.bpp = 12,
+		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+	},
+	// {
+	// 	/* 2 to 1 hdr */
+	// 	.bus_fmt = MEDIA_BUS_FMT_Y12_1X12,
+	// 	.width = 1920,
+	// 	.height = 1080,
+	// 	.max_fps = {
+	// 		.numerator = 10000,
+	// 		.denominator = 300000,
+	// 	},
+	// 	.exp_def = 0x08ad / 2,
+	// 	.hts_def = 0x0437 * 2, // REG{0x320c,0x320d}
+	// 	.vts_def = 0x08b0, // REG{0x320e,0x320f}
+	// 	.reg_list = sc2210_hdr2_12_1920x1080_30fps_regs,
+	// 	.hdr_mode = HDR_X2,
+	// 	.mipi_freq_idx = 1,
+	// 	.bpp = 12,
+	// 	.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_1,
+	// 	.vc[PAD1] = V4L2_MBUS_CSI2_CHANNEL_0,//L->csi wr0
+	// 	.vc[PAD2] = V4L2_MBUS_CSI2_CHANNEL_1,
+	// 	.vc[PAD3] = V4L2_MBUS_CSI2_CHANNEL_1,//M->csi wr2
+	// },
+	{
+		/* linear modes */
+		.bus_fmt = MEDIA_BUS_FMT_Y12_1X12,
+		.width = 1920,
+		.height = 800,
+		.max_fps = {
+			.numerator = 10000,
+			.denominator = 600000,
+		},
+		.exp_def = 0x0455 / 2,
+		.hts_def = 0x0437 * 2, // REG{0x320c,0x320d}
+		.vts_def = 0x0458, // REG{0x320e,0x320f}
+		.reg_list = sc2210_linear_12_1920x800_60fps_regs,
+		.hdr_mode = NO_HDR,
+		.mipi_freq_idx = 1,
+		.bpp = 12,
+		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+	},
+	{
+		/* linear modes */
+		.bus_fmt = MEDIA_BUS_FMT_Y10_1X10,
+		.width = 1920,
+		.height = 768,
+		.max_fps = {
+			.numerator = 10000,
+			.denominator = 1200000,
+		},
+		.exp_def = 0x0381 / 2,
+		.hts_def = 0x044c * 2, // REG{0x320c,0x320d}
+		.vts_def = 0x0384, // REG{0x320e,0x320f}
+		.reg_list = sc2210_linear_10_1920x768_120fps_regs,
+		.hdr_mode = NO_HDR,
+		.mipi_freq_idx = 2, // 594.00 Mbps
+		.bpp = 10,
+		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+	},
+	{
+		/* linear modes */
+		.bus_fmt = MEDIA_BUS_FMT_Y12_1X12,
+		.width = 1920,
+		.height = 576,
+		.max_fps = {
+			.numerator = 10000,
+			.denominator = 600000,
+		},
+		.exp_def = 0x0455 / 2,
+		.hts_def = 0x0437 * 2, // REG{0x320c,0x320d}
+		.vts_def = 0x0458, // REG{0x320e,0x320f}
+		.reg_list = sc2210_linear_12_1920x576_60fps_regs,
+		.hdr_mode = NO_HDR,
+		.mipi_freq_idx = 1,
+		.bpp = 12,
+		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+	},
+	{
+		/* linear modes */
+		.bus_fmt = MEDIA_BUS_FMT_Y10_1X10,
+		.width = 1920,
+		.height = 544,
+		.max_fps = {
+			.numerator = 10000,
+			.denominator = 1350000,
+		},
+		.exp_def = 0x031d / 2,
+		.hts_def = 0x044c * 2, // REG{0x320c,0x320d}
+		.vts_def = 0x0320, // REG{0x320e,0x320f}
+		.reg_list = sc2210_linear_10_1920x544_180fps_regs,
+		.hdr_mode = NO_HDR,
+		.mipi_freq_idx = 2, // 594.00 Mbps
+		.bpp = 10,
+		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+	},
+	{
+		/* linear modes */
+		.bus_fmt = MEDIA_BUS_FMT_Y12_1X12,
+		.width = 256,
+		.height = 1024,
+		.max_fps = {
+			.numerator = 10000,
+			.denominator = 600000,
+		},
+		.exp_def = 0x0455 / 2,
+		.hts_def = 0x0437 * 2, // REG{0x320c,0x320d}
+		.vts_def = 0x0458, // REG{0x320e,0x320f}
+		.reg_list = sc2210_linear_12_256x1024_60fps_regs,
+		.hdr_mode = NO_HDR,
+		.mipi_freq_idx = 1,
+		.bpp = 12,
+		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+	},
+};
+
 static const struct sc2210_mode_group supported_mode_groups[] = {
 	{ ARRAY_SIZE(modes_mixed_formats), modes_mixed_formats },
+	{ ARRAY_SIZE(modes_mixed_formats_bl), modes_mixed_formats_bl },
 	{ ARRAY_SIZE(modes_1920_1080_90_10bit), modes_1920_1080_90_10bit },
 	{ ARRAY_SIZE(modes_1920_768_120_10bit), modes_1920_768_120_10bit },
 	{ ARRAY_SIZE(modes_1920_544_180_10bit), modes_1920_544_180_10bit },
