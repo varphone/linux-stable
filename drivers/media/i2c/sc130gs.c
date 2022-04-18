@@ -531,6 +531,27 @@ static const struct regval sc130gs_linear_10_1280x1024_210fps_slave_regs[] = {
  * }
  */
 
+static const struct sc130gs_mode modes_1280_1024_210_10bit_bg10[] = {
+	{
+		/* linear modes */
+		.bus_fmt = MEDIA_BUS_FMT_SBGGR10_1X10,
+		.width = 1280,
+		.height = 1024,
+		.max_fps = {
+			.numerator = 10000,
+			.denominator = 2100000,
+		},
+		.exp_def = 0x20b / 2,
+		.hts_def = 0x30c * 2, // REG{0x320c,0x320d}
+		.vts_def = 0x20f * 2, // REG{0x320e,0x320f}
+		.reg_list = sc130gs_linear_10_1280x1024_210fps_regs,
+		.hdr_mode = NO_HDR,
+		.mipi_freq_idx = 3, // 594.00 Mbps
+		.bpp = 10,
+		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+	},
+};
+
 static const struct sc130gs_mode modes_1280_1024_120_10bit[] = {
 	{
 		/* linear modes */
@@ -595,6 +616,7 @@ static const struct sc130gs_mode modes_1280_1024_210_10bit_slave[] = {
 };
 
 static const struct sc130gs_mode_group supported_mode_groups[] = {
+	{ ARRAY_SIZE(modes_1280_1024_210_10bit_bg10), modes_1280_1024_210_10bit_bg10 },
 	{ ARRAY_SIZE(modes_1280_1024_120_10bit), modes_1280_1024_120_10bit },
 	{ ARRAY_SIZE(modes_1280_1024_210_10bit), modes_1280_1024_210_10bit },
 	{ ARRAY_SIZE(modes_1280_1024_210_10bit_slave), modes_1280_1024_210_10bit_slave },
