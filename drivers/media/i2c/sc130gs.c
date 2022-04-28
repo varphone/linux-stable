@@ -381,6 +381,7 @@ static const struct regval sc130gs_linear_10_1280x1024_210fps_regs[] = {
 	{0x3664, 0x06},
 	{0x3c00, 0x41},
 	{0x3d08, 0x00},
+	{0x3225, 0x02},
 	{0x3e01, 0x20},
 	{0x3e02, 0x50},
 	{0x3e03, 0x0b},
@@ -1455,7 +1456,8 @@ static int sc130gs_set_ctrl(struct v4l2_ctrl *ctrl)
 
 	switch (ctrl->id) {
 	case V4L2_CID_EXPOSURE:
-		if (sc130gs->cur_mode->hdr_mode != NO_HDR)
+		if (sc130gs->cur_mode->hdr_mode != NO_HDR ||
+		    sc130gs->ext_trigger->val)
 			goto out_ctrl;
 		val = ctrl->val << 1;
 		ret = sc130gs_write_reg(sc130gs->client, SC130GS_REG_EXP_LONG_L,
@@ -1469,7 +1471,8 @@ static int sc130gs_set_ctrl(struct v4l2_ctrl *ctrl)
 		break;
 
 	case V4L2_CID_ANALOGUE_GAIN:
-		if (sc130gs->cur_mode->hdr_mode != NO_HDR)
+		if (sc130gs->cur_mode->hdr_mode != NO_HDR ||
+		    sc130gs->ext_trigger->val)
 			goto out_ctrl;
 		ret = sc130gs_read_reg(sc130gs->client, SC130GS_REG_CDGAIN,
 				       SC130GS_REG_VALUE_08BIT, &val);
@@ -1529,6 +1532,14 @@ static int sc130gs_set_ctrl(struct v4l2_ctrl *ctrl)
 			val = 0x00;
 		ret |= sc130gs_write_reg(sc130gs->client, 0x3234,
 					 SC130GS_REG_VALUE_08BIT, val);
+		if (ctrl->val) {
+			ret |= sc130gs_write_reg(sc130gs->client, 0x3225,
+						 SC130GS_REG_VALUE_08BIT, 0x02);
+			ret |= sc130gs_write_reg(sc130gs->client, 0x3e01,
+						 SC130GS_REG_VALUE_08BIT, 0x00);
+			ret |= sc130gs_write_reg(sc130gs->client, 0x3e02,
+						 SC130GS_REG_VALUE_08BIT, 0x00);
+		}
 		break;
 	default:
 		dev_warn(&client->dev, "%s Unhandled id:0x%x, val:0x%x\n",
