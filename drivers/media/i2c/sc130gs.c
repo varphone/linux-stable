@@ -100,7 +100,7 @@
 
 #define SC130GS_NAME			"sc130gs"
 
-#define SC130GS_DEF_MODE_GROUP		0
+#define SC130GS_DEF_MODE_GROUP		2
 #define SC130GS_DEF_MODE_ID		0
 
 static int default_group = SC130GS_DEF_MODE_GROUP;
