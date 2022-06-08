@@ -130,7 +130,7 @@
 
 #define SC2210_NAME			"sc2210"
 
-#define SC2210_DEF_MODE_GROUP		0
+#define SC2210_DEF_MODE_GROUP		1
 #define SC2210_DEF_MODE_ID		0
 
 static int default_group = SC2210_DEF_MODE_GROUP;
@@ -230,9 +230,9 @@ struct sc2210 {
 #define to_sc2210(sd) container_of(sd, struct sc2210, subdev)
 
 /*
- * Xclk 27Mhz linear 10bit 1920*544 180fps 594Mbps/lane
+ * Xclk 27Mhz linear 10bit 1792*544 135fps 594Mbps/lane
  */
-static const struct regval sc2210_linear_10_1920x544_180fps_regs[] = {
+static const struct regval sc2210_linear_10_1792x544_135fps_regs[] = {
 	{0x0103, 0x01},
 	{0x0100, 0x00},
 	{0x36e9, 0x80},
@@ -576,15 +576,20 @@ static const struct regval sc2210_linear_10_1920x544_180fps_regs[] = {
 	// 1920x544@135fps
 	{0x320e, 0x03},
 	{0x320f, 0x20},
+	// 1792x544@135fps
+	{0x3208, 0x07},
+	{0x3209, 0x00},
+	{0x3210, 0x00},
+	{0x3211, 0x44},
 	//
 	{0x0100, 0x01},
 	{REG_NULL, 0x00},
 };
 
 /*
- * Xclk 27Mhz linear 10bit 1920*768 120fps 594Mbps/lane
+ * Xclk 27Mhz linear 10bit 1792*768 120fps 594Mbps/lane
  */
-static const struct regval sc2210_linear_10_1920x768_120fps_regs[] = {
+static const struct regval sc2210_linear_10_1792x768_120fps_regs[] = {
 	{0x0103, 0x01},
 	{0x0100, 0x00},
 	{0x36e9, 0x80},
@@ -925,6 +930,11 @@ static const struct regval sc2210_linear_10_1920x768_120fps_regs[] = {
 	{0x320f, 0x84},
 	{0x3e01, 0x38},
 	{0x3e02, 0x00},
+	// 1792x768@120fps
+	{0x3208, 0x07},
+	{0x3209, 0x00},
+	{0x3210, 0x00},
+	{0x3211, 0x44},
 	//
 	{0x0100, 0x01},
 	{REG_NULL, 0x00},
@@ -2207,9 +2217,9 @@ static const struct regval sc2210_linear_12_1920x544_116fps_regs[] = {
 };
 
 /*
- * Xclk 27Mhz linear 12bit 1920*576 60fps 432Mbps/lane
+ * Xclk 27Mhz linear 12bit 1792*576 60fps 432Mbps/lane
  */
-static const struct regval sc2210_linear_12_1920x576_60fps_regs[] = {
+static const struct regval sc2210_linear_12_1792x576_60fps_regs[] = {
 	{0x0103, 0x01},
 	{0x0100, 0x00},
 	{0x36e9, 0x80},
@@ -2501,6 +2511,11 @@ static const struct regval sc2210_linear_12_1920x576_60fps_regs[] = {
 	{0x320b, 0x40},
 	{0x3212, 0x01},
 	{0x3213, 0x00},
+	// 1792x576@60fps
+	{0x3208, 0x07},
+	{0x3209, 0x00},
+	{0x3210, 0x00},
+	{0x3211, 0x44},
 	//
 	{0x0100, 0x01},
 	{REG_NULL, 0x00},
@@ -2802,9 +2817,9 @@ static const struct regval sc2210_linear_12_1920x768_83_6fps_regs[] = {
 };
 
 /*
- * Xclk 27Mhz linear 12bit 1920*800 60fps 432Mbps/lane
+ * Xclk 27Mhz linear 12bit 1792*800 60fps 432Mbps/lane
  */
-static const struct regval sc2210_linear_12_1920x800_60fps_regs[] = {
+static const struct regval sc2210_linear_12_1792x800_60fps_regs[] = {
 	{0x0103, 0x01},
 	{0x0100, 0x00},
 	{0x36e9, 0x80},
@@ -3096,6 +3111,11 @@ static const struct regval sc2210_linear_12_1920x800_60fps_regs[] = {
 	{0x320b, 0x20},
 	{0x3212, 0x00},
 	{0x3213, 0x90},
+	// 1792x800@60fps
+	{0x3208, 0x07},
+	{0x3209, 0x00},
+	{0x3210, 0x00},
+	{0x3211, 0x44},
 	//
 	{0x0100, 0x01},
 	{REG_NULL, 0x00},
@@ -3692,11 +3712,11 @@ static const struct sc2210_mode modes_1920_1080_90_10bit[] = {
 	},
 };
 
-static const struct sc2210_mode modes_1920_768_120_10bit[] = {
+static const struct sc2210_mode modes_1792_768_120_10bit[] = {
 	{
 		/* linear modes */
 		.bus_fmt = MEDIA_BUS_FMT_SBGGR10_1X10,
-		.width = 1920,
+		.width = 1792,
 		.height = 768,
 		.max_fps = {
 			.numerator = 10000,
@@ -3705,7 +3725,7 @@ static const struct sc2210_mode modes_1920_768_120_10bit[] = {
 		.exp_def = 0x0381 / 2,
 		.hts_def = 0x044c * 2, // REG{0x320c,0x320d}
 		.vts_def = 0x0384, // REG{0x320e,0x320f}
-		.reg_list = sc2210_linear_10_1920x768_120fps_regs,
+		.reg_list = sc2210_linear_10_1792x768_120fps_regs,
 		.hdr_mode = NO_HDR,
 		.mipi_freq_idx = 2, // 594.00 Mbps
 		.bpp = 10,
@@ -3713,11 +3733,11 @@ static const struct sc2210_mode modes_1920_768_120_10bit[] = {
 	},
 };
 
-static const struct sc2210_mode modes_1920_544_180_10bit[] = {
+static const struct sc2210_mode modes_1792_544_135_10bit[] = {
 	{
 		/* linear modes */
 		.bus_fmt = MEDIA_BUS_FMT_SBGGR10_1X10,
-		.width = 1920,
+		.width = 1792,
 		.height = 544,
 		.max_fps = {
 			.numerator = 10000,
@@ -3726,7 +3746,7 @@ static const struct sc2210_mode modes_1920_544_180_10bit[] = {
 		.exp_def = 0x031d / 2,
 		.hts_def = 0x044c * 2, // REG{0x320c,0x320d}
 		.vts_def = 0x0320, // REG{0x320e,0x320f}
-		.reg_list = sc2210_linear_10_1920x544_180fps_regs,
+		.reg_list = sc2210_linear_10_1792x544_135fps_regs,
 		.hdr_mode = NO_HDR,
 		.mipi_freq_idx = 2, // 594.00 Mbps
 		.bpp = 10,
@@ -3861,7 +3881,7 @@ static const struct sc2210_mode modes_mixed_formats[] = {
 	{
 		/* linear modes */
 		.bus_fmt = MEDIA_BUS_FMT_SBGGR12_1X12,
-		.width = 1920,
+		.width = 1792,
 		.height = 800,
 		.max_fps = {
 			.numerator = 10000,
@@ -3870,7 +3890,7 @@ static const struct sc2210_mode modes_mixed_formats[] = {
 		.exp_def = 0x0455 / 2,
 		.hts_def = 0x0437 * 2, // REG{0x320c,0x320d}
 		.vts_def = 0x0458, // REG{0x320e,0x320f}
-		.reg_list = sc2210_linear_12_1920x800_60fps_regs,
+		.reg_list = sc2210_linear_12_1792x800_60fps_regs,
 		.hdr_mode = NO_HDR,
 		.mipi_freq_idx = 1,
 		.bpp = 12,
@@ -3879,7 +3899,7 @@ static const struct sc2210_mode modes_mixed_formats[] = {
 	{
 		/* linear modes */
 		.bus_fmt = MEDIA_BUS_FMT_SBGGR10_1X10,
-		.width = 1920,
+		.width = 1792,
 		.height = 768,
 		.max_fps = {
 			.numerator = 10000,
@@ -3888,7 +3908,7 @@ static const struct sc2210_mode modes_mixed_formats[] = {
 		.exp_def = 0x0381 / 2,
 		.hts_def = 0x044c * 2, // REG{0x320c,0x320d}
 		.vts_def = 0x0384, // REG{0x320e,0x320f}
-		.reg_list = sc2210_linear_10_1920x768_120fps_regs,
+		.reg_list = sc2210_linear_10_1792x768_120fps_regs,
 		.hdr_mode = NO_HDR,
 		.mipi_freq_idx = 2, // 594.00 Mbps
 		.bpp = 10,
@@ -3897,7 +3917,7 @@ static const struct sc2210_mode modes_mixed_formats[] = {
 	{
 		/* linear modes */
 		.bus_fmt = MEDIA_BUS_FMT_SBGGR12_1X12,
-		.width = 1920,
+		.width = 1792,
 		.height = 576,
 		.max_fps = {
 			.numerator = 10000,
@@ -3906,7 +3926,7 @@ static const struct sc2210_mode modes_mixed_formats[] = {
 		.exp_def = 0x0455 / 2,
 		.hts_def = 0x0437 * 2, // REG{0x320c,0x320d}
 		.vts_def = 0x0458, // REG{0x320e,0x320f}
-		.reg_list = sc2210_linear_12_1920x576_60fps_regs,
+		.reg_list = sc2210_linear_12_1792x576_60fps_regs,
 		.hdr_mode = NO_HDR,
 		.mipi_freq_idx = 1,
 		.bpp = 12,
@@ -3915,7 +3935,7 @@ static const struct sc2210_mode modes_mixed_formats[] = {
 	{
 		/* linear modes */
 		.bus_fmt = MEDIA_BUS_FMT_SBGGR10_1X10,
-		.width = 1920,
+		.width = 1792,
 		.height = 544,
 		.max_fps = {
 			.numerator = 10000,
@@ -3924,7 +3944,7 @@ static const struct sc2210_mode modes_mixed_formats[] = {
 		.exp_def = 0x031d / 2,
 		.hts_def = 0x044c * 2, // REG{0x320c,0x320d}
 		.vts_def = 0x0320, // REG{0x320e,0x320f}
-		.reg_list = sc2210_linear_10_1920x544_180fps_regs,
+		.reg_list = sc2210_linear_10_1792x544_135fps_regs,
 		.hdr_mode = NO_HDR,
 		.mipi_freq_idx = 2, // 594.00 Mbps
 		.bpp = 10,
@@ -3994,7 +4014,7 @@ static const struct sc2210_mode modes_mixed_formats_bl[] = {
 	{
 		/* linear modes */
 		.bus_fmt = MEDIA_BUS_FMT_Y12_1X12,
-		.width = 1920,
+		.width = 1792,
 		.height = 800,
 		.max_fps = {
 			.numerator = 10000,
@@ -4003,7 +4023,7 @@ static const struct sc2210_mode modes_mixed_formats_bl[] = {
 		.exp_def = 0x0455 / 2,
 		.hts_def = 0x0437 * 2, // REG{0x320c,0x320d}
 		.vts_def = 0x0458, // REG{0x320e,0x320f}
-		.reg_list = sc2210_linear_12_1920x800_60fps_regs,
+		.reg_list = sc2210_linear_12_1792x800_60fps_regs,
 		.hdr_mode = NO_HDR,
 		.mipi_freq_idx = 1,
 		.bpp = 12,
@@ -4012,7 +4032,7 @@ static const struct sc2210_mode modes_mixed_formats_bl[] = {
 	{
 		/* linear modes */
 		.bus_fmt = MEDIA_BUS_FMT_Y10_1X10,
-		.width = 1920,
+		.width = 1792,
 		.height = 768,
 		.max_fps = {
 			.numerator = 10000,
@@ -4021,7 +4041,7 @@ static const struct sc2210_mode modes_mixed_formats_bl[] = {
 		.exp_def = 0x0381 / 2,
 		.hts_def = 0x044c * 2, // REG{0x320c,0x320d}
 		.vts_def = 0x0384, // REG{0x320e,0x320f}
-		.reg_list = sc2210_linear_10_1920x768_120fps_regs,
+		.reg_list = sc2210_linear_10_1792x768_120fps_regs,
 		.hdr_mode = NO_HDR,
 		.mipi_freq_idx = 2, // 594.00 Mbps
 		.bpp = 10,
@@ -4030,7 +4050,7 @@ static const struct sc2210_mode modes_mixed_formats_bl[] = {
 	{
 		/* linear modes */
 		.bus_fmt = MEDIA_BUS_FMT_Y12_1X12,
-		.width = 1920,
+		.width = 1792,
 		.height = 576,
 		.max_fps = {
 			.numerator = 10000,
@@ -4039,7 +4059,7 @@ static const struct sc2210_mode modes_mixed_formats_bl[] = {
 		.exp_def = 0x0455 / 2,
 		.hts_def = 0x0437 * 2, // REG{0x320c,0x320d}
 		.vts_def = 0x0458, // REG{0x320e,0x320f}
-		.reg_list = sc2210_linear_12_1920x576_60fps_regs,
+		.reg_list = sc2210_linear_12_1792x576_60fps_regs,
 		.hdr_mode = NO_HDR,
 		.mipi_freq_idx = 1,
 		.bpp = 12,
@@ -4048,7 +4068,7 @@ static const struct sc2210_mode modes_mixed_formats_bl[] = {
 	{
 		/* linear modes */
 		.bus_fmt = MEDIA_BUS_FMT_Y10_1X10,
-		.width = 1920,
+		.width = 1792,
 		.height = 544,
 		.max_fps = {
 			.numerator = 10000,
@@ -4057,7 +4077,7 @@ static const struct sc2210_mode modes_mixed_formats_bl[] = {
 		.exp_def = 0x031d / 2,
 		.hts_def = 0x044c * 2, // REG{0x320c,0x320d}
 		.vts_def = 0x0320, // REG{0x320e,0x320f}
-		.reg_list = sc2210_linear_10_1920x544_180fps_regs,
+		.reg_list = sc2210_linear_10_1792x544_135fps_regs,
 		.hdr_mode = NO_HDR,
 		.mipi_freq_idx = 2, // 594.00 Mbps
 		.bpp = 10,
@@ -4087,8 +4107,8 @@ static const struct sc2210_mode_group supported_mode_groups[] = {
 	{ ARRAY_SIZE(modes_mixed_formats), modes_mixed_formats },
 	{ ARRAY_SIZE(modes_mixed_formats_bl), modes_mixed_formats_bl },
 	{ ARRAY_SIZE(modes_1920_1080_90_10bit), modes_1920_1080_90_10bit },
-	{ ARRAY_SIZE(modes_1920_768_120_10bit), modes_1920_768_120_10bit },
-	{ ARRAY_SIZE(modes_1920_544_180_10bit), modes_1920_544_180_10bit },
+	{ ARRAY_SIZE(modes_1792_768_120_10bit), modes_1792_768_120_10bit },
+	{ ARRAY_SIZE(modes_1792_544_135_10bit), modes_1792_544_135_10bit },
 	{ ARRAY_SIZE(modes_1920_1080_60_12bit), modes_1920_1080_60_12bit },
 	{ ARRAY_SIZE(modes_1920_768_83_6_12bit), modes_1920_768_83_6_12bit },
 	{ ARRAY_SIZE(modes_1920_544_116_12bit), modes_1920_544_116_12bit },
