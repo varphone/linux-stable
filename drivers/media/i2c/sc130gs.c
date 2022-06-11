@@ -37,6 +37,7 @@
 #endif
 
 #define V4L2_CID_EXT_TRIGGER		(V4L2_CID_IMAGE_SOURCE_CLASS_BASE + 0x1001)
+#define V4L2_CID_SLEEP			(V4L2_CID_IMAGE_SOURCE_CLASS_BASE + 0x1006)
 
 #define MIPI_FREQ_186M			186000000 // 371.25Mbps/lane
 #define MIPI_FREQ_216M			432000000 // 432.00Mbps/lane
@@ -173,6 +174,7 @@ struct sc130gs {
 	struct v4l2_ctrl	*pixel_rate;
 	struct v4l2_ctrl	*link_freq;
 	struct v4l2_ctrl	*ext_trigger;
+	struct v4l2_ctrl	*sleep;
 	struct mutex		mutex;
 	bool			streaming;
 	bool			power_on;
@@ -1541,6 +1543,15 @@ static int sc130gs_set_ctrl(struct v4l2_ctrl *ctrl)
 						 SC130GS_REG_VALUE_08BIT, 0x00);
 		}
 		break;
+	case V4L2_CID_SLEEP:
+		if (ctrl->val)
+			val = 0x00;
+		else
+			val = 0x01;
+		ret |= sc130gs_write_reg(sc130gs->client, SC130GS_REG_CTRL_MODE,
+					 SC130GS_REG_VALUE_08BIT, val);
+		dev_dbg(&client->dev, "set sleep: 0x%x, ret: %d\n", val, ret);
+		break;
 	default:
 		dev_warn(&client->dev, "%s Unhandled id:0x%x, val:0x%x\n",
 			 __func__, ctrl->id, ctrl->val);
@@ -1562,6 +1573,17 @@ static const struct v4l2_ctrl_config sc130gs_ctrl_ext_trigger = {
 	.ops = &sc130gs_ctrl_ops,
 	.id = V4L2_CID_EXT_TRIGGER,
 	.name = "Ext Trigger",
+	.type = V4L2_CTRL_TYPE_BOOLEAN,
+	.min = false,
+	.max = true,
+	.step = 1,
+	.def = false,
+};
+
+static const struct v4l2_ctrl_config sc130gs_ctrl_sleep = {
+	.ops = &sc130gs_ctrl_ops,
+	.id = V4L2_CID_SLEEP,
+	.name = "Sleep",
 	.type = V4L2_CTRL_TYPE_BOOLEAN,
 	.min = false,
 	.max = true,
@@ -1633,6 +1655,7 @@ static int sc130gs_initialize_controls(struct sc130gs *sc130gs)
 			  0);
 	sc130gs->ext_trigger =
 		v4l2_ctrl_new_custom(handler, &sc130gs_ctrl_ext_trigger, NULL);
+	sc130gs->sleep = v4l2_ctrl_new_custom(handler, &sc130gs_ctrl_sleep, NULL);
 
 	if (handler->error) {
 		ret = handler->error;
