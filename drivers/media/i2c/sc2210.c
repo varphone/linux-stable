@@ -130,7 +130,7 @@
 
 #define SC2210_NAME			"sc2210"
 
-#define SC2210_DEF_MODE_GROUP		1
+#define SC2210_DEF_MODE_GROUP		0
 #define SC2210_DEF_MODE_ID		0
 
 static int default_group = SC2210_DEF_MODE_GROUP;
