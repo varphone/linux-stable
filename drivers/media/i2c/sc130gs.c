@@ -1172,6 +1172,9 @@ static int __sc130gs_start_stream(struct sc130gs *sc130gs)
 		}
 	}
 
+	if (sc130gs->sleep->cur.val != 0)
+		return 0;
+
 	return sc130gs_write_reg(sc130gs->client, SC130GS_REG_CTRL_MODE,
 				 SC130GS_REG_VALUE_08BIT,
 				 SC130GS_MODE_STREAMING);
