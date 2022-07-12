@@ -4925,6 +4925,9 @@ static int __sc2210_start_stream(struct sc2210 *sc2210)
 		}
 	}
 
+	if (sc2210->sleep->cur.val != 0)
+		return 0;
+
 	return sc2210_write_reg(sc2210->client, SC2210_REG_CTRL_MODE,
 		SC2210_REG_VALUE_08BIT, SC2210_MODE_STREAMING);
 }
