@@ -7,7 +7,7 @@
 #include "bridge.h"
 
 #define RKISP_MAX_BUS_CLK 8
-#define RKISP_MAX_RETRY_CNT 5
+#define RKISP_MAX_RETRY_CNT 0xffffffff
 
 struct isp_clk_info {
 	u32 clk_rate;
@@ -30,7 +30,7 @@ struct rkisp_monitor {
 	struct completion cmpl;
 	int (*reset_handle)(struct rkisp_device *dev);
 	u32 state;
-	u8 retry;
+	u32 retry;
 	bool is_en;
 };
 
