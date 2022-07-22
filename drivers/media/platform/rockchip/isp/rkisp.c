@@ -964,7 +964,7 @@ static void rkisp_restart_monitor(struct work_struct *work)
 			}
 			continue;
 		}
-		dev_info(hw->dev, "isp%d to restart state:0x%x try:%d mipi_irq_cnt:%d\n",
+		dev_info(hw->dev, "isp%d to restart state:0x%x try:%u mipi_irq_cnt:%d\n",
 			 hw->cur_dev_id, monitor->state, monitor->retry, mipi_irq_cnt);
 		if (monitor->retry++ > RKISP_MAX_RETRY_CNT || hw->is_shutdown) {
 			monitor->is_en = false;
