@@ -596,6 +596,12 @@
 		};
 	};
 
+	mcu {
+		mcu_gpios: mcu-gpios {
+			rockchip,pins = <3 RK_PC1 RK_FUNC_GPIO &pcfg_output_low_pull_up>;
+		};
+	};
+
 	pmic {
 		vsel1_gpio: vsel1-gpio {
 			rockchip,pins =
@@ -712,6 +718,12 @@
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart5m0_xfer>;
+};
+
+&uart7 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart7m1_xfer &mcu_gpios>;
 };
 
 &uart8 {
