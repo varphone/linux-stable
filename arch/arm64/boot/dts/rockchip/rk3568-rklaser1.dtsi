@@ -365,13 +365,19 @@
 
 	/delete-node/ gt1x@14;
 
+	dac2@4C {
+		compatible = "ti,dac5571";
+		reg = <0x4C>;
+		vdd-supply = <&vcc3v3_sys>;
+	};
+
 	eeprom@50 {
 		compatible = "atmel,24c08";
 		reg = <0x50>;
 		pagesize = <16>;
 	};
 
-	dac@60 {
+	dac1@60 {
 		compatible = "microchip,mcp4725";
 		reg = <0x60>;
 		vdd-supply = <&vcc3v3_sys>;
