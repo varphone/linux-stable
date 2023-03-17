@@ -205,6 +205,11 @@
 				remote-endpoint = <&sc130gs_out>;
 				data-lanes = <1 2 3 4>;
 			};
+			mipi_in_ucam6: endpoint@7 {
+				reg = <7>;
+				remote-endpoint = <&fvig02_out>;
+				data-lanes = <1 2 3 4>;
+			};
 		};
 		port@1 {
 			reg = <1>;
@@ -388,6 +393,31 @@
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c2m1_xfer>;
+
+	fvig02: fvig02@10 {
+		status = "okay";
+		compatible = "fullv,fvig02";
+		reg = <0x10>;
+		clocks = <&cru CLK_CIF_OUT>;
+		clock-names = "xvclk";
+		power-domains = <&power RK3568_PD_VI>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&cif_clk>;
+		reset-gpios = <&gpio3 RK_PD4 GPIO_ACTIVE_LOW>;
+		/*pwdn-gpios = <&gpio4 RK_PB4 GPIO_ACTIVE_HIGH>;*/
+		rockchip,camera-module-index = <0>;
+		rockchip,camera-module-facing = "back";
+		rockchip,camera-module-name = "FV-IG02";
+		rockchip,camera-module-lens-name = "FIXED";
+		// NO_HDR:0 HDR_X2:5 HDR_X3:6
+		rockchip,camera-hdr-mode = <0>;
+		port {
+			fvig02_out: endpoint {
+				remote-endpoint = <&mipi_in_ucam6>;
+				data-lanes = <1 2 3 4>;
+			};
+		};
+	};
 
 	imx385: imx385@1a {
 		status = "okay";
