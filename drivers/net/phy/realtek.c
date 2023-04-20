@@ -40,6 +40,8 @@
 #define RTL8366RB_POWER_SAVE			0x15
 #define RTL8366RB_POWER_SAVE_ON			BIT(12)
 
+#define RTLGEN_SPEED_MASK			0x0630
+
 MODULE_DESCRIPTION("Realtek PHY driver");
 MODULE_AUTHOR("Johnson Leung");
 MODULE_LICENSE("GPL");
@@ -211,6 +213,55 @@ static int rtl8366rb_config_init(struct phy_device *phydev)
 	return ret;
 }
 
+/* get actual speed to cover the downshift case */
+static int rtlgen_get_speed(struct phy_device *phydev)
+{
+	int val;
+
+	if (!phydev->link)
+		return 0;
+
+	val = phy_read_paged(phydev, 0xa43, 0x12);
+	if (val < 0)
+		return val;
+
+	switch (val & RTLGEN_SPEED_MASK) {
+	case 0x0000:
+		phydev->speed = SPEED_10;
+		break;
+	case 0x0010:
+		phydev->speed = SPEED_100;
+		break;
+	case 0x0020:
+		phydev->speed = SPEED_1000;
+		break;
+	case 0x0200:
+		phydev->speed = SPEED_10000;
+		break;
+	case 0x0210:
+		phydev->speed = SPEED_2500;
+		break;
+	case 0x0220:
+		phydev->speed = SPEED_5000;
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
+static int rtlgen_read_status(struct phy_device *phydev)
+{
+	int ret;
+
+	ret = genphy_read_status(phydev);
+	if (ret < 0)
+		return ret;
+
+	return rtlgen_get_speed(phydev);
+}
+
 static struct phy_driver realtek_drvs[] = {
 	{
 		.phy_id         = 0x00008201,
@@ -287,6 +338,7 @@ static struct phy_driver realtek_drvs[] = {
 		.config_init	= &rtl8211f_config_init,
 		.ack_interrupt	= &rtl8211f_ack_interrupt,
 		.config_intr	= &rtl8211f_config_intr,
+		.read_status	= rtlgen_read_status,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
 		.read_page	= rtl821x_read_page,
