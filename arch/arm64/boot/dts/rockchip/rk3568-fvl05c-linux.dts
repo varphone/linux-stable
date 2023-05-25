@@ -15,10 +15,27 @@
 
 &can0 {
         assigned-clocks = <&cru CLK_CAN0>;
-        assigned-clock-rates = <150000000>;
+        assigned-clock-rates = <100000000>;
         pinctrl-names = "default";
         pinctrl-0 = <&can0m1_pins>;
         status = "okay";
+};
+
+&i2c0 {
+        rk809: pmic@20 {
+		regulators {
+			vccio_sd: LDO_REG5 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-name = "vccio_sd";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
+			};
+                };
+        };
 };
 
 &rk809_codec {
